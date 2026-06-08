@@ -6,6 +6,7 @@
 #include "../BpmEditTool.h"
 #include "../MasterView.h"
 #include "../EditConfig.h"
+#include <QActionGroup> // Qt6: no longer pulled in transitively
 #include <cmath>
 #include <cstdlib>
 

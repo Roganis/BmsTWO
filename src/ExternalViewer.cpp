@@ -2,6 +2,7 @@
 #include "document/Document.h"
 #include "document/History.h"
 #include "MainWindow.h"
+#include <QRegExp> // Qt6: provided by the Core5Compat module
 
 
 const char *ExternalViewer::SettingsGroup = "ExternalViewer";
@@ -203,13 +204,13 @@ QString ExternalViewer::EvalArgument(QString argumentFormat, QMap<QString, QStri
 			continue;
 		}
 		*/
-        result += argumentFormat.midRef(pos, posnext - pos);
+        result += argumentFormat.mid(pos, posnext - pos);
         pos = posnext;
 		pos += variable.matchedLength();
 		QString var = variable.cap(1);
 		result += env.contains(var) ? env[var] : "";
 	}
-    result += argumentFormat.midRef(pos);
+    result += argumentFormat.mid(pos);
     return result;
 }
 

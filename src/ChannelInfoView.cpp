@@ -202,8 +202,13 @@ void ChannelInfoView::WaveSummaryUpdated()
 		return;
 	WaveSummary summary = channel->GetWaveSummary();
 	if (summary.FrameCount > 0){
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		int sampleBits = summary.Format.bytesPerSample() * 8;
+#else
+		int sampleBits = summary.Format.sampleSize();
+#endif
 		labelFormat->setText(QString("%1bit/%2ch/%3")
-							 .arg(summary.Format.sampleSize())
+							 .arg(sampleBits)
 							 .arg(summary.Format.channelCount())
 							 .arg(TextForSamplingRate(summary.Format.sampleRate())));
 		qreal sec = (qreal)summary.FrameCount / summary.Format.sampleRate();

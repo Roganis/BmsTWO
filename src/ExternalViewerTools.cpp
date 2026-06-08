@@ -3,6 +3,8 @@
 #include "MainWindow.h"
 #include "util/SymbolIconManager.h"
 #include "sequence_view/SequenceView.h"
+#include <QActionGroup> // Qt6: no longer pulled in transitively
+#include "util/KeySeq.h"
 
 ExternalViewerTools::ExternalViewerTools(const QString &objectName, const QString &windowTitle, MainWindow *mainWindow)
 	: QToolBar(windowTitle, mainWindow)
@@ -17,8 +19,8 @@ ExternalViewerTools::ExternalViewerTools(const QString &objectName, const QStrin
 	actionPlayHere = addAction(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Play), tr("Play from Here"));
 	actionStop = addAction(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Stop), tr("Stop"));
 
-	actionPlayBeg->setShortcuts(QList<QKeySequence>() << Qt::Key_F5 << Qt::ControlModifier + Qt::Key_R);
-	actionPlayHere->setShortcuts(QList<QKeySequence>() << Qt::Key_F6 << Qt::ControlModifier + Qt::ShiftModifier + Qt::Key_R);
+	actionPlayBeg->setShortcuts(QList<QKeySequence>() << Qt::Key_F5 << KeySeq(Qt::ControlModifier, Qt::Key_R));
+	actionPlayHere->setShortcuts(QList<QKeySequence>() << Qt::Key_F6 << KeySeq(Qt::ControlModifier, Qt::ShiftModifier, Qt::Key_R));
 
 	addWidget(viewersConfig = new QComboBox(this));
 	viewersConfig->setMinimumWidth(100);

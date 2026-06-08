@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "sequence_view/SequenceView.h"
 #include "util/SymbolIconManager.h"
+#include <QActionGroup> // Qt6: no longer pulled in transitively
 
 namespace SequenceViewSettings{
 static const char* SettingsGroup = "SequenceView";

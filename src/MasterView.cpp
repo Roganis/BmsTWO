@@ -295,7 +295,7 @@ void MiniMapView::UpdateBuffer()
 	for (int y=0; y<height(); y++){
 		int t = y * sview->viewLength / height();
 		int t2 = (y+1) * sview->viewLength / height();
-		if (std::min(t2, rmsCacheOfTicks.size()) > t){
+		if (std::min(t2, (int)rmsCacheOfTicks.size()) > t){
 			if (t2 > rmsCacheOfTicks.size())
 				t2 = rmsCacheOfTicks.size();
 			if (t < 0)
@@ -588,7 +588,7 @@ void MasterLaneView::UpdateBackBuffer(const QRect &rect)
 	for (int y=rect.bottom()+my; y>=rect.top()-my; y--){
 		int t = sview->Y2Time(y);
 		int t2 = sview->Y2Time(y-1);
-		if (std::min(t2, mview->rmsCacheOfTicks.size()) > t){
+		if (std::min(t2, (int)mview->rmsCacheOfTicks.size()) > t){
 			if (t2 > mview->rmsCacheOfTicks.size())
 				t2 = mview->rmsCacheOfTicks.size();
 			if (t < 0)

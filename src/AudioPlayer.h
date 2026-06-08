@@ -6,7 +6,13 @@
 #include <QMutex>
 #include <QIODevice>
 #include <QAudioBuffer>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QAudioSink>
+typedef QAudioSink BmsAudioOutput; // QAudioOutput was renamed to QAudioSink in Qt6
+#else
 #include <QAudioOutput>
+typedef QAudioOutput BmsAudioOutput;
+#endif
 #include <QFrame>
 #include <QToolBar>
 #include <QSlider>
@@ -93,7 +99,7 @@ class AudioPlayerOutput : public QObject
 	Q_OBJECT
 
 private:
-	QAudioOutput *aout;
+	BmsAudioOutput *aout;
 
 private slots:
 	void OnStateChanged(QAudio::State newState);
