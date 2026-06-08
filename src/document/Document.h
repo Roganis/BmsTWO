@@ -178,6 +178,7 @@ private:
 	DocumentInfo info;
 	QMap<int, BarLine> barLines;
 	QMap<int, BpmEvent> bpmEvents;
+	Bga bga;
 	QList<SoundChannel*> soundChannels;
 	QMap<SoundChannel*, int> soundChannelLength;
 
@@ -224,6 +225,8 @@ public:
 	DocumentInfo *GetInfo(){ return &info; }
 	const QMap<int, BarLine> &GetBarLines() const{ return barLines; }
 	const QMap<int, BpmEvent> &GetBpmEvents() const{ return bpmEvents; }
+	const Bga &GetBga() const{ return bga; }
+	const QMap<int, BgaEvent> &GetBgaEvents(BgaLayer layer) const;
 	const QList<SoundChannel*> &GetSoundChannels() const{ return soundChannels; }
 	double GetAbsoluteTime(int ticks) const;
 	int FromAbsoluteTime(double destSeconds) const;
@@ -248,6 +251,12 @@ public:
 	bool RemoveBpmEvent(int location);
 	void UpdateBpmEvents(QList<BpmEvent> events);
 	void RemoveBpmEvents(QList<int> locations);
+
+	// BGA editing (undoable). Headers are keyed by id; events by location.
+	bool InsertBgaHeader(BgaHeader header);
+	bool RemoveBgaHeader(int id);
+	bool InsertBgaEvent(BgaLayer layer, BgaEvent event);
+	bool RemoveBgaEvent(BgaLayer layer, int location);
 
 	bool MultiChannelDeleteSoundNotes(const QMultiMap<SoundChannel*, SoundNote> &notes);
 	bool MultiChannelUpdateSoundNotes(const QMultiMap<SoundChannel*, SoundNote> &notes,
@@ -278,6 +287,9 @@ signals:
 	void TotalLengthChanged(int length);
 
 	void BarLinesChanged();
+
+	// emitted when BGA headers or any BGA event lane changes.
+	void BgaChanged();
 
 	void AnyNotesChanged();
 

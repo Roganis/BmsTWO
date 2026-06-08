@@ -147,6 +147,47 @@ int main(int argc, char **argv) {
         pump();
     }
 
+    fprintf(stderr, "=== case: bga headers + timeline ===\n");
+    {
+        Document doc;
+        doc.Initialize();
+        EditHistory *h = doc.GetHistory();
+        // headers
+        for (int i = 0; i < 64; i++)
+            doc.InsertBgaHeader(BgaHeader(i, QString("bmp%1.png").arg(i)));
+        // re-edit some headers (update path)
+        for (int i = 0; i < 64; i += 4)
+            doc.InsertBgaHeader(BgaHeader(i, QString("changed%1.png").arg(i)));
+        // events across all three lanes
+        for (int i = 0; i < 300; i++) {
+            doc.InsertBgaEvent(BgaLayer::Base,  BgaEvent(i * 24, i % 64));
+            doc.InsertBgaEvent(BgaLayer::Layer, BgaEvent(i * 24 + 6, (i + 1) % 64));
+            doc.InsertBgaEvent(BgaLayer::Poor,  BgaEvent(i * 24 + 12, (i + 2) % 64));
+        }
+        // verify state
+        if (doc.GetBga().headers.size() != 64) { fprintf(stderr, "FAIL header count %d\n", doc.GetBga().headers.size()); return 1; }
+        if (doc.GetBgaEvents(BgaLayer::Base).size() != 300) { fprintf(stderr, "FAIL base count\n"); return 1; }
+        // remove a subset
+        for (int i = 0; i < 300; i += 3) doc.RemoveBgaEvent(BgaLayer::Base, i * 24);
+        for (int i = 0; i < 64; i += 5)  doc.RemoveBgaHeader(i);
+        // dedup: re-inserting identical event must be a no-op
+        if (!doc.GetBgaEvents(BgaLayer::Layer).isEmpty()) {
+            auto ev = doc.GetBgaEvents(BgaLayer::Layer).first();
+            bool changed = doc.InsertBgaEvent(BgaLayer::Layer, ev);
+            if (changed) { fprintf(stderr, "FAIL: identical re-insert was not a no-op\n"); return 1; }
+        }
+        storm(h, 3);
+        pump();
+        // after a full undo we should be back to an empty BGA
+        undoAll(h);
+        if (!doc.GetBga().headers.isEmpty() || !doc.GetBgaEvents(BgaLayer::Base).isEmpty()
+            || !doc.GetBgaEvents(BgaLayer::Layer).isEmpty() || !doc.GetBgaEvents(BgaLayer::Poor).isEmpty()) {
+            fprintf(stderr, "FAIL: BGA not empty after full undo\n"); return 1;
+        }
+        redoAll(h);
+        pump();
+    }
+
     fprintf(stderr, "ALL CASES DONE\n");
     return 0;
 }

@@ -105,6 +105,9 @@ void Document::LoadFile(QString filePath)
         BpmEvent event(jsonEvent[i]);
         bpmEvents.insert(event.location, event);
     }
+    if (bmsonFields.contains(Bmson::Bms::BgaKey)){
+        bga = Bga(bmsonFields[Bmson::Bms::BgaKey]);
+    }
     QJsonArray soundChannelsJson = bmsonFields[Bmson::Bms::SoundChannelsKey].toArray();
     for (int i=0; i<soundChannelsJson.size(); i++){
         auto *channel = new SoundChannel(this);
@@ -205,8 +208,6 @@ void Document::LoadBms(const Bms::Bms &bms)
         bmsonFields[Bmson::Bms::StopEventsKey] = jsonEvents;
     }
     {
-        Bga bga;
-
         // BGAイベント
         bga.bgaEvents = Bms::BmsUtil::GetBgaEvents(bms, info.GetResolution());
         bga.layerEvents = Bms::BmsUtil::GetLayerEvents(bms, info.GetResolution());
@@ -235,8 +236,7 @@ void Document::LoadBms(const Bms::Bms &bms)
                 bga.headers.insert(i, BgaHeader(i, bms.bmpDefs[i]));
             }
         }
-
-        bmsonFields[Bmson::Bms::BgaKey] = bga.AsJson();
+        // The live `bga` model is now the source of truth; ExportTo serializes it.
     }
 
     QVector<QMap<int, SoundNote>> notes = Bms::BmsUtil::GetNotesOfBmson(bms, bms.mode, info.GetResolution());
@@ -330,6 +330,9 @@ void Document::ExportTo(const QString &exportFilePath)
         jsonBpmEvents.append(event.SaveBmson());
     }
     bmsonFields[Bmson::Bms::BpmEventsKey] = jsonBpmEvents;
+    if (!bga.headers.empty() || !bga.bgaEvents.empty() || !bga.layerEvents.empty() || !bga.missEvents.empty()){
+        bmsonFields[Bmson::Bms::BgaKey] = bga.AsJson();
+    }
     QJsonArray jsonSoundChannels;
     for (SoundChannel *channel : std::as_const(soundChannels)){
         jsonSoundChannels.append(channel->SaveBmson());
@@ -777,6 +780,83 @@ void Document::RemoveBpmEvents(QList<int> locations)
     afterDo();
     history->Add(actions);
 }
+
+
+// --- BGA editing -----------------------------------------------------------
+// The BGA payload is small, so each edit snapshots the whole Bga and replays
+// it via EditValueAction<Bga>; this keeps the undo logic trivially correct for
+// headers and all three event lanes without per-field bookkeeping.
+
+static QMap<int, BgaEvent> &BgaEventMapRef(Bga &bga, BgaLayer layer)
+{
+    switch (layer){
+    case BgaLayer::Layer: return bga.layerEvents;
+    case BgaLayer::Poor:  return bga.missEvents;
+    case BgaLayer::Base:
+    default:              return bga.bgaEvents;
+    }
+}
+
+const QMap<int, BgaEvent> &Document::GetBgaEvents(BgaLayer layer) const
+{
+    switch (layer){
+    case BgaLayer::Layer: return bga.layerEvents;
+    case BgaLayer::Poor:  return bga.missEvents;
+    case BgaLayer::Base:
+    default:              return bga.bgaEvents;
+    }
+}
+
+bool Document::InsertBgaHeader(BgaHeader header)
+{
+    if (bga.headers.contains(header.id) && bga.headers[header.id] == header)
+        return false;
+    Bga oldBga = bga;
+    bga.headers.insert(header.id, header);
+    emit BgaChanged();
+    auto updater = [this](Bga value){ bga = value; emit BgaChanged(); };
+    history->Add(new EditValueAction<Bga>(updater, oldBga, bga, tr("edit BGA header"), false));
+    return true;
+}
+
+bool Document::RemoveBgaHeader(int id)
+{
+    if (!bga.headers.contains(id))
+        return false;
+    Bga oldBga = bga;
+    bga.headers.remove(id);
+    emit BgaChanged();
+    auto updater = [this](Bga value){ bga = value; emit BgaChanged(); };
+    history->Add(new EditValueAction<Bga>(updater, oldBga, bga, tr("remove BGA header"), false));
+    return true;
+}
+
+bool Document::InsertBgaEvent(BgaLayer layer, BgaEvent event)
+{
+    QMap<int, BgaEvent> &map = BgaEventMapRef(bga, layer);
+    if (map.contains(event.location) && map[event.location] == event)
+        return false;
+    Bga oldBga = bga;
+    BgaEventMapRef(bga, layer).insert(event.location, event);
+    emit BgaChanged();
+    auto updater = [this](Bga value){ bga = value; emit BgaChanged(); };
+    history->Add(new EditValueAction<Bga>(updater, oldBga, bga, tr("edit BGA event"), false));
+    return true;
+}
+
+bool Document::RemoveBgaEvent(BgaLayer layer, int location)
+{
+    QMap<int, BgaEvent> &map = BgaEventMapRef(bga, layer);
+    if (!map.contains(location))
+        return false;
+    Bga oldBga = bga;
+    BgaEventMapRef(bga, layer).remove(location);
+    emit BgaChanged();
+    auto updater = [this](Bga value){ bga = value; emit BgaChanged(); };
+    history->Add(new EditValueAction<Bga>(updater, oldBga, bga, tr("remove BGA event"), false));
+    return true;
+}
+
 
 bool Document::MultiChannelDeleteSoundNotes(const QMultiMap<SoundChannel *, SoundNote> &notes)
 {
