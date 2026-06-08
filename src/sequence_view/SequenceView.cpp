@@ -744,6 +744,47 @@ void SequenceView::ToggleBarLineAtCursor()
 	}
 }
 
+// Fill / paint (issue #12): fill the fine-grid steps between the earliest and
+// latest selected note in each channel+lane, so two notes define a run.
+void SequenceView::FillSelectedNotes()
+{
+	if (!document || lockCommands > 0)
+		return;
+	// Group selected notes by channel, then by lane.
+	QMap<SoundChannel*, QMap<int, QList<SoundNote>>> grouped;
+	for (auto nv : selectedNotes){
+		const SoundNote n = nv->GetNote();
+		grouped[nv->GetChannelView()->GetChannel()][n.lane].append(n);
+	}
+	QMultiMap<SoundChannel*, SoundNote> toAdd;
+	for (auto ci = grouped.begin(); ci != grouped.end(); ++ci){
+		for (auto li = ci.value().begin(); li != ci.value().end(); ++li){
+			const int lane = li.key();
+			const QList<SoundNote> &ns = li.value();
+			if (ns.size() < 2)
+				continue; // need a span to fill
+			int minLoc = ns.first().location, maxLoc = minLoc;
+			const int noteType = ns.first().noteType;
+			for (const SoundNote &n : ns){
+				minLoc = std::min(minLoc, n.location);
+				maxLoc = std::max(maxLoc, n.location);
+			}
+			int t = minLoc, guard = 0;
+			while (t < maxLoc && ++guard < 1000000){
+				const int next = SnapToUpperFineGrid(t + 1);
+				if (next <= t)
+					break;
+				t = next;
+				if (t < maxLoc) // endpoints already exist
+					toAdd.insert(ci.key(), SoundNote(t, lane, 0, noteType));
+			}
+		}
+	}
+	if (toAdd.isEmpty())
+		return;
+	document->MultiChannelUpdateSoundNotes(toAdd, UpdateNotePolicy::BestEffort);
+}
+
 void SequenceView::TransferSelectedNotesToBgm()
 {
 	if (lockCommands > 0)
