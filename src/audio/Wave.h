@@ -14,6 +14,8 @@
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 #include "PcmFormat.h"
+#include <memory>
+#include <vector>
 
 
 // Portable interleaved-stereo sample frame. Qt6 removed QAudioBuffer's
@@ -220,7 +222,7 @@ private:
 	int err;
     int fmt;
 	PcmFormat format;
-	void *data;
+	std::unique_ptr<char[]> data; // raw decoded PCM bytes
 	quint64 frames;
 	quint64 bytes;
 
@@ -239,7 +241,7 @@ public:
 	int error() const{ return err; }
 
 	PcmFormat GetFormat() const{ return format; }
-	const void *GetRawData() const{ return data; }
+	const void *GetRawData() const{ return data.get(); }
 	quint64 GetFrameCount() const{ return frames; }
 };
 
@@ -254,7 +256,7 @@ public:
 private:
 	int samplingRate;
 	int frames;
-	SampleType *data;
+	std::vector<SampleType> data;
 
 public:
 	StandardWaveData(); // empty
@@ -292,7 +294,7 @@ class AudioPlayConstantSourceMix : public AudioPlaySource
 private:
 	QMutex mtx;
 	QList<AudioPlaySource*> sources;
-	SampleType *internalBuf;
+	std::vector<SampleType> internalBuf;
 	static const int BufferSize;
 
 	//static float sigmoid(float x);

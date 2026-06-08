@@ -158,9 +158,9 @@ void WaveData::LoadWav(const QString &srcPath)
 			err = DataSizeOver;
 			return;
 		}
-		data = new quint8[bytes];
+		data.reset(new char[bytes]);
         fmt = WAV;
-		char *d = (char*)data;
+		char *d = data.get();
 		int remainingSize = bytes;
 		static const int unitSize = 0x00100000;
 		while (remainingSize > unitSize){
@@ -218,9 +218,9 @@ void WaveData::LoadOgg(const QString &srcPath)
 		return;
 	}
 	static const int bufferSize = 4096;
-	data = new char[bytes + bufferSize];
+	data.reset(new char[bytes + bufferSize]);
     fmt = OGG;
-	char *d = (char*)data;
+	char *d = data.get();
 	int bitstream;
 	int remainingSize = bytes;
 	while (remainingSize > bufferSize){
@@ -279,16 +279,7 @@ void WaveData::LoadOgg(const QString &srcPath)
 
 WaveData::~WaveData()
 {
-    if (data != nullptr){
-        switch (fmt) {
-            case WAV:
-                delete[] static_cast<quint8*>(data);
-                break;
-            case OGG:
-                delete[] static_cast<char*>(data);
-                break;
-        }
-	}
+	// data is a std::unique_ptr<char[]>; freed automatically.
 }
 
 void WaveData::Save([[maybe_unused]] const QString &dstPath)
@@ -299,7 +290,6 @@ void WaveData::Save([[maybe_unused]] const QString &dstPath)
 
 
 StandardWaveData::StandardWaveData()
-	: data(nullptr)
 {
 	samplingRate = 44100;
 	frames = 0;
@@ -308,7 +298,6 @@ StandardWaveData::StandardWaveData()
 
 StandardWaveData::StandardWaveData(WaveData *src)
     : frames(0)
-    , data(nullptr)
 {
 	PcmFormat fmt = src->GetFormat();
 	samplingRate = fmt.sampleRate();
@@ -320,7 +309,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 	case 8:
 		if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					quint8 v = ((const quint8*)s)[i];
@@ -336,7 +325,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 			}
 		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					qint8 v = ((const qint8*)s)[i];
@@ -357,7 +346,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 	case 16:
 		if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					quint16 v = ((const quint16*)s)[i];
@@ -373,7 +362,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 			}
 		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					qint16 v = ((const qint16*)s)[i];
@@ -394,7 +383,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 	case 24:
 		if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					qint32 vl = ((const quint8*)s)[i*3+1];
@@ -413,7 +402,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 			}
 		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					qint32 vl = ((const quint8*)s)[i*3+1];
@@ -437,7 +426,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 	case 32:
 		if (fmt.sampleType() == PcmFormat::Float){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					float v = ((const float*)s)[i];
@@ -453,7 +442,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 			}
 		}else if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					quint16 v = ((const quint16*)s)[i*2];
@@ -469,7 +458,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 			}
 		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
-			data = new SampleType[frames];
+			data.resize(frames);
 			if (fmt.channelCount() == 1){
 				for (int i=0; i<frames; i++){
 					quint16 v = ((const quint16*)s)[i*2];
@@ -493,9 +482,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 
 StandardWaveData::~StandardWaveData()
 {
-	if (data){
-		delete[] data;
-	}
+	// data is a std::vector; freed automatically.
 }
 
 
