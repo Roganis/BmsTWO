@@ -1,12 +1,19 @@
 name: release
 
-# Builds the runnable artifacts and creates a (draft) GitHub Release when a
-# v* tag is pushed. The release is created in one final job after both builds
-# finish, so there is no race creating the draft.
+# Builds the runnable artifacts and creates a (draft) GitHub Release.
+# Triggers on a pushed v* tag, or via manual dispatch with a `tag` input
+# (used where tags can't be pushed directly). The release is created in one
+# final job after both builds finish, so there is no race creating the draft.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to create (e.g. v0.3.0)'
+        required: true
+        default: 'v0.3.0'
 
 permissions:
   contents: write
@@ -49,7 +56,7 @@ jobs:
 
       - name: Package zip
         shell: pwsh
-        run: Compress-Archive -Path build/dist/* -DestinationPath "BmsONE-${{ github.ref_name }}-windows-x64.zip"
+        run: Compress-Archive -Path build/dist/* -DestinationPath "BmsONE-${{ github.event.inputs.tag || github.ref_name }}-windows-x64.zip"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -96,7 +103,7 @@ jobs:
           chmod +x linuxdeploy*.AppImage
           export APPIMAGE_EXTRACT_AND_RUN=1
           export QMAKE="$(which qmake6)"
-          export OUTPUT="BmsONE-${{ github.ref_name }}-linux-x86_64.AppImage"
+          export OUTPUT="BmsONE-${{ github.event.inputs.tag || github.ref_name }}-linux-x86_64.AppImage"
           ./linuxdeploy-x86_64.AppImage --appdir AppDir \
             -d AppDir/usr/share/applications/BmsONE.desktop \
             -i AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png \
@@ -122,6 +129,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           draft: true
           generate_release_notes: true
           files: dist/**/*
