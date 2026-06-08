@@ -90,9 +90,11 @@ jobs:
 
       - name: Deploy Qt runtime (windeployqt)
         run: |
+          echo QT_ROOT_DIR=%QT_ROOT_DIR%
+          where windeployqt
           mkdir build\dist
           copy build\release\BmsONE.exe build\dist\
-          windeployqt --release --no-translations build\dist\BmsONE.exe
+          "%QT_ROOT_DIR%\bin\windeployqt.exe" --release --no-translations --no-opengl-sw build\dist\BmsONE.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
