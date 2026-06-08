@@ -5,7 +5,7 @@ const int AudioPlayConstantSourceMix::BufferSize = 4096;
 AudioPlayConstantSourceMix::AudioPlayConstantSourceMix(QObject *parent, QList<AudioPlaySource *> sources)
 	: AudioPlaySource(parent)
 	, sources(sources)
-	, internalBuf(new SampleType[BufferSize])
+	, internalBuf(BufferSize)
 {
 	QMutexLocker lock(&mtx);
 	for (auto source : sources){
@@ -15,7 +15,7 @@ AudioPlayConstantSourceMix::AudioPlayConstantSourceMix(QObject *parent, QList<Au
 
 AudioPlayConstantSourceMix::~AudioPlayConstantSourceMix()
 {
-	delete[] internalBuf;
+	// internalBuf is a std::vector; freed automatically.
 }
 
 void AudioPlayConstantSourceMix::AudioPlayRelease()
@@ -33,7 +33,7 @@ int AudioPlayConstantSourceMix::AudioPlayRead(AudioPlaySource::SampleType *buffe
     for (auto source : std::as_const(sources)) {
         int cur = 0;
 		while (bufferSampleCount - cur >= BufferSize){
-			int sizeRead = source->AudioPlayRead(internalBuf, BufferSize);
+			int sizeRead = source->AudioPlayRead(internalBuf.data(), BufferSize);
 			for (int i=0; i<sizeRead; i++){
 				buffer[cur+i].left += internalBuf[i].left;
 				buffer[cur+i].right += internalBuf[i].right;
@@ -44,7 +44,7 @@ int AudioPlayConstantSourceMix::AudioPlayRead(AudioPlaySource::SampleType *buffe
 		}
 		if (cur < bufferSampleCount){
 			int sizeToRead = bufferSampleCount - cur;
-			int sizeRead = source->AudioPlayRead(internalBuf, sizeToRead);
+			int sizeRead = source->AudioPlayRead(internalBuf.data(), sizeToRead);
 			for (int i=0; i<sizeRead; i++){
 				buffer[cur+i].left += internalBuf[i].left;
 				buffer[cur+i].right += internalBuf[i].right;

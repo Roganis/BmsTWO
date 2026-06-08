@@ -3,7 +3,8 @@
 
 #include <QObject>
 #include <QString>
-#include <QStack>
+#include <memory>
+#include <vector>
 
 
 class EditActionException
@@ -31,9 +32,11 @@ class EditHistory : public QObject
 	Q_OBJECT
 
 private:
-	QStack<EditAction*> undoActions;
-	QStack<EditAction*> redoActions;
-	EditAction *savedAction;
+	// The stacks own their actions (move-only unique_ptr; std::vector is used
+	// because Qt containers don't support move-only value types).
+	std::vector<std::unique_ptr<EditAction>> undoActions;
+	std::vector<std::unique_ptr<EditAction>> redoActions;
+	EditAction *savedAction; // non-owning marker for clean/dirty tracking
 	bool reservedAction;
 
 	void ClearFutureActions();
