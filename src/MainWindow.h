@@ -20,6 +20,7 @@ class ViewMode;
 class SequenceView;
 class InfoView;
 class ChannelInfoView;
+class BgaView;
 class BpmEditView;
 class NoteEditView;
 class ExternalViewer;
@@ -108,6 +109,7 @@ private:
 	SequenceView *sequenceView;
 	InfoView *infoView;
 	ChannelInfoView *channelInfoView;
+	BgaView *bgaView;
 	ExternalViewer *externalViewer;
 
 	QDockWidget *selectedObjectsDockWidget;

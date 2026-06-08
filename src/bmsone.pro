@@ -67,6 +67,7 @@ SOURCES += main.cpp\
                 MainWindow.cpp \
     InfoView.cpp \
         ChannelInfoView.cpp \
+        BgaView.cpp \
     AudioPlayer.cpp \
     SequenceTools.cpp \
         BpmEditTool.cpp \
@@ -151,6 +152,7 @@ SOURCES += main.cpp\
 
 HEADERS  += MainWindow.h \
         ChannelInfoView.h \
+        BgaView.h \
     AudioPlayer.h \
         InfoView.h \
         SequenceTools.h \

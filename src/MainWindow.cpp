@@ -2,6 +2,7 @@
 #include "sequence_view/SequenceView.h"
 #include "InfoView.h"
 #include "ChannelInfoView.h"
+#include "BgaView.h"
 #include "BpmEditTool.h"
 #include "NoteEditTool.h"
 #include "document/History.h"
@@ -441,6 +442,14 @@ MainWindow::MainWindow(QSettings *settings)
 	addDockWidget(Qt::LeftDockWidgetArea, dock2);
 	dock2->resize(334, dock2->height());
 	menuViewDockBars->insertAction(actionViewDockSeparator, dock2->toggleViewAction());
+
+	auto dockBga = new QDockWidget(tr("BGA"));
+	UIUtil::SetFont(dockBga);
+	dockBga->setObjectName("Bga");
+	dockBga->setWidget(bgaView = new BgaView(this));
+	addDockWidget(Qt::LeftDockWidgetArea, dockBga);
+	dockBga->hide(); // off by default; available from View > Docks
+	menuViewDockBars->insertAction(actionViewDockSeparator, dockBga->toggleViewAction());
 
 	selectedObjectsDockWidget = new QDockWidget(tr("Selected Objects"));
 	UIUtil::SetFont(selectedObjectsDockWidget);
@@ -996,6 +1005,7 @@ void MainWindow::ReplaceDocument(Document *newDocument)
 
 	infoView->ReplaceDocument(document);
 	channelInfoView->ReplaceDocument(document);
+	bgaView->ReplaceDocument(document);
 	sequenceView->ReplaceDocument(document);
 	externalViewer->ReplaceDocument(document);
 
