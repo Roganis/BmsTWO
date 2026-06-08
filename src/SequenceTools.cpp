@@ -390,6 +390,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		disconnect(mainWindow->actionEditCopy, SIGNAL(triggered(bool)), sview, SLOT(CopySelectedNotes()));
 		disconnect(mainWindow->actionEditCut, SIGNAL(triggered(bool)), sview, SLOT(CutSelectedNotes()));
 		disconnect(mainWindow->actionEditPaste, SIGNAL(triggered(bool)), sview, SLOT(PasteNotes()));
+		disconnect(mainWindow->actionEditToggleBarLine, SIGNAL(triggered(bool)), sview, SLOT(ToggleBarLineAtCursor()));
 	}
 	sview = newSView;
 	if (sview){
@@ -408,6 +409,8 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		connect(mainWindow->actionEditCopy, SIGNAL(triggered(bool)), sview, SLOT(CopySelectedNotes()));
 		connect(mainWindow->actionEditCut, SIGNAL(triggered(bool)), sview, SLOT(CutSelectedNotes()));
 		connect(mainWindow->actionEditPaste, SIGNAL(triggered(bool)), sview, SLOT(PasteNotes()));
+		connect(mainWindow->actionEditToggleBarLine, SIGNAL(triggered(bool)), sview, SLOT(ToggleBarLineAtCursor()));
+		mainWindow->actionEditToggleBarLine->setEnabled(true);
 
 		ModeChanged(sview->GetMode());
 		snapToGrid->setEnabled(true);
@@ -426,6 +429,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		mainWindow->actionEditCopy->setEnabled(false);
 		mainWindow->actionEditCut->setEnabled(false);
 		mainWindow->actionEditPaste->setEnabled(false);
+		mainWindow->actionEditToggleBarLine->setEnabled(false);
 	}
 }
 

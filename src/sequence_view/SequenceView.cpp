@@ -721,6 +721,22 @@ void SequenceView::PasteNotes()
 	document->MultiChannelUpdateSoundNotes(notes, UpdateNotePolicy::BestEffort);
 }
 
+// Custom bar division (issue #7): place/remove a bar line at the cursor so the
+// user can build measures of arbitrary length.
+void SequenceView::ToggleBarLineAtCursor()
+{
+	if (!document || lockCommands > 0)
+		return;
+	const int loc = GetCurrentLocation();
+	const QMap<int, BarLine> &bars = document->GetBarLines();
+	auto it = bars.find(loc);
+	if (it != bars.end() && !it->Ephemeral){
+		document->RemoveBarLine(loc);
+	}else{
+		document->InsertBarLine(BarLine(loc, 0));
+	}
+}
+
 void SequenceView::TransferSelectedNotesToBgm()
 {
 	if (lockCommands > 0)

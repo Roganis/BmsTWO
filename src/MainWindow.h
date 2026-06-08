@@ -137,6 +137,7 @@ private:
 	QAction *actionEditTransferToKey;
 	QAction *actionEditTransferToBgm;
 	QAction *actionEditSeparateLayeredNotes;
+	QAction *actionEditToggleBarLine;
 	QAction *actionEditModeEdit;
 	QAction *actionEditModeWrite;
 	QAction *actionEditModeInteractive;

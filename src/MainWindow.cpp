@@ -135,6 +135,11 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionEditSeparateLayeredNotes);
 	actionEditSeparateLayeredNotes->setEnabled(false);
 
+	actionEditToggleBarLine = new QAction(tr("Toggle Bar Line at Cursor"), this);
+	actionEditToggleBarLine->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_B));
+	SharedUIHelper::RegisterGlobalShortcut(actionEditToggleBarLine);
+	actionEditToggleBarLine->setEnabled(false);
+
 	actionEditModeEdit = new QAction(tr("Edit Mode"), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionEditModeEdit);
 	actionEditModeEdit->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_1));
@@ -275,6 +280,8 @@ MainWindow::MainWindow(QSettings *settings)
 	menuEdit->addAction(actionEditTransferToKey);
 	menuEdit->addAction(actionEditTransferToBgm);
 	menuEdit->addAction(actionEditSeparateLayeredNotes);
+	menuEdit->addSeparator();
+	menuEdit->addAction(actionEditToggleBarLine);
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditModeEdit);
 	menuEdit->addAction(actionEditModeWrite);
