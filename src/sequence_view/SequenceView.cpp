@@ -700,11 +700,15 @@ void SequenceView::PasteNotes()
 	const QList<SoundChannel*> &channels = document->GetSoundChannels();
 	if (arr.isEmpty() || channels.isEmpty())
 		return;
-	// Offset so the earliest copied note lands at the current cursor location.
+	// Offset so the earliest copied note lands at the cursor (the last clicked
+	// location); fall back to the viewport position if there is no cursor.
 	int minY = INT_MAX;
 	for (const auto v : arr)
 		minY = std::min(minY, v.toObject()["y"].toInt());
-	const int offset = GetCurrentLocation() - minY;
+	const int anchor = (cursor && cursor->GetState() != SequenceViewCursor::State::NOTHING)
+			? cursor->GetTime()
+			: GetCurrentLocation();
+	const int offset = anchor - minY;
 	QMultiMap<SoundChannel*, SoundNote> notes;
 	for (const auto v : arr){
 		const QJsonObject o = v.toObject();
