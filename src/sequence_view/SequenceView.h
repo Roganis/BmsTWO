@@ -243,6 +243,8 @@ private:
 	void dropEventVp(QDropEvent *event);
 	void wheelEventVp(QWheelEvent *event);
 	void OnViewportResize();
+	void ScheduleChannelsRelayout(); // coalesce per-channel relayouts (bulk insert/remove)
+	bool channelsRelayoutScheduled = false;
 	void SetChannelsGeometry();
 	void AnimateChannelsGeometry();
 
