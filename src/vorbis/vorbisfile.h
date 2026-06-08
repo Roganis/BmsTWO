@@ -6,12 +6,11 @@
  * IN 'COPYING'. PLEASE READ THESE TERMS BEFORE DISTRIBUTING.       *
  *                                                                  *
  * THE OggVorbis SOURCE CODE IS (C) COPYRIGHT 1994-2007             *
- * by the Xiph.Org Foundation http://www.xiph.org/                  *
+ * by the Xiph.Org Foundation https://xiph.org/                     *
  *                                                                  *
  ********************************************************************
 
  function: stdio-based convenience library for opening/seeking/decoding
- last mod: $Id: vorbisfile.h 17182 2010-04-29 03:48:32Z xiphmont $
 
  ********************************************************************/
 
@@ -72,28 +71,28 @@ static int _ov_header_fseek_wrap(FILE *f,ogg_int64_t off,int whence){
  * we're using (the same one as the main application).
  */
 
-[[maybe_unused]] static ov_callbacks OV_CALLBACKS_DEFAULT = {
+static ov_callbacks OV_CALLBACKS_DEFAULT = {
   (size_t (*)(void *, size_t, size_t, void *))  fread,
   (int (*)(void *, ogg_int64_t, int))           _ov_header_fseek_wrap,
   (int (*)(void *))                             fclose,
   (long (*)(void *))                            ftell
 };
 
-[[maybe_unused]] static ov_callbacks OV_CALLBACKS_NOCLOSE = {
+static ov_callbacks OV_CALLBACKS_NOCLOSE = {
   (size_t (*)(void *, size_t, size_t, void *))  fread,
   (int (*)(void *, ogg_int64_t, int))           _ov_header_fseek_wrap,
   (int (*)(void *))                             NULL,
   (long (*)(void *))                            ftell
 };
 
-[[maybe_unused]] static ov_callbacks OV_CALLBACKS_STREAMONLY = {
+static ov_callbacks OV_CALLBACKS_STREAMONLY = {
   (size_t (*)(void *, size_t, size_t, void *))  fread,
   (int (*)(void *, ogg_int64_t, int))           NULL,
   (int (*)(void *))                             fclose,
   (long (*)(void *))                            NULL
 };
 
-[[maybe_unused]] static ov_callbacks OV_CALLBACKS_STREAMONLY_NOCLOSE = {
+static ov_callbacks OV_CALLBACKS_STREAMONLY_NOCLOSE = {
   (size_t (*)(void *, size_t, size_t, void *))  fread,
   (int (*)(void *, ogg_int64_t, int))           NULL,
   (int (*)(void *))                             NULL,

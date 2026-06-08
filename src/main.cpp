@@ -6,10 +6,14 @@
 #include <QApplication>
 #include <QMetaType>
 #include "document/SoundChannelDef.h"
+#include "util/CrashHandler.h"
 
 
 int main(int argc, char *argv[])
 {
+	// Install crash handler first so even early faults produce a stack trace.
+	CrashHandler::Install(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+
 	qRegisterMetaType<QList<RmsCacheEntry>>("QList<RmsCacheEntry>");
 	qRegisterMetaType<QList<QString>>("QList<QString>");
 	qRegisterMetaType<BmsonIO::BmsonVersion>("BmsonIO::BmsonVersion");

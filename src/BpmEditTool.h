@@ -10,6 +10,7 @@
 
 
 class MainWindow;
+class QSettings;
 
 class BpmEditView : public ScrollableForm
 {
@@ -17,6 +18,7 @@ class BpmEditView : public ScrollableForm
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 	QFormLayout *formLayout;
 	QLabel *message;
 	QuasiModalEdit *edit;

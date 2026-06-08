@@ -1,4 +1,5 @@
 #include "ScalarRegion.h"
+#include <climits>
 
 ScalarRegion::ScalarRegion()
 {

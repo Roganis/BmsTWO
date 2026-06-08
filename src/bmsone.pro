@@ -11,6 +11,8 @@ CONFIG += c++17 warn_on
 FORMS    +=
 QT       += core concurrent gui multimedia
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+# Qt6 moved QRegExp and QTextCodec into the Core5Compat module.
+greaterThan(QT_MAJOR_VERSION, 5): QT += core5compat
 #QT += gui-private
 TEMPLATE = app
 INCLUDEPATH += $$PWD/ $$PWD/libvorbis
@@ -22,7 +24,21 @@ TRANSLATIONS = i18n/ja.ts
 linux-g++ {
     QMAKE_CXXFLAGS += -std=c++17
     QMAKE_CXXFLAGS_DEBUG += -ggdb -O0 # For use with GDB
+    # Export symbols so the crash handler's backtrace_symbols() can name frames.
+    QMAKE_LFLAGS += -rdynamic
 }
+
+# Crash handler needs dbghelp on Windows for stack symbolization.
+win32: LIBS += -ldbghelp
+macx:  QMAKE_LFLAGS += -rdynamic
+
+# libogg / libvorbis are compiled from the bundled sources listed in SOURCES
+# below (same as the win32 build), so no system ogg/vorbis packages are linked.
+# To use system libraries instead, drop the libogg/libvorbis entries from
+# SOURCES/HEADERS and uncomment the block below.
+#unix:!macx {
+#    LIBS += -logg -lvorbis -lvorbisfile
+#}
 
 macx_clang {
     QMAKE_CXXFLAGS += -std=c++17 -stdlib=libc++
@@ -79,6 +95,7 @@ SOURCES += main.cpp\
         sequence_view/Skin.cpp \
         util/ScrollableForm.cpp \
         util/QuasiModalEdit.cpp \
+        util/CrashHandler.cpp \
         util/CollapseButton.cpp \
         util/JsonExtension.cpp \
         util/Util.cpp \
@@ -159,6 +176,7 @@ HEADERS  += MainWindow.h \
         sequence_view/SequenceViewDef.h \
         sequence_view/SequenceViewContexts.h \
         util/QuasiModalEdit.h \
+        util/CrashHandler.h \
         util/ScrollableForm.h \
         util/CollapseButton.h \
         util/SignalFunction.h \

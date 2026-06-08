@@ -11,6 +11,7 @@
 class MainWindow;
 class SequenceView;
 class SoundNoteView;
+class QSettings;
 
 class NoteEditView : public ScrollableForm
 {
@@ -18,6 +19,7 @@ class NoteEditView : public ScrollableForm
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 	SequenceView *sview;
 	QFormLayout *formLayout;
 	QLabel *message;

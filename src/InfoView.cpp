@@ -14,6 +14,7 @@ const char* InfoView::SettingsShowExtraFields = "ShowExtraFields";
 InfoView::InfoView(MainWindow *mainWindow)
 	: ScrollableForm(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, formLayout(nullptr)
 	, document(nullptr)
 {
@@ -174,7 +175,7 @@ InfoView::InfoView(MainWindow *mainWindow)
 
 InfoView::~InfoView()
 {
-	auto *settings = mainWindow->GetSettings();
+	auto *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsShowSubartists, editSubartists->isVisibleTo(this));
@@ -234,7 +235,7 @@ void InfoView::ReplaceDocument(Document *newDocument)
 void InfoView::UpdateFormGeom()
 {
 	Form()->setGeometry(0, 0, Form()->width(), 33333);
-	Form()->setGeometry(0, 0, Form()->width(), dummy->y()+formLayout->spacing()+formLayout->margin());
+	Form()->setGeometry(0, 0, Form()->width(), dummy->y()+formLayout->spacing()+formLayout->contentsMargins().top());
 }
 
 void InfoView::SetSubartists(QStringList value)

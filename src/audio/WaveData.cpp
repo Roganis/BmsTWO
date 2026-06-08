@@ -11,7 +11,7 @@ WaveData::WaveData()
 	format.setCodec("audio/pcm");
 	format.setSampleRate(44100);
 	format.setSampleSize(16);
-	format.setSampleType(QAudioFormat::SignedInt);
+	format.setSampleType(PcmFormat::SignedInt);
 	bytes = 0;
 	frames = 0;
 }
@@ -92,7 +92,7 @@ void WaveData::LoadWav(const QString &srcPath)
 		switch (bitsPerSample){
 		case 8:
 			// 8bit unsigned int (00 - 80 - FF)
-			format.setSampleType(QAudioFormat::UnSignedInt);
+			format.setSampleType(PcmFormat::UnSignedInt);
 			if (blockAlign != channelsCount){
 				qDebug() << "8bit x " << channelsCount << "ch -> " << blockAlign;
 				err = UnsupportedFormat;
@@ -101,7 +101,7 @@ void WaveData::LoadWav(const QString &srcPath)
 			break;
 		case 16:
 			// 16bit signed int (8000 - 0000 - 7FFF )
-			format.setSampleType(QAudioFormat::SignedInt);
+			format.setSampleType(PcmFormat::SignedInt);
 			if (blockAlign != 2*channelsCount){
 				qDebug() << "16bit x " << channelsCount << "ch -> " << blockAlign;
 				err = UnsupportedFormat;
@@ -110,7 +110,7 @@ void WaveData::LoadWav(const QString &srcPath)
 			break;
 		case 24:
 			// 24bit signed int (800000 - 000000 - 7FFFFF)
-			format.setSampleType(QAudioFormat::SignedInt);
+			format.setSampleType(PcmFormat::SignedInt);
 			if (blockAlign != 3*channelsCount){
 				qDebug() << "24bit x " << channelsCount << "ch -> " << blockAlign;
 				err = UnsupportedFormat;
@@ -119,7 +119,7 @@ void WaveData::LoadWav(const QString &srcPath)
 			break;
 		case 32:
 			// 32bit float
-			format.setSampleType(QAudioFormat::Float);
+			format.setSampleType(PcmFormat::Float);
 			if (blockAlign != 4*channelsCount){
 				qDebug() << "32bit x " << channelsCount << "ch -> " << blockAlign;
 				err = UnsupportedFormat;
@@ -203,12 +203,12 @@ void WaveData::LoadOgg(const QString &srcPath)
 		return;
 	}
 	const vorbis_info *info = ov_info(&file, -1);
-	format.setByteOrder(QAudioFormat::LittleEndian);
+	format.setByteOrder(PcmFormat::LittleEndian);
 	format.setSampleRate(info->rate);
 	format.setChannelCount(info->channels);
 	format.setCodec("audio/pcm");
 	format.setSampleSize(16);
-	format.setSampleType(QAudioFormat::SignedInt);
+	format.setSampleType(PcmFormat::SignedInt);
 	// read data
 	frames = ov_pcm_total(&file, -1);
 	quint64 bytes = frames * 2 * info->channels;
@@ -310,7 +310,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
     : frames(0)
     , data(nullptr)
 {
-	QAudioFormat fmt = src->GetFormat();
+	PcmFormat fmt = src->GetFormat();
 	samplingRate = fmt.sampleRate();
 	const void *s = src->GetRawData();
 	if (fmt.channelCount() <= 0 || fmt.channelCount() > 2){
@@ -318,7 +318,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 	}
 	switch (fmt.sampleSize()){
 	case 8:
-		if (fmt.sampleType() == QAudioFormat::UnSignedInt){
+		if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -334,7 +334,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 					data[i].right = (r-128)*256;
 				}
 			}
-		}else if (fmt.sampleType() == QAudioFormat::SignedInt){
+		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -355,7 +355,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 		}
 		break;
 	case 16:
-		if (fmt.sampleType() == QAudioFormat::UnSignedInt){
+		if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -371,7 +371,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 					data[i].right = (r-32768);
 				}
 			}
-		}else if (fmt.sampleType() == QAudioFormat::SignedInt){
+		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -392,7 +392,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 		}
 		break;
 	case 24:
-		if (fmt.sampleType() == QAudioFormat::UnSignedInt){
+		if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -411,7 +411,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 					data[i].right = qint16((rl | (rh<<8)) - 32768);
 				}
 			}
-		}else if (fmt.sampleType() == QAudioFormat::SignedInt){
+		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -435,7 +435,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 		}
 		break;
 	case 32:
-		if (fmt.sampleType() == QAudioFormat::Float){
+		if (fmt.sampleType() == PcmFormat::Float){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -451,7 +451,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 					data[i].right = std::max<qint16>(-32768, std::min<qint16>(32767, qint16(r * 32768.0f)));
 				}
 			}
-		}else if (fmt.sampleType() == QAudioFormat::UnSignedInt){
+		}else if (fmt.sampleType() == PcmFormat::UnSignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){
@@ -467,7 +467,7 @@ StandardWaveData::StandardWaveData(WaveData *src)
 					data[i].right = (r-32768);
 				}
 			}
-		}else if (fmt.sampleType() == QAudioFormat::SignedInt){
+		}else if (fmt.sampleType() == PcmFormat::SignedInt){
 			frames = src->GetFrameCount();
 			data = new SampleType[frames];
 			if (fmt.channelCount() == 1){

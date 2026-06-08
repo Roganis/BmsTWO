@@ -71,7 +71,7 @@ private:
 	S32F44100StreamTransformer *wave;
 	QFuture<void> task;
 	static const int BufferSize;
-	QAudioBuffer::S32F *buf;
+	StereoFloat32 *buf;
 	volatile bool cancel;
 
 	void AddSoundTask();
@@ -126,7 +126,7 @@ public:
 
 private:
 	Document *document;
-	QVector<QAudioBuffer::S32F> data;
+	QVector<StereoFloat32> data;
 	QMap<int, QPair<int,int>> counter;
 	QSet<MasterCacheWorkerBase*> workers;
 	mutable QMutex workersMutex;
@@ -150,9 +150,9 @@ public:
 	void MultiAddSound(QList<MasterCacheMultiWorker::Patch> patches, SoundChannel *channel);
 
     int GetDataSize();
-    const QAudioBuffer::StereoFrame<float> *GetAllData() const;
-	void GetData(int position, std::function<bool(int, QAudioBuffer::S32F)> f);
-	QPair<int, QAudioBuffer::S32F> GetData(int position);
+    const StereoFloat32 *GetAllData() const;
+	void GetData(int position, std::function<bool(int, StereoFloat32)> f);
+	QPair<int, StereoFloat32> GetData(int position);
 
 	bool IsComplete() const;
 

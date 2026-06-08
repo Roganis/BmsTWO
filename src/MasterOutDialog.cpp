@@ -22,7 +22,7 @@ MasterOutDialog::MasterOutDialog(Document *document, QWidget *parent)
 	buttonsLayout->addStretch(1);
 	buttonsLayout->addWidget(okButton);
 	buttonsLayout->addWidget(cancelButton);
-	buttonsLayout->setMargin(0);
+	buttonsLayout->setContentsMargins(0, 0, 0, 0);
 	buttons = new QWidget(this);
 	buttons->setLayout(buttonsLayout);
 	buttons->setContentsMargins(0, 0, 0, 0);
@@ -260,7 +260,7 @@ void MasterOutDialog::ProcessSoftClip(QDataStream &dout)
 	Rms rmsSat(0.f, 0.f);
 	Rms peakSat(0.f, 0.f);
     int samples = master->GetDataSize();
-    const QAudioBuffer::StereoFrame<float> *s = master->GetAllData();
+    const StereoFloat32 *s = master->GetAllData();
     for (int i = 0; i < samples; s++){
         float l = s[i].left * gain, r = s[i].right * gain;
 		float satL = saturate(0.8f, l), satR = saturate(0.8f, r);
@@ -322,7 +322,7 @@ void MasterOutDialog::ProcessHardClip(QDataStream &dout)
 	Rms rmsSat(0.f, 0.f);
 	Rms peakSat(0.f, 0.f);
     int samples = master->GetDataSize();
-    const QAudioBuffer::StereoFrame<float> *s = master->GetAllData();
+    const StereoFloat32 *s = master->GetAllData();
     for (int i = 0; i < samples; s++){
         float l = s[i].left * gain, r = s[i].right * gain;
 		float satL = std::max(-1.0f, std::min(1.0f, l));
@@ -384,7 +384,7 @@ void MasterOutDialog::ProcessNormalize(QDataStream &dout)
 	Rms rms(0.f, 0.f);
 	Rms peakSat(0.f, 0.f);
     int samples = master->GetDataSize();
-    const QAudioBuffer::StereoFrame<float> *s = master->GetAllData();
+    const StereoFloat32 *s = master->GetAllData();
     for (int i = 0; i < samples; s++){
         float l = std::fabs(s[i].left);
         float r = std::fabs(s[i].right);

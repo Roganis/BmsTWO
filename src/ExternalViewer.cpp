@@ -2,6 +2,7 @@
 #include "document/Document.h"
 #include "document/History.h"
 #include "MainWindow.h"
+#include <QRegExp> // Qt6: provided by the Core5Compat module
 
 
 const char *ExternalViewer::SettingsGroup = "ExternalViewer";
@@ -19,6 +20,7 @@ const char *ExternalViewer::SettingsViewerExecutionDirectoryFormatKey = "Working
 ExternalViewer::ExternalViewer(MainWindow *mainWindow)
 	: QObject(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, document(nullptr)
 {
 
@@ -50,7 +52,7 @@ ExternalViewer::ExternalViewer(MainWindow *mainWindow)
 ExternalViewer::~ExternalViewer()
 {
 	Clean();
-	QSettings *settings = mainWindow->GetSettings();
+	QSettings *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsViewerCountKey, config.count());
@@ -202,13 +204,13 @@ QString ExternalViewer::EvalArgument(QString argumentFormat, QMap<QString, QStri
 			continue;
 		}
 		*/
-        result += argumentFormat.midRef(pos, posnext - pos);
+        result += argumentFormat.mid(pos, posnext - pos);
         pos = posnext;
 		pos += variable.matchedLength();
 		QString var = variable.cap(1);
 		result += env.contains(var) ? env[var] : "";
 	}
-    result += argumentFormat.midRef(pos);
+    result += argumentFormat.mid(pos);
     return result;
 }
 

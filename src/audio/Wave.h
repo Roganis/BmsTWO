@@ -13,6 +13,23 @@
 #include <QTypeInfo>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
+#include "PcmFormat.h"
+
+
+// Portable interleaved-stereo sample frame. Qt6 removed QAudioBuffer's
+// StereoFrame<>/S16S/S32F; this is a layout-compatible replacement exposing
+// the members the codebase uses (left, right, clear()).
+template<typename T>
+struct StereoFrame
+{
+	T left;
+	T right;
+	StereoFrame(T l = T(), T r = T()) : left(l), right(r) {}
+	void clear() { left = T(); right = T(); }
+};
+
+typedef StereoFrame<qint16> StereoInt16;
+typedef StereoFrame<float>  StereoFloat32;
 
 
 class AudioStreamSource : public QObject
@@ -39,7 +56,7 @@ public:
 
 protected:
 	int error;
-	QAudioFormat format;
+	PcmFormat format;
 	quint64 bytes;
 	quint64 frames;
 	quint64 current; // in frames
@@ -49,7 +66,7 @@ public:
 	~AudioStreamSource(){}
 
 	int Error() const{ return error; }
-	QAudioFormat GetFormat() const{ return format; }
+	PcmFormat GetFormat() const{ return format; }
 	quint64 GetTotalBytes() const{ return bytes; }
 	quint64 GetFrameCount() const{ return frames; }
 	quint64 GetCurrentFrame() const{ return current; }
@@ -110,7 +127,7 @@ private:
 	static const uint InputBufferSize = 4096;
 
 public:
-	typedef QAudioBuffer::S16S SampleType;
+	typedef StereoInt16 SampleType;
 
 private:
 	AudioStreamSource *src;
@@ -130,7 +147,7 @@ public:
 	virtual void SeekRelative(qint64 relativeFrames);
 	virtual void SeekAbsolute(quint64 absoluteFrames);
 
-	quint64 Read(QAudioBuffer::S16S *buffer, quint64 frames);
+	quint64 Read(StereoInt16 *buffer, quint64 frames);
 };
 
 class S32F44100StreamTransformer : public AudioStreamSource
@@ -141,7 +158,7 @@ private:
 	static const uint InputBufferSize = 4096;
 
 public:
-	typedef QAudioBuffer::S32F SampleType;
+	typedef StereoFloat32 SampleType;
 
 private:
 	AudioStreamSource *src;
@@ -161,7 +178,7 @@ public:
 	virtual void SeekRelative(qint64 relativeFrames);
 	virtual void SeekAbsolute(quint64 absoluteFrames);
 
-	quint64 Read(QAudioBuffer::S32F *buffer, quint64 frames);
+	quint64 Read(StereoFloat32 *buffer, quint64 frames);
 };
 
 
@@ -202,7 +219,7 @@ public:
 private:
 	int err;
     int fmt;
-	QAudioFormat format;
+	PcmFormat format;
 	void *data;
 	quint64 frames;
 	quint64 bytes;
@@ -221,7 +238,7 @@ public:
 
 	int error() const{ return err; }
 
-	QAudioFormat GetFormat() const{ return format; }
+	PcmFormat GetFormat() const{ return format; }
 	const void *GetRawData() const{ return data; }
 	quint64 GetFrameCount() const{ return frames; }
 };
@@ -232,7 +249,7 @@ public:
 class StandardWaveData
 {
 public:
-	typedef QAudioBuffer::S16S SampleType;
+	typedef StereoInt16 SampleType;
 
 private:
 	int samplingRate;
@@ -258,7 +275,7 @@ class AudioPlaySource : public QObject
 	Q_OBJECT
 
 public:
-	typedef QAudioBuffer::S32F SampleType;
+	typedef StereoFloat32 SampleType;
 
 	AudioPlaySource(QObject *parent=nullptr) : QObject(parent){}
 	~AudioPlaySource(){}

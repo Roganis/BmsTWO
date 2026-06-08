@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "sequence_view/SequenceView.h"
 #include "util/SymbolIconManager.h"
+#include <QActionGroup> // Qt6: no longer pulled in transitively
 
 namespace SequenceViewSettings{
 static const char* SettingsGroup = "SequenceView";
@@ -654,7 +655,7 @@ GridSettingDialog::GridSettingDialog(QList<GridSize> grids, GridSize mediumGrid,
 	buttonsLayout->addStretch(1);
 	buttonsLayout->addWidget(okButton);
 	buttonsLayout->addWidget(cancelButton);
-	buttonsLayout->setMargin(0);
+	buttonsLayout->setContentsMargins(0, 0, 0, 0);
 	auto buttons = new QWidget(this);
 	buttons->setLayout(buttonsLayout);
 	buttons->setContentsMargins(0, 0, 0, 0);

@@ -6,6 +6,7 @@
 #include "../BpmEditTool.h"
 #include "../MasterView.h"
 #include "../EditConfig.h"
+#include <QActionGroup> // Qt6: no longer pulled in transitively
 #include <cmath>
 #include <cstdlib>
 
@@ -50,6 +51,7 @@ QWidget *SequenceView::NewWidget(
 SequenceView::SequenceView(MainWindow *parent)
 	: QAbstractScrollArea(parent)
 	, mainWindow(parent)
+	, settingsCache(parent->GetSettings())
 	, miniMap(nullptr)
     , viewMode(nullptr)
     , skin(nullptr)
@@ -218,7 +220,7 @@ SequenceView::~SequenceView()
 		context = context->Escape();
 	}
 	delete context;
-	QSettings *settings = mainWindow->GetSettings();
+	QSettings *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsCoarseGridKey, QPoint(coarseGrid.Denominator, coarseGrid.Numerator));

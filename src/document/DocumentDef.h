@@ -6,6 +6,7 @@
 #include <QString>
 #include <QMap>
 #include <QAudioFormat>
+#include "../audio/PcmFormat.h"
 
 
 enum class UpdateNotePolicy
@@ -153,11 +154,11 @@ struct Bga : public BmsonObject
 
 struct WaveSummary
 {
-    QAudioFormat Format;
+    PcmFormat Format;
     qint64 FrameCount;
 
     WaveSummary() : FrameCount(0){}
-    WaveSummary(const QAudioFormat &format, qint64 frameCount) : Format(format), FrameCount(frameCount){}
+    WaveSummary(const PcmFormat &format, qint64 frameCount) : Format(format), FrameCount(frameCount){}
     bool IsValid() const{ return FrameCount > 0; }
 };
 

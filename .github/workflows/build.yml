@@ -1,0 +1,208 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (Qt5 / AppImage)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt5 and build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            qtbase5-dev \
+            qtmultimedia5-dev \
+            qttools5-dev-tools \
+            libqt5multimedia5-plugins \
+            libgl1-mesa-dev
+
+      - name: Build (release)
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../src/bmsone.pro CONFIG-=debug CONFIG+=release
+          make -j"$(nproc)"
+
+      - name: Assemble AppDir
+        run: |
+          cd build
+          make INSTALL_ROOT="$PWD/AppDir" install || true
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/64x64/apps
+          cp BmsONE AppDir/usr/bin/BmsONE
+          cp ../deploy/linux/BmsONE.desktop AppDir/usr/share/applications/BmsONE.desktop
+          cp ../src/images/bmsone64.png AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png
+
+      - name: Package AppImage (linuxdeployqt)
+        run: |
+          cd build
+          wget -q https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt-continuous-x86_64.AppImage
+          ./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract
+          export VERSION="${GITHUB_SHA::8}"
+          ./squashfs-root/AppRun \
+            AppDir/usr/share/applications/BmsONE.desktop \
+            -appimage -no-translations \
+            -extra-plugins=audio,mediaservice,platforms
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-linux-x86_64-AppImage
+          path: build/BmsONE*.AppImage
+          if-no-files-found: error
+
+  windows:
+    name: Windows (Qt5 / MinGW)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt5 (MinGW 8.1)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: windows
+          target: desktop
+          arch: win64_mingw81
+          # Qt Multimedia ships in the Qt 5.15 base install (it is not a
+          # separate add-on module as it is in Qt 6), so no `modules:` needed.
+          tools: 'tools_mingw,qt.tools.win64_mingw810'
+          add-tools-to-path: true
+          cache: true
+
+      - name: Build (release)
+        run: |
+          mkdir build
+          cd build
+          qmake ..\src\bmsone.pro CONFIG-=debug CONFIG+=release
+          mingw32-make -j2
+
+      - name: Deploy Qt runtime
+        run: |
+          mkdir build\dist
+          copy build\release\BmsONE.exe build\dist\
+          rem Qt modules used by the app
+          for %%D in (Qt5Core Qt5Gui Qt5Widgets Qt5Multimedia Qt5Network) do copy "%QT_ROOT_DIR%\bin\%%D.dll" build\dist\ || exit /b 1
+          rem MinGW C/C++ runtime
+          for %%D in (libgcc_s_seh-1 libstdc++-6 libwinpthread-1) do copy "%QT_ROOT_DIR%\bin\%%D.dll" build\dist\ || exit /b 1
+          rem Qt plugins (platform plugin is mandatory; the rest enable styling,
+          rem image loading and audio preview)
+          for %%P in (platforms styles imageformats iconengines audio mediaservice bearer) do xcopy /E /I /Y "%QT_ROOT_DIR%\plugins\%%P" "build\dist\%%P"
+          dir /s /b build\dist
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-windows-x86_64-mingw
+          path: build/dist
+          if-no-files-found: error
+
+  windows-qt6:
+    name: Windows (Qt6 / MinGW)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.1'
+          host: windows
+          target: desktop
+          arch: win64_mingw
+          # qt5compat -> QTextCodec/QRegExp (Core5Compat); qtmultimedia -> audio.
+          modules: 'qt5compat qtmultimedia'
+          tools: 'tools_mingw1310'
+          add-tools-to-path: true
+          cache: true
+
+      - name: Build (release)
+        run: |
+          mkdir build
+          cd build
+          qmake ..\src\bmsone.pro CONFIG-=debug CONFIG+=release
+          mingw32-make -j2
+
+      - name: Deploy Qt runtime (windeployqt)
+        run: |
+          mkdir build\dist
+          copy build\release\BmsONE.exe build\dist\
+          "%QT_ROOT_DIR%\bin\windeployqt.exe" --release --no-translations --compiler-runtime build\dist\BmsONE.exe
+          rem Safety net: ensure the MinGW runtime is present even if windeployqt skips it
+          for %%D in (libgcc_s_seh-1 libstdc++-6 libwinpthread-1) do copy "%QT_ROOT_DIR%\bin\%%D.dll" build\dist\ >nul 2>&1
+          dir /s /b build\dist
+
+      - name: Upload Windows Qt6 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-windows-x86_64-qt6-mingw
+          path: build/dist
+          if-no-files-found: error
+
+  linux-qt6:
+    name: Linux (Qt6 / AppImage)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6 and build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            qt6-base-dev \
+            qt6-multimedia-dev \
+            libqt6core5compat6-dev \
+            qt6-tools-dev-tools \
+            libgl1-mesa-dev libfuse2 libxcb-cursor0
+
+      - name: Build (release)
+        run: |
+          mkdir -p build
+          cd build
+          qmake6 ../src/bmsone.pro CONFIG-=debug CONFIG+=release
+          make -j"$(nproc)"
+
+      - name: Assemble AppDir
+        run: |
+          cd build
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/64x64/apps
+          cp BmsONE AppDir/usr/bin/BmsONE
+          cp ../deploy/linux/BmsONE.desktop AppDir/usr/share/applications/BmsONE.desktop
+          cp ../src/images/bmsone64.png AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png
+
+      - name: Package AppImage (linuxdeploy + qt plugin)
+        run: |
+          cd build
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$(which qmake6)"
+          export OUTPUT=BmsONE-x86_64-qt6.AppImage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir \
+            -d AppDir/usr/share/applications/BmsONE.desktop \
+            -i AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png \
+            --plugin qt --output appimage
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-linux-x86_64-qt6-AppImage
+          path: build/BmsONE*-qt6.AppImage
+          if-no-files-found: error

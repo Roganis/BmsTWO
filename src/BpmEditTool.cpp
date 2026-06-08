@@ -13,6 +13,7 @@ using namespace BpmEditToolsSettings;
 BpmEditView::BpmEditView(MainWindow *mainWindow)
 	: ScrollableForm(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, automated(false)
 {
 	auto *layout = new QFormLayout();
@@ -21,7 +22,7 @@ BpmEditView::BpmEditView(MainWindow *mainWindow)
 	icon->setPixmap(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Event).pixmap(UIUtil::ToolBarIconSize, QIcon::Normal));
 	{
 		auto *captionLayout = new QHBoxLayout();
-		captionLayout->setMargin(0);
+		captionLayout->setContentsMargins(0, 0, 0, 0);
 		captionLayout->addWidget(icon);
 		captionLayout->addWidget(message = new QLabel(), 1);
 		layout->addRow(captionLayout);
@@ -71,7 +72,7 @@ BpmEditView::BpmEditView(MainWindow *mainWindow)
 
 BpmEditView::~BpmEditView()
 {
-	auto *settings = mainWindow->GetSettings();
+	auto *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsShowExtraFields, editExtraFields->isVisibleTo(this));
@@ -227,6 +228,6 @@ void BpmEditView::ExtraFieldsEscPressed()
 void BpmEditView::UpdateFormGeom()
 {
 	Form()->setGeometry(0, 0, Form()->width(), 33333);
-	Form()->setGeometry(0, 0, Form()->width(), dummy->y()+formLayout->spacing()+formLayout->margin());
+	Form()->setGeometry(0, 0, Form()->width(), dummy->y()+formLayout->spacing()+formLayout->contentsMargins().top());
 }
 

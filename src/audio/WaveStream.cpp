@@ -65,7 +65,7 @@ int WaveStreamSource::Open()
 			error = UnsupportedFormat;
 			return error;
 		}
-		format.setByteOrder(QAudioFormat::LittleEndian);
+		format.setByteOrder(PcmFormat::LittleEndian);
 		format.setChannelCount(channelsCount);
 		format.setCodec("audio/pcm");
 		format.setSampleRate(samplesPerSec);
@@ -73,7 +73,7 @@ int WaveStreamSource::Open()
 		switch (bitsPerSample){
             case 8:
                 // 8bit unsigned int (00 - 80 - FF)
-                format.setSampleType(QAudioFormat::UnSignedInt);
+                format.setSampleType(PcmFormat::UnSignedInt);
                 if (blockAlign != channelsCount){
                     qDebug() << "8bit x " << channelsCount << "ch -> " << blockAlign;
                     error = UnsupportedFormat;
@@ -82,7 +82,7 @@ int WaveStreamSource::Open()
                 break;
             case 16:
                 // 16bit signed int (8000 - 0000 - 7FFF )
-                format.setSampleType(QAudioFormat::SignedInt);
+                format.setSampleType(PcmFormat::SignedInt);
                 if (blockAlign != 2*channelsCount){
                     qDebug() << "16bit x " << channelsCount << "ch -> " << blockAlign;
                     error = UnsupportedFormat;
@@ -91,7 +91,7 @@ int WaveStreamSource::Open()
                 break;
             case 24:
                 // 24bit signed int (800000 - 000000 - 7FFFFF)
-                format.setSampleType(QAudioFormat::SignedInt);
+                format.setSampleType(PcmFormat::SignedInt);
                 if (blockAlign != 3*channelsCount){
                     qDebug() << "24bit x " << channelsCount << "ch -> " << blockAlign;
                     error = UnsupportedFormat;
@@ -100,7 +100,7 @@ int WaveStreamSource::Open()
                 break;
             case 32:
                 // 32bit float
-                format.setSampleType(QAudioFormat::Float);
+                format.setSampleType(PcmFormat::Float);
                 if (blockAlign != 4*channelsCount){
                     qDebug() << "32bit x " << channelsCount << "ch -> " << blockAlign;
                     error = UnsupportedFormat;
@@ -210,12 +210,12 @@ int OggStreamSource::Open()
 		return error;
 	}
 	const vorbis_info *info = ov_info(file, -1);
-	format.setByteOrder(QAudioFormat::LittleEndian);
+	format.setByteOrder(PcmFormat::LittleEndian);
 	format.setSampleRate(info->rate);
 	format.setChannelCount(info->channels);
 	format.setCodec("audio/pcm");
 	format.setSampleSize(16);
-	format.setSampleType(QAudioFormat::SignedInt);
+	format.setSampleType(PcmFormat::SignedInt);
 	// read data
 	frames = ov_pcm_total(file, -1);
 	bytes = frames * 2 * info->channels;
@@ -279,9 +279,9 @@ S16S44100StreamTransformer::S16S44100StreamTransformer(AudioStreamSource *src, Q
 {
 	src->setParent(this);
 	format.setCodec("audio/pcm");
-	format.setByteOrder(QAudioFormat::LittleEndian);
+	format.setByteOrder(PcmFormat::LittleEndian);
 	format.setSampleSize(16);
-	format.setSampleType(QAudioFormat::SignedInt);
+	format.setSampleType(PcmFormat::SignedInt);
 	format.setChannelCount(2);
 	format.setSampleRate(44100);
 	bytes = src->GetTotalBytes() * src->GetFormat().bytesForFrames(src->GetFormat().sampleRate()) / format.bytesForFrames(format.sampleRate());
@@ -297,7 +297,7 @@ S16S44100StreamTransformer::~S16S44100StreamTransformer()
 bool S16S44100StreamTransformer::IsSourceS16S44100() const
 {
 	//return src->GetFormat() == format;
-	QAudioFormat fmt = src->GetFormat();
+	PcmFormat fmt = src->GetFormat();
 	return fmt.byteOrder() == format.byteOrder()
 			&& fmt.sampleSize() == format.sampleSize()
 			&& fmt.sampleType() == format.sampleType()
@@ -312,8 +312,8 @@ int S16S44100StreamTransformer::Open()
 
 quint64 S16S44100StreamTransformer::Read(char *buffer, quint64 bufferSize)
 {
-	quint64 framesRead = Read(reinterpret_cast<QAudioBuffer::S16S*>(buffer), bufferSize/sizeof(QAudioBuffer::S16S));
-	return framesRead * sizeof(QAudioBuffer::S16S);
+	quint64 framesRead = Read(reinterpret_cast<StereoInt16*>(buffer), bufferSize/sizeof(StereoInt16));
+	return framesRead * sizeof(StereoInt16);
 }
 
 void S16S44100StreamTransformer::SeekRelative(qint64 relativeFrames)
@@ -332,14 +332,14 @@ void S16S44100StreamTransformer::SeekAbsolute(quint64 absoluteFrames)
 
 static S16S44100StreamTransformer::SampleType Interpolate(S16S44100StreamTransformer::SampleType a, S16S44100StreamTransformer::SampleType b, qreal t)
 {
-	return QAudioBuffer::StereoFrame<short>(a.left*(1.0-t)+b.left*t, a.right*(1.0-t)+b.right*t);
+	return StereoInt16(a.left*(1.0-t)+b.left*t, a.right*(1.0-t)+b.right*t);
 }
 
-quint64 S16S44100StreamTransformer::Read(QAudioBuffer::S16S *buffer, quint64 frames)
+quint64 S16S44100StreamTransformer::Read(StereoInt16 *buffer, quint64 frames)
 {
 	//QTime t0 = QTime::currentTime();
 	if (IsSourceS16S44100()){
-		quint64 framesRead = src->Read(reinterpret_cast<char*>(buffer), frames * sizeof(QAudioBuffer::S16S)) / sizeof(QAudioBuffer::S16S);
+		quint64 framesRead = src->Read(reinterpret_cast<char*>(buffer), frames * sizeof(StereoInt16)) / sizeof(StereoInt16);
 		current += framesRead;
 		return framesRead;
 	}
@@ -380,14 +380,14 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
 		switch (src->GetFormat().sampleSize()){
             case 8:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint8 *be = (const quint8*)(inputBuffer + sizeRead);
                                 for (const quint8 *b = (const quint8*)inputBuffer; b<be; ){
                                     quint8 v = *b++;
                                     short s = (short(v) - 128) * 256;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(s, s));
+                                    auxBuffer.append(StereoInt16(s, s));
                                 }
                                 break;
                             }
@@ -398,20 +398,20 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                     quint8 r = *b++;
                                     short sl = (short(l) - 128) * 256;
                                     short sr = (short(r) - 128) * 256;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(sl, sr));
+                                    auxBuffer.append(StereoInt16(sl, sr));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const qint8 *be = (const qint8*)(inputBuffer + sizeRead);
                                 for (const qint8 *b = (const qint8*)inputBuffer; b<be; ){
                                     qint8 v = *b++;
                                     short s = short(v) * 256;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(s, s));
+                                    auxBuffer.append(StereoInt16(s, s));
                                 }
                                 break;
                             }
@@ -422,7 +422,7 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                     qint8 r = *b++;
                                     short sl = short(l) * 256;
                                     short sr = short(r) * 256;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(sl, sr));
+                                    auxBuffer.append(StereoInt16(sl, sr));
                                 }
                                 break;
                             }
@@ -434,14 +434,14 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                 break;
             case 16:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint16 *be = (const quint16*)(inputBuffer + sizeRead);
                                 for (const quint16 *b = (const quint16*)inputBuffer; b<be; ){
                                     quint16 v = *b++;
                                     int s = int(v) - 32768;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(s, s));
+                                    auxBuffer.append(StereoInt16(s, s));
                                 }
                                 break;
                             }
@@ -452,19 +452,19 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                     quint16 r = *b++;
                                     int sl = int(l) - 32768;
                                     int sr = int(r) - 32768;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(sl, sr));
+                                    auxBuffer.append(StereoInt16(sl, sr));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1:{
                                 const qint16 *be = (const qint16*)(inputBuffer + sizeRead);
                                 for (const qint16 *b = (const qint16*)inputBuffer; b<be; ){
                                     qint16 v = *b++;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(v, v));
+                                    auxBuffer.append(StereoInt16(v, v));
                                 }
                                 break;
                             }
@@ -473,7 +473,7 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (const qint16 *b = (const qint16*)inputBuffer; b<be; ){
                                     qint16 l = *b++;
                                     qint16 r = *b++;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(l, r));
+                                    auxBuffer.append(StereoInt16(l, r));
                                 }
                                 break;
                             }
@@ -485,14 +485,14 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                 break;
             case 24:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint8 *b = (const quint8*)inputBuffer;
                                 int samples = sizeRead / 3;
                                 for (int i=0; i<samples; i++){
                                     qint16 v = (b[i*3+1] | (b[i*3+2] << 8)) - 32768;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(v, v));
+                                    auxBuffer.append(StereoInt16(v, v));
                                 }
                                 break;
                             }
@@ -502,20 +502,20 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (int i=0; i<samples; i++){
                                     qint16 l = (b[i*6+1] | (b[i*6+2] << 8)) - 32768;
                                     qint16 r = (b[i*6+4] | (b[i*6+5] << 8)) - 32768;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(l, r));
+                                    auxBuffer.append(StereoInt16(l, r));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint8 *b = (const quint8*)inputBuffer;
                                 int samples = sizeRead / 3;
                                 for (int i=0; i<samples; i++){
                                     qint16 v = (qint16)(b[i*3+1] | (b[i*3+2] << 8));
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(v, v));
+                                    auxBuffer.append(StereoInt16(v, v));
                                 }
                                 break;
                             }
@@ -525,7 +525,7 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (int i=0; i<samples; i++){
                                     qint16 l = (qint16)(b[i*6+1] | (b[i*6+2] << 8));
                                     qint16 r = (qint16)(b[i*6+4] | (b[i*6+5] << 8));
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(l, r));
+                                    auxBuffer.append(StereoInt16(l, r));
                                 }
                                 break;
                             }
@@ -537,14 +537,14 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                 break;
             case 32:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::Float:
+                    case PcmFormat::Float:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const float *b = (const float*)inputBuffer;
                                 int samples = sizeRead / 4;
                                 for (int i=0; i<samples; i++){
                                     qint16 v = b[i] * 32767.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(v, v));
+                                    auxBuffer.append(StereoInt16(v, v));
                                 }
                                 break;
                             }
@@ -554,13 +554,13 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (int i=0; i<samples; i++){
                                     qint16 l = b[i*2] * 32767.f;
                                     qint16 r = b[i*2+1] * 32767.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<signed short>(l, r));
+                                    auxBuffer.append(StereoInt16(l, r));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1:
                                 break;
@@ -568,7 +568,7 @@ void S16S44100StreamTransformer::Provide(qreal playHeadEnd)
                                 break;
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1:
                                 break;
@@ -588,7 +588,7 @@ void S16S44100StreamTransformer::Forget(qreal playHeadEnd)
 {
 	const qreal samplingRatio = qreal(src->GetFormat().sampleRate()) / format.sampleRate();
 	int playHeadOffset = int(qint64(playHeadEnd - 1.0*samplingRatio - 1.0) - qint64(src->GetCurrentFrame() - auxBuffer.size()));
-	int forgetOffset = std::max(0, std::min(auxBuffer.size(), playHeadOffset));
+	int forgetOffset = std::max(0, std::min((int)auxBuffer.size(), playHeadOffset));
 	for (int i=0; i<forgetOffset; i++){
 		auxBuffer.removeFirst();
 	}
@@ -607,9 +607,9 @@ S32F44100StreamTransformer::S32F44100StreamTransformer(AudioStreamSource *src, Q
 {
 	src->setParent(this);
 	format.setCodec("audio/pcm");
-	format.setByteOrder(QAudioFormat::LittleEndian);
+	format.setByteOrder(PcmFormat::LittleEndian);
 	format.setSampleSize(32);
-	format.setSampleType(QAudioFormat::Float);
+	format.setSampleType(PcmFormat::Float);
 	format.setChannelCount(2);
 	format.setSampleRate(44100);
 	bytes = src->GetTotalBytes() * src->GetFormat().bytesForFrames(src->GetFormat().sampleRate()) / format.bytesForFrames(format.sampleRate());
@@ -625,7 +625,7 @@ S32F44100StreamTransformer::~S32F44100StreamTransformer()
 bool S32F44100StreamTransformer::IsSourceS32F44100() const
 {
 	//return src->GetFormat() == format;
-	QAudioFormat fmt = src->GetFormat();
+	PcmFormat fmt = src->GetFormat();
 	return fmt.byteOrder() == format.byteOrder()
 			&& fmt.sampleSize() == format.sampleSize()
 			&& fmt.sampleType() == format.sampleType()
@@ -640,8 +640,8 @@ int S32F44100StreamTransformer::Open()
 
 quint64 S32F44100StreamTransformer::Read(char *buffer, quint64 bufferSize)
 {
-	quint64 framesRead = Read(reinterpret_cast<QAudioBuffer::S32F*>(buffer), bufferSize/sizeof(QAudioBuffer::S32F));
-	return framesRead * sizeof(QAudioBuffer::S32F);
+	quint64 framesRead = Read(reinterpret_cast<StereoFloat32*>(buffer), bufferSize/sizeof(StereoFloat32));
+	return framesRead * sizeof(StereoFloat32);
 }
 
 void S32F44100StreamTransformer::SeekRelative(qint64 relativeFrames)
@@ -660,14 +660,14 @@ void S32F44100StreamTransformer::SeekAbsolute(quint64 absoluteFrames)
 
 static S32F44100StreamTransformer::SampleType Interpolate(S32F44100StreamTransformer::SampleType a, S32F44100StreamTransformer::SampleType b, qreal t)
 {
-	return QAudioBuffer::StereoFrame<float>(a.left*(1.0-t)+b.left*t, a.right*(1.0-t)+b.right*t);
+	return StereoFloat32(a.left*(1.0-t)+b.left*t, a.right*(1.0-t)+b.right*t);
 }
 
-quint64 S32F44100StreamTransformer::Read(QAudioBuffer::S32F *buffer, quint64 frames)
+quint64 S32F44100StreamTransformer::Read(StereoFloat32 *buffer, quint64 frames)
 {
 	//QTime t0 = QTime::currentTime();
 	if (IsSourceS32F44100()){
-		quint64 framesRead = src->Read(reinterpret_cast<char*>(buffer), frames * sizeof(QAudioBuffer::S32F)) / sizeof(QAudioBuffer::S32F);
+		quint64 framesRead = src->Read(reinterpret_cast<char*>(buffer), frames * sizeof(StereoFloat32)) / sizeof(StereoFloat32);
 		current += framesRead;
 		return framesRead;
 	}
@@ -708,14 +708,14 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
 		switch (src->GetFormat().sampleSize()){
             case 8:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint8 *be = (const quint8*)(inputBuffer + sizeRead);
                                 for (const quint8 *b = (const quint8*)inputBuffer; b<be; ){
                                     quint8 v = *b++;
                                     float s = (short(v) - 128) / 128.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(s, s));
+                                    auxBuffer.append(StereoFloat32(s, s));
                                 }
                                 break;
                             }
@@ -726,20 +726,20 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                     quint8 r = *b++;
                                     float sl = (short(l) - 128) / 128.f;
                                     float sr = (short(r) - 128) / 128.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(sl, sr));
+                                    auxBuffer.append(StereoFloat32(sl, sr));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const qint8 *be = (const qint8*)(inputBuffer + sizeRead);
                                 for (const qint8 *b = (const qint8*)inputBuffer; b<be; ){
                                     qint8 v = *b++;
                                     float s = float(v) / 128.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(s, s));
+                                    auxBuffer.append(StereoFloat32(s, s));
                                 }
                                 break;
                             }
@@ -750,7 +750,7 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                     qint8 r = *b++;
                                     float sl = float(l) * 128.f;
                                     float sr = float(r) * 128.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(sl, sr));
+                                    auxBuffer.append(StereoFloat32(sl, sr));
                                 }
                                 break;
                             }
@@ -762,14 +762,14 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                 break;
             case 16:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint16 *be = (const quint16*)(inputBuffer + sizeRead);
                                 for (const quint16 *b = (const quint16*)inputBuffer; b<be; ){
                                     quint16 v = *b++;
                                     float s = (int(v) - 32768) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(s, s));
+                                    auxBuffer.append(StereoFloat32(s, s));
                                 }
                                 break;
                             }
@@ -780,19 +780,19 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                     quint16 r = *b++;
                                     float sl = (int(l) - 32768) / 32768.f;
                                     float sr = (int(r) - 32768) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(sl, sr));
+                                    auxBuffer.append(StereoFloat32(sl, sr));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1:{
                                 const qint16 *be = (const qint16*)(inputBuffer + sizeRead);
                                 for (const qint16 *b = (const qint16*)inputBuffer; b<be; ){
                                     float v = (*b++) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(v, v));
+                                    auxBuffer.append(StereoFloat32(v, v));
                                 }
                                 break;
                             }
@@ -801,7 +801,7 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (const qint16 *b = (const qint16*)inputBuffer; b<be; ){
                                     float l = (*b++) / 32768.f;
                                     float r = (*b++) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(l, r));
+                                    auxBuffer.append(StereoFloat32(l, r));
                                 }
                                 break;
                             }
@@ -813,14 +813,14 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                 break;
             case 24:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint8 *b = (const quint8*)inputBuffer;
                                 int samples = sizeRead / 3;
                                 for (int i=0; i<samples; i++){
                                     float v = ((b[i*3+1] | (b[i*3+2] << 8 )) - 32768) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(v, v));
+                                    auxBuffer.append(StereoFloat32(v, v));
                                 }
                                 break;
                             }
@@ -830,20 +830,20 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (int i=0; i<samples; i++){
                                     float l = ((b[i*6+1] | (b[i*6+2] << 8 )) - 32768) / 32768.f;
                                     float r = ((b[i*6+4] | (b[i*6+5] << 8 )) - 32768) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(l, r));
+                                    auxBuffer.append(StereoFloat32(l, r));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const quint8 *b = (const quint8*)inputBuffer;
                                 int samples = sizeRead / 3;
                                 for (int i=0; i<samples; i++){
                                     float v = (qint16)(b[i*3+1] | (b[i*3+2] << 8 )) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(v, v));
+                                    auxBuffer.append(StereoFloat32(v, v));
                                 }
                                 break;
                             }
@@ -853,7 +853,7 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (int i=0; i<samples; i++){
                                     float l = (qint16)(b[i*6+1] | (b[i*6+2] << 8 )) / 32768.f;
                                     float r = (qint16)(b[i*6+4] | (b[i*6+5] << 8 )) / 32768.f;
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(l, r));
+                                    auxBuffer.append(StereoFloat32(l, r));
                                 }
                                 break;
                             }
@@ -865,14 +865,14 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                 break;
             case 32:
                 switch (src->GetFormat().sampleType()){
-                    case QAudioFormat::Float:
+                    case PcmFormat::Float:
                         switch (src->GetFormat().channelCount()){
                             case 1: {
                                 const float *b = (const float*)inputBuffer;
                                 int samples = sizeRead / 4;
                                 for (int i=0; i<samples; i++){
                                     float v = b[i];
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(v, v));
+                                    auxBuffer.append(StereoFloat32(v, v));
                                 }
                                 break;
                             }
@@ -882,13 +882,13 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                 for (int i=0; i<samples; i++){
                                     float l = b[i*2];
                                     float r = b[i*2+1];
-                                    auxBuffer.append(QAudioBuffer::StereoFrame<float>(l, r));
+                                    auxBuffer.append(StereoFloat32(l, r));
                                 }
                                 break;
                             }
                         }
                         break;
-                    case QAudioFormat::UnSignedInt:
+                    case PcmFormat::UnSignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1:
                                 break;
@@ -896,7 +896,7 @@ void S32F44100StreamTransformer::Provide(qreal playHeadEnd)
                                 break;
                         }
                         break;
-                    case QAudioFormat::SignedInt:
+                    case PcmFormat::SignedInt:
                         switch (src->GetFormat().channelCount()){
                             case 1:
                                 break;
@@ -916,7 +916,7 @@ void S32F44100StreamTransformer::Forget(qreal playHeadEnd)
 {
 	const qreal samplingRatio = qreal(src->GetFormat().sampleRate()) / format.sampleRate();
 	int playHeadOffset = int(qint64(playHeadEnd - 1.0*samplingRatio - 1.0) - qint64(src->GetCurrentFrame() - auxBuffer.size()));
-	int forgetOffset = std::max(0, std::min(auxBuffer.size(), playHeadOffset));
+	int forgetOffset = std::max(0, std::min((int)auxBuffer.size(), playHeadOffset));
 	for (int i=0; i<forgetOffset; i++){
 		auxBuffer.removeFirst();
 	}
@@ -940,7 +940,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
             switch (format.channelCount()){
                 case 1:
                     switch (format.sampleType()){
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -953,7 +953,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -972,7 +972,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                     break;
                 case 2:
                     switch (format.sampleType()){
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -985,7 +985,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1008,7 +1008,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
             switch (format.channelCount()){
                 case 1:
                     switch (format.sampleType()){
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1020,7 +1020,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1038,7 +1038,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                     break;
                 case 2:
                     switch (format.sampleType()){
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1051,7 +1051,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1074,7 +1074,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
             switch (format.channelCount()){
                 case 1:
                     switch (format.sampleType()){
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1087,7 +1087,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1106,7 +1106,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                     break;
                 case 2:
                     switch (format.sampleType()){
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1121,7 +1121,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1152,7 +1152,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
             switch (format.channelCount()){
                 case 1:
                     switch (format.sampleType()){
-                        case QAudioFormat::Float:
+                        case PcmFormat::Float:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1164,7 +1164,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1176,7 +1176,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1194,7 +1194,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                     break;
                 case 2:
                     switch (format.sampleType()){
-                        case QAudioFormat::Float:
+                        case PcmFormat::Float:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1207,7 +1207,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::UnSignedInt:
+                        case PcmFormat::UnSignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)
@@ -1220,7 +1220,7 @@ void AudioStreamSource::EnumerateAllAsFloat(std::function<void(float)> whenMonor
                                 }
                             }
                             break;
-                        case QAudioFormat::SignedInt:
+                        case PcmFormat::SignedInt:
                             while (GetRemainingFrameCount() > 0){
                                 const quint64 sizeRead = Read(buffer, BufferSize);
                                 if (sizeRead == 0)

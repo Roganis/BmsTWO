@@ -6,6 +6,7 @@
 #include <QTextStream>
 #include <QTextCodec>
 #include <QString>
+#include <QVariant>
 #include <QVector>
 #include <QList>
 #include <QMap>
@@ -170,6 +171,7 @@ public:
 private:
 	BmsReaderConfig config;
 	QFile file;
+	QString contentString; // decoded file contents the QTextStream reads from
 	QTextStream in;
 	Status status;
 	float progress;

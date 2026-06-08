@@ -2,6 +2,10 @@
 #include "MainWindow.h"
 #include "util/SymbolIconManager.h"
 #include <cmath>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QMediaDevices>
+#include <QAudioDevice>
+#endif
 
 const char* AudioPlayer::SettingsGroup = "AudioPlayer";
 const char* AudioPlayer::SettingsMuteKey = "Mute";
@@ -10,6 +14,7 @@ const char* AudioPlayer::SettingsVolumeKey = "Volume";
 AudioPlayer::AudioPlayer(MainWindow *mainWindow, const QString &objectName, const QString &windowTitle)
 	: QToolBar(windowTitle, mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, audioThread(new QThread())
 	, indicator(nullptr)
 	, io(nullptr)
@@ -60,7 +65,7 @@ AudioPlayer::AudioPlayer(MainWindow *mainWindow, const QString &objectName, cons
 
 AudioPlayer::~AudioPlayer()
 {
-	QSettings *settings = mainWindow->GetSettings();
+	QSettings *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsMuteKey, actionMute->isChecked());
@@ -143,20 +148,28 @@ AudioPlayerOutput::~AudioPlayerOutput()
 void AudioPlayerOutput::Start(AudioPlayerInternal *io)
 {
 	QAudioFormat format;
+	format.setChannelCount(2);
+	format.setSampleRate(44100);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	format.setSampleFormat(QAudioFormat::Int16);
+	QAudioDevice info = QMediaDevices::defaultAudioOutput();
+	if (!info.isFormatSupported(format)){
+		qDebug() << "AudioPlayer: format is not supported.";
+		return;
+	}
+	aout = new QAudioSink(info, format, this);
+#else
 	format.setCodec("audio/pcm");
 	format.setSampleSize(16);
 	format.setSampleType(QAudioFormat::SignedInt);
 	format.setByteOrder(QAudioFormat::LittleEndian);
-	format.setChannelCount(2);
-	format.setSampleRate(44100);
-
 	QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
 	if (!info.isFormatSupported(format)){
 		qDebug() << "AudioPlayer: format is not supported.";
 		return;
 	}
-
 	aout = new QAudioOutput(format, this);
+#endif
 	connect(aout, SIGNAL(stateChanged(QAudio::State)), this, SLOT(OnStateChanged(QAudio::State)));
 
 	aout->setBufferSize(16384);

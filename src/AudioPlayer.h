@@ -6,7 +6,13 @@
 #include <QMutex>
 #include <QIODevice>
 #include <QAudioBuffer>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QAudioSink>
+typedef QAudioSink BmsAudioOutput; // QAudioOutput was renamed to QAudioSink in Qt6
+#else
 #include <QAudioOutput>
+typedef QAudioOutput BmsAudioOutput;
+#endif
 #include <QFrame>
 #include <QToolBar>
 #include <QSlider>
@@ -19,9 +25,9 @@ class AudioPlayerInternal : public QIODevice
 	Q_OBJECT
 
 private:
-	typedef QAudioBuffer::S16S SampleTypePlay;
-	typedef QAudioBuffer::S32F SampleTypeRead;
-	typedef QAudioBuffer::S32F SampleTypeTemp;
+	typedef StereoInt16 SampleTypePlay;
+	typedef StereoFloat32 SampleTypeRead;
+	typedef StereoFloat32 SampleTypeTemp;
 	static const float EnvPrevRelease;
 	static const float EnvPrevThreshold;
 
@@ -93,7 +99,7 @@ class AudioPlayerOutput : public QObject
 	Q_OBJECT
 
 private:
-	QAudioOutput *aout;
+	BmsAudioOutput *aout;
 
 private slots:
 	void OnStateChanged(QAudio::State newState);
@@ -112,6 +118,7 @@ public slots:
 
 
 class MainWindow;
+class QSettings;
 
 class AudioPlayer : public QToolBar
 {
@@ -128,6 +135,7 @@ private:
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 	QThread *audioThread;
 	AudioPlayerOutput *output;
 	AudioPlayerIndicator *indicator;

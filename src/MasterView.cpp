@@ -175,7 +175,7 @@ void MiniMapView::ReconstructRmsCache()
 #if 1
 		// INTERNAL ITERATOR
 		int s = smp_prev;
-		master->GetData(smp_prev, [&](int pending, QAudioBuffer::S32F signal){
+		master->GetData(smp_prev, [&](int pending, StereoFloat32 signal){
 			packet.available &= pending == 0;
 			packet.rms.L += signal.left * signal.left;
 			packet.rms.R += signal.right * signal.right;
@@ -186,7 +186,7 @@ void MiniMapView::ReconstructRmsCache()
 #else
 		// EXTERNAL ITERATOR
 		for (int s=smp_prev; s<smp; s++){
-			QPair<int, QAudioBuffer::S32F> d = master->GetData(s);
+			QPair<int, StereoFloat32> d = master->GetData(s);
 			packet.available &= d.first == 0;
 			packet.rms.L += d.second.left * d.second.left;
 			packet.rms.R += d.second.right * d.second.right;
@@ -244,7 +244,7 @@ void MiniMapView::UpdateRmsCachePartially()
 #if 1
 			// INTERNAL ITERATOR
 			int s = smp_prev;
-			master->GetData(smp_prev, [&](int pending, QAudioBuffer::S32F signal){
+			master->GetData(smp_prev, [&](int pending, StereoFloat32 signal){
 				packet.available &= pending == 0;
 				packet.rms.L += signal.left * signal.left;
 				packet.rms.R += signal.right * signal.right;
@@ -255,7 +255,7 @@ void MiniMapView::UpdateRmsCachePartially()
 #else
 			// EXTERNAL ITERATOR
 			for (int s=smp_prev; s<smp; s++){
-				QPair<int, QAudioBuffer::S32F> d = master->GetData(s);
+				QPair<int, StereoFloat32> d = master->GetData(s);
 				packet.available &= d.first == 0;
 				packet.rms.L += d.second.left * d.second.left;
 				packet.rms.R += d.second.right * d.second.right;
@@ -295,11 +295,15 @@ void MiniMapView::UpdateBuffer()
 	for (int y=0; y<height(); y++){
 		int t = y * sview->viewLength / height();
 		int t2 = (y+1) * sview->viewLength / height();
-		if (std::min(t2, rmsCacheOfTicks.size()) > t){
+		if (std::min(t2, (int)rmsCacheOfTicks.size()) > t){
 			if (t2 > rmsCacheOfTicks.size())
 				t2 = rmsCacheOfTicks.size();
 			if (t < 0)
 				t = 0;
+			// After clamping, an empty/short RMS cache can leave t2 == t,
+			// which would divide by zero below. Skip degenerate rows.
+			if (t2 <= t)
+				continue;
 			Rms rms(0.0f, 0.0f);
 			Rms peak(0.0f, 0.0f);
 			for (int i=t; i<t2; i++){
@@ -584,11 +588,15 @@ void MasterLaneView::UpdateBackBuffer(const QRect &rect)
 	for (int y=rect.bottom()+my; y>=rect.top()-my; y--){
 		int t = sview->Y2Time(y);
 		int t2 = sview->Y2Time(y-1);
-		if (std::min(t2, mview->rmsCacheOfTicks.size()) > t){
+		if (std::min(t2, (int)mview->rmsCacheOfTicks.size()) > t){
 			if (t2 > mview->rmsCacheOfTicks.size())
 				t2 = mview->rmsCacheOfTicks.size();
 			if (t < 0)
 				t = 0;
+			// After clamping, an empty/short RMS cache can leave t2 == t,
+			// which would divide by zero below. Skip degenerate rows.
+			if (t2 <= t)
+				continue;
 			Rms rms(0.0f, 0.0f);
 			Rms peak(0.0f, 0.0f);
 			for (int i=t; i<t2; i++){

@@ -305,7 +305,7 @@ int SoundChannelPreviewer::AudioPlayRead(AudioPlaySource::SampleType *buffer, in
 				currentSamplePos += samplesRead;
 			}else{
 				for (int i=0; i<samples; i++){
-					buffer[i] = QAudioBuffer::StereoFrame<float>();
+					buffer[i] = StereoFloat32();
 				}
 				samples = 0;
 			}
@@ -324,7 +324,7 @@ int SoundChannelPreviewer::AudioPlayRead(AudioPlaySource::SampleType *buffer, in
 					int samplesRead = wave->Read(buffer, r);
 					if (samplesRead == 0){
 						for (int i=0; i<r; i++){
-							buffer[i] = QAudioBuffer::StereoFrame<float>();
+							buffer[i] = StereoFloat32();
 						}
 						break;
 					}
@@ -333,7 +333,7 @@ int SoundChannelPreviewer::AudioPlayRead(AudioPlaySource::SampleType *buffer, in
 				}
 			}else{
 				for (int i=0; i<endSamples; i++){
-					buffer[i] = QAudioBuffer::StereoFrame<float>();
+					buffer[i] = StereoFloat32();
 				}
 				buffer += endSamples;
 			}

@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "sequence_view/SequenceView.h"
 #include "util/SymbolIconManager.h"
+#include "util/KeySeq.h"
 //#include "SignalFunction.h"
 
 
@@ -31,13 +32,13 @@ ChannelFindTools::ChannelFindTools(const QString &objectName, const QString &win
 
 	actionChannelFindFilterActive = new QAction(tr("Active Channels Only"), this);
 	actionChannelFindFilterActive->setIcon(SymbolIconManager::GetIcon(SymbolIconManager::Icon::SearchSound));
-	actionChannelFindFilterActive->setShortcut(Qt::ControlModifier + Qt::ShiftModifier + Qt::Key_D);
+	actionChannelFindFilterActive->setShortcut(KeySeq(Qt::ControlModifier, Qt::ShiftModifier, Qt::Key_D));
 	SharedUIHelper::RegisterGlobalShortcut(actionChannelFindFilterActive);
 	actionChannelFindFilterActive->setCheckable(true);
 
 	actionChannelFindHideOthers = new QAction(tr("Show Hit Channels Only"), this);
 	actionChannelFindHideOthers->setIcon(SymbolIconManager::GetIcon(SymbolIconManager::Icon::SearchHighlight));
-	actionChannelFindHideOthers->setShortcut(Qt::ControlModifier + Qt::ShiftModifier + Qt::Key_F);
+	actionChannelFindHideOthers->setShortcut(KeySeq(Qt::ControlModifier, Qt::ShiftModifier, Qt::Key_F));
 	SharedUIHelper::RegisterGlobalShortcut(actionChannelFindHideOthers);
 	actionChannelFindHideOthers->setCheckable(true);
 
