@@ -213,6 +213,10 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionChannelNew);
 	connect(actionChannelNew, SIGNAL(triggered()), this, SLOT(ChannelNew()));
 
+	actionChannelImportMidi = new QAction(tr("Import MIDI to Channel..."), this);
+	SharedUIHelper::RegisterGlobalShortcut(actionChannelImportMidi);
+	connect(actionChannelImportMidi, SIGNAL(triggered()), this, SLOT(ChannelImportMidi()));
+
 	actionChannelPrev = new QAction(tr("Select Previous"), this);
 	actionChannelPrev->setShortcut(QKeySequence::Back);
 	SharedUIHelper::RegisterGlobalShortcut(actionChannelPrev);
@@ -337,6 +341,8 @@ MainWindow::MainWindow(QSettings *settings)
 	menuChannel->addSeparator();
 	menuChannel->addAction(actionChannelSelectFile);
 	menuChannel->addAction(actionChannelPreviewSource);
+	menuChannel->addSeparator();
+	menuChannel->addAction(actionChannelImportMidi);
 
 	menuPreview = menuBar()->addMenu(tr("Preview"));
 
@@ -732,6 +738,21 @@ void MainWindow::ChannelPreviewSource()
 	if (!document || currentChannel < 0)
 		return;
 	channelInfoView->PreviewSound();
+}
+
+void MainWindow::ChannelImportMidi()
+{
+	if (!document)
+		return;
+	SequenceView *sview = GetActiveSequenceView();
+	if (!sview)
+		return;
+	QString filters = tr("MIDI files (*.mid *.midi)") + ";;" + tr("all files (*.*)");
+	QString dir = document->GetProjectDirectory(QDir::home()).absolutePath();
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Import MIDI to Channel"), dir, filters);
+	if (fileName.isEmpty())
+		return;
+	sview->ImportMidi(fileName);
 }
 
 void MainWindow::ChannelsNew(QList<QString> filePaths)

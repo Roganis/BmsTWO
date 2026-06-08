@@ -17,6 +17,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#include <QFile>
+#include <QMessageBox>
+#include "../midi/MidiImport.h"
 
 namespace SequenceViewSettings{
 static const char* SettingsGroup = "SequenceView";
@@ -796,6 +799,58 @@ void SequenceView::FillSelectedNotes()
 	if (toAdd.isEmpty())
 		return;
 	document->MultiChannelUpdateSoundNotes(toAdd, UpdateNotePolicy::BestEffort);
+}
+
+// MIDI import (issue #11): drop the MIDI note onsets into the current channel as
+// slice notes (BGM lane), preserving the original rhythm, and import the tempo
+// map as BPM events so irregular timing plays back correctly ("leave the MIDI
+// sequence as is").
+void SequenceView::ImportMidi(const QString &path)
+{
+	if (!document || lockCommands > 0)
+		return;
+	if (currentChannel < 0 || currentChannel >= soundChannels.size()){
+		QMessageBox::warning(this, tr("Import MIDI"),
+							 tr("Select a target sound channel first, then import the MIDI."));
+		return;
+	}
+	QFile file(path);
+	if (!file.open(QFile::ReadOnly)){
+		QMessageBox::warning(this, tr("Import MIDI"), tr("Could not open the MIDI file."));
+		return;
+	}
+	const MidiImport::Result midi = MidiImport::Parse(file.readAll());
+	if (!midi.ok || midi.ppq <= 0){
+		QMessageBox::warning(this, tr("Import MIDI"),
+							 midi.error.isEmpty() ? tr("Could not read the MIDI file.") : midi.error);
+		return;
+	}
+	const int resolution = document->GetInfo()->GetResolution();
+	SoundChannel *channel = soundChannels[currentChannel]->GetChannel();
+
+	// Place one slice note (BGM lane, continuation/slice type) per onset tick.
+	QMultiMap<SoundChannel*, SoundNote> notes;
+	QSet<int> placed;
+	for (int midiTick : midi.noteOnTicks){
+		const int loc = int(qint64(midiTick) * resolution / midi.ppq);
+		if (placed.contains(loc))
+			continue;
+		placed.insert(loc);
+		notes.insert(channel, SoundNote(loc, 0 /*BGM*/, 0 /*length*/, 1 /*slice*/));
+	}
+	if (!notes.isEmpty())
+		document->MultiChannelUpdateSoundNotes(notes, UpdateNotePolicy::BestEffort);
+
+	// Import the tempo map: tempo at tick 0 sets the initial BPM, others become
+	// BPM events.
+	for (const auto &tempo : midi.tempos){
+		const int loc = int(qint64(tempo.first) * resolution / midi.ppq);
+		const double bpm = tempo.second;
+		if (loc <= 0)
+			document->GetInfo()->SetInitBpm(bpm);
+		else
+			document->InsertBpmEvent(BpmEvent(loc, bpm));
+	}
 }
 
 void SequenceView::TransferSelectedNotesToBgm()

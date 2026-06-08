@@ -166,6 +166,7 @@ private:
 	QAction *actionChannelDestroy;
 	QAction *actionChannelSelectFile;
 	QAction *actionChannelPreviewSource;
+	QAction *actionChannelImportMidi;
 
 	QAction *actionHelpAbout;
 	QAction *actionHelpAboutQt;
@@ -200,6 +201,7 @@ private slots:
 	void EditPreferences();
 	void ViewFullScreen();
 	void ChannelNew();
+	void ChannelImportMidi();
 	void ChannelPrev();
 	void ChannelNext();
 	void ChannelMoveLeft();

@@ -301,6 +301,7 @@ public slots:
 	void PasteNotes();
 	void ToggleBarLineAtCursor();
 	void FillSelectedNotes();
+	void ImportMidi(const QString &path);
 	void ZoomIn();
 	void ZoomOut();
 	void ZoomReset();
