@@ -18,6 +18,11 @@ on:
 permissions:
   contents: write
 
+# Run JS-based actions (checkout, upload/download-artifact) on Node 24;
+# silences the Node 20 deprecation warning and is forward-compatible.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build-windows:
     name: Windows (Qt6 / MinGW)
