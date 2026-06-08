@@ -7,6 +7,13 @@
 #include "../MasterView.h"
 #include "../EditConfig.h"
 #include <QActionGroup> // Qt6: no longer pulled in transitively
+#include <QApplication>
+#include <QClipboard>
+#include <QMimeData>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <climits>
 #include <cmath>
 #include <cstdlib>
 
@@ -617,6 +624,101 @@ void SequenceView::DeleteSelectedNotes()
 	if (notes.empty())
 		return;
 	document->MultiChannelDeleteSoundNotes(notes);
+}
+
+// Clipboard format for copy/paste of sound notes (issue #10).
+static const char *SoundNotesMimeType = "application/x-bmsone-soundnotes";
+
+void SequenceView::CopySelectedNotes()
+{
+	if (!document || selectedNotes.isEmpty())
+		return;
+	const QList<SoundChannel*> &channels = document->GetSoundChannels();
+	QJsonArray arr;
+	for (auto nv : selectedNotes){
+		int ci = channels.indexOf(nv->GetChannelView()->GetChannel());
+		if (ci < 0)
+			continue;
+		SoundNote n = nv->GetNote();
+		QJsonObject o;
+		o["channel"] = ci;
+		o["y"] = n.location;
+		o["x"] = n.lane;
+		o["length"] = n.length;
+		o["noteType"] = n.noteType;
+		arr.append(o);
+	}
+	if (arr.isEmpty())
+		return;
+	QJsonObject root;
+	root["type"] = "bmsone/soundnotes";
+	root["notes"] = arr;
+	const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
+	auto *mime = new QMimeData();
+	mime->setData(SoundNotesMimeType, json);
+	mime->setText(QString::fromUtf8(json));
+	QApplication::clipboard()->setMimeData(mime);
+}
+
+void SequenceView::CutSelectedNotes()
+{
+	CopySelectedNotes();
+	DeleteSelectedNotes();
+}
+
+bool SequenceView::CanPasteNotes() const
+{
+	const QMimeData *mime = QApplication::clipboard()->mimeData();
+	if (!mime)
+		return false;
+	const QByteArray json = mime->hasFormat(SoundNotesMimeType)
+			? mime->data(SoundNotesMimeType)
+			: (mime->hasText() ? mime->text().toUtf8() : QByteArray());
+	if (json.isEmpty())
+		return false;
+	QJsonParseError err;
+	const QJsonObject root = QJsonDocument::fromJson(json, &err).object();
+	return err.error == QJsonParseError::NoError
+			&& root["type"].toString() == "bmsone/soundnotes";
+}
+
+void SequenceView::PasteNotes()
+{
+	if (!document || lockCommands > 0)
+		return;
+	const QMimeData *mime = QApplication::clipboard()->mimeData();
+	if (!mime)
+		return;
+	const QByteArray json = mime->hasFormat(SoundNotesMimeType)
+			? mime->data(SoundNotesMimeType)
+			: (mime->hasText() ? mime->text().toUtf8() : QByteArray());
+	QJsonParseError err;
+	const QJsonObject root = QJsonDocument::fromJson(json, &err).object();
+	if (err.error != QJsonParseError::NoError || root["type"].toString() != "bmsone/soundnotes")
+		return;
+	const QJsonArray arr = root["notes"].toArray();
+	const QList<SoundChannel*> &channels = document->GetSoundChannels();
+	if (arr.isEmpty() || channels.isEmpty())
+		return;
+	// Offset so the earliest copied note lands at the current cursor location.
+	int minY = INT_MAX;
+	for (const auto v : arr)
+		minY = std::min(minY, v.toObject()["y"].toInt());
+	const int offset = GetCurrentLocation() - minY;
+	QMultiMap<SoundChannel*, SoundNote> notes;
+	for (const auto v : arr){
+		const QJsonObject o = v.toObject();
+		int ci = o["channel"].toInt();
+		ci = std::max(0, std::min(ci, (int)channels.size() - 1));
+		const int location = o["y"].toInt() + offset;
+		if (location < 0)
+			continue;
+		notes.insert(channels[ci], SoundNote(location, o["x"].toInt(), o["length"].toInt(), o["noteType"].toInt()));
+	}
+	if (notes.isEmpty())
+		return;
+	ClearNotesSelection();
+	document->MultiChannelUpdateSoundNotes(notes, UpdateNotePolicy::BestEffort);
 }
 
 void SequenceView::TransferSelectedNotesToBgm()

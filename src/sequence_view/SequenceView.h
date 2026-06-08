@@ -294,6 +294,9 @@ public slots:
 	void TransferSelectedNotesToBgm();
 	void TransferSelectedNotesToKey();
 	void SeparateLayeredNotes();
+	void CopySelectedNotes();
+	void CutSelectedNotes();
+	void PasteNotes();
 	void ZoomIn();
 	void ZoomOut();
 	void ZoomReset();
@@ -326,6 +329,7 @@ public:
 	GridSize GetMediumGrid() const{ return coarseGrid; }
 	bool HasNotesSelection() const;
 	bool HasBpmEventsSelection() const;
+	bool CanPasteNotes() const;
 	int GetCurrentLocation() const;
 	SoundChannelView *GetSoundChannelView(SoundChannel *channel);
 	int GetFooterHeight() const{ return footerHeight; }
