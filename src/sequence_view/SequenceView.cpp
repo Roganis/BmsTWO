@@ -16,6 +16,7 @@
 #include <climits>
 #include <cmath>
 #include <cstdlib>
+#include <algorithm>
 
 namespace SequenceViewSettings{
 static const char* SettingsGroup = "SequenceView";
@@ -440,6 +441,18 @@ void SequenceView::ReplaceDocument(Document *newDocument)
 bool SequenceView::HasNotesSelection() const
 {
 	return !selectedNotes.empty();
+}
+
+QList<SoundChannel*> SequenceView::GetSelectedSoundChannels() const
+{
+	QList<int> indices = selectedChannels.values();
+	std::sort(indices.begin(), indices.end());
+	QList<SoundChannel*> result;
+	for (int i : indices){
+		if (i >= 0 && i < soundChannels.size())
+			result.append(soundChannels[i]->GetChannel());
+	}
+	return result;
 }
 
 bool SequenceView::HasBpmEventsSelection() const

@@ -132,9 +132,24 @@ void SoundChannelView::ShowNoteLocation(int location)
 
 void SoundChannelView::Preview()
 {
-	auto *previewer = new SoundChannelSourceFilePreviewer(channel, this);
-	connect(previewer, SIGNAL(Stopped()), previewer, SLOT(deleteLater()));
-	sview->mainWindow->GetAudioPlayer()->Play(previewer);
+	// Multi-track sample preview (#16): if this channel is part of a
+	// multi-channel selection, audition all the selected channels' samples
+	// mixed together; otherwise preview just this one.
+	const int myIndex = sview->soundChannels.indexOf(this);
+	QList<SoundChannel*> selected = sview->GetSelectedSoundChannels();
+	if (selected.size() > 1 && sview->selectedChannels.contains(myIndex)){
+		QList<AudioPlaySource*> sources;
+		for (SoundChannel *ch : selected)
+			sources.append(new SoundChannelSourceFilePreviewer(ch, nullptr));
+		auto *mix = new AudioPlayConstantSourceMix(this, sources);
+		for (AudioPlaySource *s : sources)
+			s->setParent(mix); // freed with the mix on AudioPlayRelease
+		sview->mainWindow->GetAudioPlayer()->Play(mix);
+	}else{
+		auto *previewer = new SoundChannelSourceFilePreviewer(channel, this);
+		connect(previewer, SIGNAL(Stopped()), previewer, SLOT(deleteLater()));
+		sview->mainWindow->GetAudioPlayer()->Play(previewer);
+	}
 }
 
 void SoundChannelView::MoveLeft()

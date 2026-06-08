@@ -334,6 +334,7 @@ public:
 	bool HasNotesSelection() const;
 	bool HasBpmEventsSelection() const;
 	bool CanPasteNotes() const;
+	QList<SoundChannel*> GetSelectedSoundChannels() const; // multi-track sample preview (#16)
 	int GetCurrentLocation() const;
 	SoundChannelView *GetSoundChannelView(SoundChannel *channel);
 	int GetFooterHeight() const{ return footerHeight; }
