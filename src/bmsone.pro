@@ -123,6 +123,7 @@ SOURCES += main.cpp\
         bms/Bms.cpp \
     bms/BmsUtil.cpp \
     bms/BmsImportDialog.cpp \
+    midi/MidiImport.cpp \
     libogg/bitwise.c \
     libogg/framing.c \
     libvorbis/analysis.c \
@@ -204,6 +205,7 @@ HEADERS  += MainWindow.h \
         bmson/Bmson.h \
     bms/Bms.h \
     bms/BmsImportDialog.h \
+    midi/MidiImport.h \
     libvorbis/books/coupled/res_books_51.h \
     libvorbis/books/coupled/res_books_stereo.h \
     libvorbis/books/floor/floor_books.h \
