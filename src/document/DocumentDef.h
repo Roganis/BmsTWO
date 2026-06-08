@@ -17,6 +17,15 @@ enum class UpdateNotePolicy
 };
 
 
+// Which BGA event lane an edit targets.
+enum class BgaLayer
+{
+    Base = 0,  // bga_events  (the main background animation layer)
+    Layer,     // layer_events (overlay)
+    Poor,      // poor_events / miss layer
+};
+
+
 class BmsConsts
 {
 public:
