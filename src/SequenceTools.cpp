@@ -3,6 +3,8 @@
 #include "sequence_view/SequenceView.h"
 #include "util/SymbolIconManager.h"
 #include <QActionGroup> // Qt6: no longer pulled in transitively
+#include <QApplication>
+#include <QClipboard>
 
 namespace SequenceViewSettings{
 static const char* SettingsGroup = "SequenceView";
@@ -296,6 +298,11 @@ SequenceTools::SequenceTools(const QString &objectName, const QString &windowTit
 	actionGroupChannelLaneMode->setExclusive(true);
 
 	connect(mainWindow->actionEditDelete, SIGNAL(triggered(bool)), this, SLOT(DeleteObjects()));
+	// Keep Paste's enabled state in sync with the clipboard contents.
+	connect(QApplication::clipboard(), &QClipboard::dataChanged, this, [this]{
+		if (sview)
+			this->mainWindow->actionEditPaste->setEnabled(sview->CanPasteNotes());
+	});
 	mainWindow->actionEditModeEdit->setCheckable(true);
 	connect(mainWindow->actionEditModeEdit, SIGNAL(triggered(bool)), this, SLOT(EditMode()));
 	mainWindow->actionEditModeWrite->setCheckable(true);
@@ -380,6 +387,10 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		disconnect(mainWindow->actionEditTransferToKey, SIGNAL(triggered(bool)), sview, SLOT(TransferSelectedNotesToKey()));
 		disconnect(mainWindow->actionEditTransferToBgm, SIGNAL(triggered(bool)), sview, SLOT(TransferSelectedNotesToBgm()));
 		disconnect(mainWindow->actionEditSeparateLayeredNotes, SIGNAL(triggered(bool)), sview, SLOT(SeparateLayeredNotes()));
+		disconnect(mainWindow->actionEditCopy, SIGNAL(triggered(bool)), sview, SLOT(CopySelectedNotes()));
+		disconnect(mainWindow->actionEditCut, SIGNAL(triggered(bool)), sview, SLOT(CutSelectedNotes()));
+		disconnect(mainWindow->actionEditPaste, SIGNAL(triggered(bool)), sview, SLOT(PasteNotes()));
+		disconnect(mainWindow->actionEditToggleBarLine, SIGNAL(triggered(bool)), sview, SLOT(ToggleBarLineAtCursor()));
 	}
 	sview = newSView;
 	if (sview){
@@ -395,6 +406,11 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		connect(mainWindow->actionEditTransferToKey, SIGNAL(triggered(bool)), sview, SLOT(TransferSelectedNotesToKey()));
 		connect(mainWindow->actionEditTransferToBgm, SIGNAL(triggered(bool)), sview, SLOT(TransferSelectedNotesToBgm()));
 		connect(mainWindow->actionEditSeparateLayeredNotes, SIGNAL(triggered(bool)), sview, SLOT(SeparateLayeredNotes()));
+		connect(mainWindow->actionEditCopy, SIGNAL(triggered(bool)), sview, SLOT(CopySelectedNotes()));
+		connect(mainWindow->actionEditCut, SIGNAL(triggered(bool)), sview, SLOT(CutSelectedNotes()));
+		connect(mainWindow->actionEditPaste, SIGNAL(triggered(bool)), sview, SLOT(PasteNotes()));
+		connect(mainWindow->actionEditToggleBarLine, SIGNAL(triggered(bool)), sview, SLOT(ToggleBarLineAtCursor()));
+		mainWindow->actionEditToggleBarLine->setEnabled(true);
 
 		ModeChanged(sview->GetMode());
 		snapToGrid->setEnabled(true);
@@ -404,11 +420,16 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		SmallGridChanged(sview->GetSmallGrid());
 		MediumGridChanged(sview->GetMediumGrid());
 		ChannelLaneModeChanged(sview->GetChannelLaneMode());
+		SelectionChanged(); // initialize copy/cut/paste/delete enabled state
 	}else{
 		snapToGrid->setEnabled(false);
 		snapToGrid->setChecked(false);
 		darkenNotesInInactiveChannels->setEnabled(false);
 		darkenNotesInInactiveChannels->setChecked(true);
+		mainWindow->actionEditCopy->setEnabled(false);
+		mainWindow->actionEditCut->setEnabled(false);
+		mainWindow->actionEditPaste->setEnabled(false);
+		mainWindow->actionEditToggleBarLine->setEnabled(false);
 	}
 }
 
@@ -530,6 +551,9 @@ void SequenceTools::SelectionChanged()
 {
 	if (!sview)
 		return;
+	mainWindow->actionEditCopy->setEnabled(sview->HasNotesSelection());
+	mainWindow->actionEditCut->setEnabled(sview->HasNotesSelection());
+	mainWindow->actionEditPaste->setEnabled(sview->CanPasteNotes());
 	if (sview->HasNotesSelection()){
 		mainWindow->actionEditDelete->setEnabled(true);
 		mainWindow->actionEditTransferToKey->setEnabled(true);
