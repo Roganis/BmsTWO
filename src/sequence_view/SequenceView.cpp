@@ -705,9 +705,12 @@ void SequenceView::PasteNotes()
 	int minY = INT_MAX;
 	for (const auto v : arr)
 		minY = std::min(minY, v.toObject()["y"].toInt());
-	const int anchor = (cursor && cursor->GetState() != SequenceViewCursor::State::NOTHING)
+	int anchor = (cursor && cursor->GetState() != SequenceViewCursor::State::NOTHING)
 			? cursor->GetTime()
 			: GetCurrentLocation();
+	// Respect "snap to grid": drop the pasted group onto the fine grid.
+	if (snapToGrid)
+		anchor = SnapToLowerFineGrid(anchor);
 	const int offset = anchor - minY;
 	QMultiMap<SoundChannel*, SoundNote> notes;
 	for (const auto v : arr){
