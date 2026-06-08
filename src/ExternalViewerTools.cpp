@@ -484,7 +484,7 @@ QWidget *ExternalViewerConfigDialog::LabelWithIcon(QIcon icon, QString text)
 	auto layout = new QHBoxLayout();
 	auto iconLabel = new QLabel();
 	iconLabel->setPixmap(icon.pixmap(16, 16));
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 	//layout->setSpacing(0);
 	layout->addWidget(iconLabel);
 	layout->addWidget(new QLabel(text), 1);

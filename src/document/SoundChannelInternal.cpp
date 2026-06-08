@@ -468,7 +468,7 @@ void SoundChannelResourceManager::TaskDrawOverallWaveformAndRmsCache()
 //			 << " (" << totalSize*100/(2*wave->GetFrameCount()/RmsCacheBlockSize) << "%)";
 }
 
-quint64 SoundChannelResourceManager::ReadAsS16S(QAudioBuffer::S16S *buffer, quint64 frames)
+quint64 SoundChannelResourceManager::ReadAsS16S(StereoInt16 *buffer, quint64 frames)
 {
 	const int frameSize = wave->GetFormat().bytesPerFrame();
 	quint64 requiredSize = frameSize * frames;
@@ -493,7 +493,7 @@ quint64 SoundChannelResourceManager::ReadAsS16S(QAudioBuffer::S16S *buffer, quin
 	}
 }
 
-void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buffer, quint64 frames)
+void SoundChannelResourceManager::ConvertAuxBufferToS16S(StereoInt16 *buffer, quint64 frames)
 {
 	const qint8 *abEnd = (const qint8*)auxBuffer + frames * wave->GetFormat().bytesPerFrame();
 	switch (wave->GetFormat().sampleSize()){
@@ -504,13 +504,13 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                 case QAudioFormat::UnSignedInt:
                     for (quint64 i=0; i<frames; i++){
                         quint8 c = ((quint8*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>(((int)c - 128)*256, ((int)c - 128)*256);
+                        buffer[i] = StereoFrame<qint16>(((int)c - 128)*256, ((int)c - 128)*256);
                     }
                     break;
                 case QAudioFormat::SignedInt:
                     for (quint64 i=0; i<frames; i++){
                         qint8 c = ((qint8*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>((int)c*256, (int)c*256);
+                        buffer[i] = StereoFrame<qint16>((int)c*256, (int)c*256);
                     }
                     break;
                 default:
@@ -522,13 +522,13 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                 case QAudioFormat::UnSignedInt:
                     for (quint64 i=0; i<frames; i++){
                         QAudioBuffer::S8U s = ((QAudioBuffer::S8U*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>(((int)s.left - 128)*256, ((int)s.right - 128)*256);
+                        buffer[i] = StereoFrame<qint16>(((int)s.left - 128)*256, ((int)s.right - 128)*256);
                     }
                     break;
                 case QAudioFormat::SignedInt:
                     for (quint64 i=0; i<frames; i++){
                         QAudioBuffer::S8S s = ((QAudioBuffer::S8S*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>((int)s.left*256, (int)s.right*256);
+                        buffer[i] = StereoFrame<qint16>((int)s.left*256, (int)s.right*256);
                     }
                     break;
                 default:
@@ -544,13 +544,13 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                 case QAudioFormat::UnSignedInt:
                     for (quint64 i=0; i<frames; i++){
                         quint16 c = ((quint16*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>((int)c - 32768, (int)c - 32768);
+                        buffer[i] = StereoFrame<qint16>((int)c - 32768, (int)c - 32768);
                     }
                     break;
                 case QAudioFormat::SignedInt:
                     for (quint64 i=0; i<frames; i++){
                         qint16 c = ((qint16*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>(c, c);
+                        buffer[i] = StereoFrame<qint16>(c, c);
                     }
                     break;
                 default:
@@ -562,12 +562,12 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                 case QAudioFormat::UnSignedInt:
                     for (quint64 i=0; i<frames; i++){
                         QAudioBuffer::S16U s = ((QAudioBuffer::S16U*)auxBuffer)[i];
-                        buffer[i] = QAudioBuffer::StereoFrame<qint16>((int)s.left - 32768, (int)s.right - 32768);
+                        buffer[i] = StereoFrame<qint16>((int)s.left - 32768, (int)s.right - 32768);
                     }
                     break;
                 case QAudioFormat::SignedInt:
                     for (quint64 i=0; i<frames; i++){
-                        buffer[i] = ((QAudioBuffer::S16S*)auxBuffer)[i];
+                        buffer[i] = ((StereoInt16*)auxBuffer)[i];
                     }
                     break;
                 default:
@@ -586,7 +586,7 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                             qint32 vl = *b++;
                             qint32 vh = *(const quint8*)b++;
                             qint16 s = qint16((vl | (vh<<8)) - 32768);
-                            *buffer++ = QAudioBuffer::StereoFrame<qint16>(s, s);
+                            *buffer++ = StereoFrame<qint16>(s, s);
                         }
                         break;
                     case QAudioFormat::SignedInt:
@@ -595,7 +595,7 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                             qint32 vl = *b++;
                             qint32 vh = *b++;
                             qint16 s = qint16(vl | (vh<<8));
-                            *buffer++ = QAudioBuffer::StereoFrame<qint16>(s, s);
+                            *buffer++ = StereoFrame<qint16>(s, s);
                         }
                         break;
                     default:
@@ -612,7 +612,7 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                             b++;
                             qint32 rl = *b++;
                             qint32 rh = *(const quint8*)b++;
-                            *buffer++ = QAudioBuffer::StereoFrame<qint16>(qint16((ll | (lh<<8)) - 32768), qint16((rl | (rh<<8)) - 32768));
+                            *buffer++ = StereoFrame<qint16>(qint16((ll | (lh<<8)) - 32768), qint16((rl | (rh<<8)) - 32768));
                         }
                         break;
                     case QAudioFormat::SignedInt:
@@ -623,7 +623,7 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                             b++;
                             qint32 rl = *b++;
                             qint32 rh = *b++;
-                            *buffer++ = QAudioBuffer::StereoFrame<qint16>(qint16(ll | (lh<<8)), qint16(rl | (rh<<8)));
+                            *buffer++ = StereoFrame<qint16>(qint16(ll | (lh<<8)), qint16(rl | (rh<<8)));
                         }
                         break;
                     default:
@@ -640,19 +640,19 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                         for (quint64 i=0; i<frames; i++){
                             auto s = ((float*)auxBuffer)[i];
                             qint16 c = std::max<qint16>(-32768, std::min<qint16>(32767, s));
-                            buffer[i] = QAudioBuffer::StereoFrame<qint16>(c, c);
+                            buffer[i] = StereoFrame<qint16>(c, c);
                         }
                         break;
                     case QAudioFormat::UnSignedInt:
                         for (quint64 i=0; i<frames; i++){
                             auto s = ((quint32*)auxBuffer)[i];
-                            buffer[i] = QAudioBuffer::StereoFrame<qint16>(int(s - 2147483648)/65536, int(s - 2147483648)/65536);
+                            buffer[i] = StereoFrame<qint16>(int(s - 2147483648)/65536, int(s - 2147483648)/65536);
                         }
                         break;
                     case QAudioFormat::SignedInt:
                         for (quint64 i=0; i<frames; i++){
                             auto s = ((qint32*)auxBuffer)[i];
-                            buffer[i] = QAudioBuffer::StereoFrame<qint16>(s/65536, s/65536);
+                            buffer[i] = StereoFrame<qint16>(s/65536, s/65536);
                         }
                         break;
                     default:
@@ -663,22 +663,22 @@ void SoundChannelResourceManager::ConvertAuxBufferToS16S(QAudioBuffer::S16S *buf
                 switch (wave->GetFormat().sampleType()){
                     case QAudioFormat::Float:
                         for (quint64 i=0; i<frames; i++){
-                            auto s = ((QAudioBuffer::S32F*)auxBuffer)[i];
-                            buffer[i] = QAudioBuffer::StereoFrame<qint16>(
+                            auto s = ((StereoFloat32*)auxBuffer)[i];
+                            buffer[i] = StereoFrame<qint16>(
                                         std::max<qint16>(-32768, std::min<qint16>(32767, s.left)),
                                         std::max<qint16>(-32768, std::min<qint16>(32767, s.right)));
                         }
                         break;
                     case QAudioFormat::UnSignedInt:
                         for (quint64 i=0; i<frames; i++){
-                            auto s = ((QAudioBuffer::StereoFrame<quint32>*)auxBuffer)[i];
-                            buffer[i] = QAudioBuffer::StereoFrame<qint16>(int(s.left - 2147483648)/65536, int(s.right - 2147483648)/65536);
+                            auto s = ((StereoFrame<quint32>*)auxBuffer)[i];
+                            buffer[i] = StereoFrame<qint16>(int(s.left - 2147483648)/65536, int(s.right - 2147483648)/65536);
                         }
                         break;
                     case QAudioFormat::SignedInt:
                         for (quint64 i=0; i<frames; i++){
-                            auto s = ((QAudioBuffer::StereoFrame<qint32>*)auxBuffer)[i];
-                            buffer[i] = QAudioBuffer::StereoFrame<qint16>(s.left/65536, s.right/65536);
+                            auto s = ((StereoFrame<qint32>*)auxBuffer)[i];
+                            buffer[i] = StereoFrame<qint16>(s.left/65536, s.right/65536);
                         }
                         break;
                     default:

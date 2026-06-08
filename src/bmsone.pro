@@ -11,6 +11,8 @@ CONFIG += c++17 warn_on
 FORMS    +=
 QT       += core concurrent gui multimedia
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+# Qt6 moved QRegExp and QTextCodec into the Core5Compat module.
+greaterThan(QT_MAJOR_VERSION, 5): QT += core5compat
 #QT += gui-private
 TEMPLATE = app
 INCLUDEPATH += $$PWD/ $$PWD/libvorbis

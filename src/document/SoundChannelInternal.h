@@ -44,8 +44,8 @@ private:
 	//bool TaskLoadWaveSummary();
 	void TaskDrawOverallWaveformAndRmsCache();
 
-	quint64 ReadAsS16S(QAudioBuffer::S16S *buffer, quint64 frames);
-	void ConvertAuxBufferToS16S(QAudioBuffer::S16S *buffer, quint64 frames);
+	quint64 ReadAsS16S(StereoInt16 *buffer, quint64 frames);
+	void ConvertAuxBufferToS16S(StereoInt16 *buffer, quint64 frames);
 
 public:
 	SoundChannelResourceManager(QObject *parent=nullptr);

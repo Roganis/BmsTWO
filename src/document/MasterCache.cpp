@@ -154,33 +154,33 @@ int MasterCache::GetDataSize()
     return data.size();
 }
 
-const QAudioBuffer::StereoFrame<float> *MasterCache::GetAllData() const
+const StereoFloat32 *MasterCache::GetAllData() const
 {
     return data.constData();
 }
 
-void MasterCache::GetData(int position, std::function<bool (int, QAudioBuffer::S32F)> f)
+void MasterCache::GetData(int position, std::function<bool (int, StereoFloat32)> f)
 {
 	QMutexLocker locker(&dataMutex);
 	bool r = true;
 	for (int s=position; r; s++){
 		if (s < 0 || s >= data.size()){
-			r = f(0, QAudioBuffer::StereoFrame<float>(0, 0));
+			r = f(0, StereoFloat32(0, 0));
 		}else{
 			r = f(counter.lowerBound(s)->first, data[s]);
 		}
 	}
 }
 
-QPair<int, QAudioBuffer::S32F> MasterCache::GetData(int position)
+QPair<int, StereoFloat32> MasterCache::GetData(int position)
 {
 	QMutexLocker locker(&dataMutex);
 	if (position < 0 || position >= data.size()){
-		return QPair<int, QAudioBuffer::S32F>(0, QAudioBuffer::StereoFrame<float>(0, 0));
+		return QPair<int, StereoFloat32>(0, StereoFloat32(0, 0));
 	}
 	auto f = data[position];
 	auto i = counter.lowerBound(position);
-	return QPair<int, QAudioBuffer::S32F>(i->first, f);
+	return QPair<int, StereoFloat32>(i->first, f);
 }
 
 bool MasterCache::IsComplete() const
@@ -244,7 +244,7 @@ void MasterCacheSingleWorker::AddSoundTask()
 	wave->Open();
 	wave->SeekAbsolute(0);
 	static const int BufferSize = 4096;
-	QAudioBuffer::S32F buf[BufferSize];
+	StereoFloat32 buf[BufferSize];
 	while (frames > 0){
 		if (cancel){
 			return;
@@ -261,7 +261,7 @@ void MasterCacheSingleWorker::AddSoundTask()
 			if (v > 0){
 				for (int i=0; i<sizeRead; i++){
 					auto smp = buf[i];
-					QAudioBuffer::S32F out = master->data[time+i];
+					StereoFloat32 out = master->data[time+i];
 					out.left += smp.left;
 					out.right += smp.right;
 					master->data[time+i] = out;
@@ -269,7 +269,7 @@ void MasterCacheSingleWorker::AddSoundTask()
 			}else{
 				for (int i=0; i<sizeRead; i++){
 					auto smp = buf[i];
-					QAudioBuffer::S32F out = master->data[time+i];
+					StereoFloat32 out = master->data[time+i];
 					out.left -= smp.left;
 					out.right -= smp.right;
 					master->data[time+i] = out;
@@ -302,7 +302,7 @@ MasterCacheMultiWorker::MasterCacheMultiWorker(MasterCache *master, QList<Master
 	if (!native)
 		return;
 	wave = new S32F44100StreamTransformer(native, this);
-	buf = new QAudioBuffer::S32F[BufferSize];
+	buf = new StereoFloat32[BufferSize];
 }
 
 MasterCacheMultiWorker::~MasterCacheMultiWorker()
@@ -368,7 +368,7 @@ void MasterCacheMultiWorker::AddSoundTask()
 				if (patch.sign > 0){
 					for (int i=0; i<sz; i++){
 						auto smp = buf[i];
-						QAudioBuffer::S32F out = master->data[patch.time+pbuf+i];
+						StereoFloat32 out = master->data[patch.time+pbuf+i];
 						out.left += smp.left;
 						out.right += smp.right;
 						master->data[patch.time+pbuf+i] = out;
@@ -376,7 +376,7 @@ void MasterCacheMultiWorker::AddSoundTask()
 				}else{
 					for (int i=0; i<sz; i++){
 						auto smp = buf[i];
-						QAudioBuffer::S32F out = master->data[patch.time+pbuf+i];
+						StereoFloat32 out = master->data[patch.time+pbuf+i];
 						out.left -= smp.left;
 						out.right -= smp.right;
 						master->data[patch.time+pbuf+i] = out;
@@ -425,8 +425,8 @@ int MasterPlayer::AudioPlayRead(AudioPlaySource::SampleType *buffer, int bufferS
 	emit Progress(position);
 	QMutexLocker locker(&master->dataMutex);
 	for (; i<bufferSampleCount && position < master->data.size(); i++,position++){
-		QAudioBuffer::S32F data = position < 0 || position >= master->data.size()
-				? QAudioBuffer::StereoFrame<float>(0, 0)
+		StereoFloat32 data = position < 0 || position >= master->data.size()
+				? StereoFloat32(0, 0)
 				: master->data[position];
 		buffer[i] = data;
 	}

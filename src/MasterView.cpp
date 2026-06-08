@@ -175,7 +175,7 @@ void MiniMapView::ReconstructRmsCache()
 #if 1
 		// INTERNAL ITERATOR
 		int s = smp_prev;
-		master->GetData(smp_prev, [&](int pending, QAudioBuffer::S32F signal){
+		master->GetData(smp_prev, [&](int pending, StereoFloat32 signal){
 			packet.available &= pending == 0;
 			packet.rms.L += signal.left * signal.left;
 			packet.rms.R += signal.right * signal.right;
@@ -186,7 +186,7 @@ void MiniMapView::ReconstructRmsCache()
 #else
 		// EXTERNAL ITERATOR
 		for (int s=smp_prev; s<smp; s++){
-			QPair<int, QAudioBuffer::S32F> d = master->GetData(s);
+			QPair<int, StereoFloat32> d = master->GetData(s);
 			packet.available &= d.first == 0;
 			packet.rms.L += d.second.left * d.second.left;
 			packet.rms.R += d.second.right * d.second.right;
@@ -244,7 +244,7 @@ void MiniMapView::UpdateRmsCachePartially()
 #if 1
 			// INTERNAL ITERATOR
 			int s = smp_prev;
-			master->GetData(smp_prev, [&](int pending, QAudioBuffer::S32F signal){
+			master->GetData(smp_prev, [&](int pending, StereoFloat32 signal){
 				packet.available &= pending == 0;
 				packet.rms.L += signal.left * signal.left;
 				packet.rms.R += signal.right * signal.right;
@@ -255,7 +255,7 @@ void MiniMapView::UpdateRmsCachePartially()
 #else
 			// EXTERNAL ITERATOR
 			for (int s=smp_prev; s<smp; s++){
-				QPair<int, QAudioBuffer::S32F> d = master->GetData(s);
+				QPair<int, StereoFloat32> d = master->GetData(s);
 				packet.available &= d.first == 0;
 				packet.rms.L += d.second.left * d.second.left;
 				packet.rms.R += d.second.right * d.second.right;
