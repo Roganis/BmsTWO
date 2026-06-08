@@ -298,6 +298,7 @@ public slots:
 	void CutSelectedNotes();
 	void PasteNotes();
 	void ToggleBarLineAtCursor();
+	void FillSelectedNotes();
 	void ZoomIn();
 	void ZoomOut();
 	void ZoomReset();

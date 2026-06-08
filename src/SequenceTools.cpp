@@ -391,6 +391,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		disconnect(mainWindow->actionEditCut, SIGNAL(triggered(bool)), sview, SLOT(CutSelectedNotes()));
 		disconnect(mainWindow->actionEditPaste, SIGNAL(triggered(bool)), sview, SLOT(PasteNotes()));
 		disconnect(mainWindow->actionEditToggleBarLine, SIGNAL(triggered(bool)), sview, SLOT(ToggleBarLineAtCursor()));
+		disconnect(mainWindow->actionEditFillNotes, SIGNAL(triggered(bool)), sview, SLOT(FillSelectedNotes()));
 	}
 	sview = newSView;
 	if (sview){
@@ -410,6 +411,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		connect(mainWindow->actionEditCut, SIGNAL(triggered(bool)), sview, SLOT(CutSelectedNotes()));
 		connect(mainWindow->actionEditPaste, SIGNAL(triggered(bool)), sview, SLOT(PasteNotes()));
 		connect(mainWindow->actionEditToggleBarLine, SIGNAL(triggered(bool)), sview, SLOT(ToggleBarLineAtCursor()));
+		connect(mainWindow->actionEditFillNotes, SIGNAL(triggered(bool)), sview, SLOT(FillSelectedNotes()));
 		mainWindow->actionEditToggleBarLine->setEnabled(true);
 
 		ModeChanged(sview->GetMode());
@@ -430,6 +432,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		mainWindow->actionEditCut->setEnabled(false);
 		mainWindow->actionEditPaste->setEnabled(false);
 		mainWindow->actionEditToggleBarLine->setEnabled(false);
+		mainWindow->actionEditFillNotes->setEnabled(false);
 	}
 }
 
@@ -559,6 +562,7 @@ void SequenceTools::SelectionChanged()
 		mainWindow->actionEditTransferToKey->setEnabled(true);
 		mainWindow->actionEditTransferToBgm->setEnabled(true);
 		mainWindow->actionEditSeparateLayeredNotes->setEnabled(true);
+		mainWindow->actionEditFillNotes->setEnabled(true);
 	}else{
 		if (sview->HasBpmEventsSelection()){
 			mainWindow->actionEditDelete->setEnabled(true);
@@ -568,6 +572,7 @@ void SequenceTools::SelectionChanged()
 		mainWindow->actionEditTransferToKey->setEnabled(false);
 		mainWindow->actionEditTransferToBgm->setEnabled(false);
 		mainWindow->actionEditSeparateLayeredNotes->setEnabled(false);
+		mainWindow->actionEditFillNotes->setEnabled(false);
 	}
 }
 
