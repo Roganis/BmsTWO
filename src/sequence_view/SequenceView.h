@@ -18,6 +18,7 @@
 
 class MainWindow;
 class StatusBar;
+class QSettings;
 class SoundNoteView;
 //class SoundChannelHeader;
 class SoundChannelFooter;
@@ -84,6 +85,7 @@ private:
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 
 	//QWidget *headerCornerEntry;
 	//QWidget *headerPlayingEntry;

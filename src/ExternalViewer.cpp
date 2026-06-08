@@ -19,6 +19,7 @@ const char *ExternalViewer::SettingsViewerExecutionDirectoryFormatKey = "Working
 ExternalViewer::ExternalViewer(MainWindow *mainWindow)
 	: QObject(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, document(nullptr)
 {
 
@@ -50,7 +51,7 @@ ExternalViewer::ExternalViewer(MainWindow *mainWindow)
 ExternalViewer::~ExternalViewer()
 {
 	Clean();
-	QSettings *settings = mainWindow->GetSettings();
+	QSettings *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsViewerCountKey, config.count());

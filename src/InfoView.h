@@ -10,6 +10,7 @@
 
 class MainWindow;
 class CollapseButton;
+class QSettings;
 
 class InfoView : public ScrollableForm
 {
@@ -22,6 +23,7 @@ private:
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 	QFormLayout *formLayout;
 	QuasiModalEdit *editTitle;
 	QuasiModalEdit *editSubtitle;

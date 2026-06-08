@@ -10,6 +10,7 @@ const char* AudioPlayer::SettingsVolumeKey = "Volume";
 AudioPlayer::AudioPlayer(MainWindow *mainWindow, const QString &objectName, const QString &windowTitle)
 	: QToolBar(windowTitle, mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, audioThread(new QThread())
 	, indicator(nullptr)
 	, io(nullptr)
@@ -60,7 +61,7 @@ AudioPlayer::AudioPlayer(MainWindow *mainWindow, const QString &objectName, cons
 
 AudioPlayer::~AudioPlayer()
 {
-	QSettings *settings = mainWindow->GetSettings();
+	QSettings *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsMuteKey, actionMute->isChecked());

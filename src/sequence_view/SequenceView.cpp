@@ -50,6 +50,7 @@ QWidget *SequenceView::NewWidget(
 SequenceView::SequenceView(MainWindow *parent)
 	: QAbstractScrollArea(parent)
 	, mainWindow(parent)
+	, settingsCache(parent->GetSettings())
 	, miniMap(nullptr)
     , viewMode(nullptr)
     , skin(nullptr)
@@ -218,7 +219,7 @@ SequenceView::~SequenceView()
 		context = context->Escape();
 	}
 	delete context;
-	QSettings *settings = mainWindow->GetSettings();
+	QSettings *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsCoarseGridKey, QPoint(coarseGrid.Denominator, coarseGrid.Numerator));

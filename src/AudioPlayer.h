@@ -112,6 +112,7 @@ public slots:
 
 
 class MainWindow;
+class QSettings;
 
 class AudioPlayer : public QToolBar
 {
@@ -128,6 +129,7 @@ private:
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 	QThread *audioThread;
 	AudioPlayerOutput *output;
 	AudioPlayerIndicator *indicator;

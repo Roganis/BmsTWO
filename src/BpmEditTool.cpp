@@ -13,6 +13,7 @@ using namespace BpmEditToolsSettings;
 BpmEditView::BpmEditView(MainWindow *mainWindow)
 	: ScrollableForm(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, automated(false)
 {
 	auto *layout = new QFormLayout();
@@ -71,7 +72,7 @@ BpmEditView::BpmEditView(MainWindow *mainWindow)
 
 BpmEditView::~BpmEditView()
 {
-	auto *settings = mainWindow->GetSettings();
+	auto *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsShowExtraFields, editExtraFields->isVisibleTo(this));

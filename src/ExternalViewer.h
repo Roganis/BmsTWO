@@ -9,6 +9,7 @@
 
 class Document;
 class MainWindow;
+class QSettings;
 
 struct ExternalViewerConfig
 {
@@ -28,6 +29,7 @@ class ExternalViewer : public QObject
 
 private:
 	MainWindow *mainWindow;
+	QSettings *settingsCache; // App-owned settings, cached for safe use in dtor
 	Document *document;
 	QString tempFilePath;
 	QFile tempFile;

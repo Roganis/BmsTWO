@@ -14,6 +14,7 @@ const char* InfoView::SettingsShowExtraFields = "ShowExtraFields";
 InfoView::InfoView(MainWindow *mainWindow)
 	: ScrollableForm(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, formLayout(nullptr)
 	, document(nullptr)
 {
@@ -174,7 +175,7 @@ InfoView::InfoView(MainWindow *mainWindow)
 
 InfoView::~InfoView()
 {
-	auto *settings = mainWindow->GetSettings();
+	auto *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsShowSubartists, editSubartists->isVisibleTo(this));

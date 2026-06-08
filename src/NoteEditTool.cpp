@@ -15,6 +15,7 @@ using namespace NoteEditToolsSettings;
 NoteEditView::NoteEditView(MainWindow *mainWindow)
 	: ScrollableForm(mainWindow)
 	, mainWindow(mainWindow)
+	, settingsCache(mainWindow->GetSettings())
 	, sview(nullptr)
 	, automated(false)
 {
@@ -74,7 +75,7 @@ NoteEditView::NoteEditView(MainWindow *mainWindow)
 
 NoteEditView::~NoteEditView()
 {
-	auto *settings = mainWindow->GetSettings();
+	auto *settings = settingsCache;
 	settings->beginGroup(SettingsGroup);
 	{
 		settings->setValue(SettingsShowExtraFields, editExtraFields->isVisibleTo(this));
