@@ -107,3 +107,48 @@ jobs:
           name: BmsONE-windows-x86_64-mingw
           path: build/dist
           if-no-files-found: error
+
+  windows-qt6:
+    name: Windows (Qt6 / MinGW)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.1'
+          host: windows
+          target: desktop
+          arch: win64_mingw
+          # qt5compat -> QTextCodec/QRegExp (Core5Compat); qtmultimedia -> audio.
+          modules: 'qt5compat qtmultimedia'
+          tools: 'tools_mingw1310'
+          add-tools-to-path: true
+          cache: true
+
+      - name: Build (release)
+        run: |
+          mkdir build
+          cd build
+          qmake ..\src\bmsone.pro CONFIG-=debug CONFIG+=release
+          mingw32-make -j2
+
+      - name: Deploy Qt runtime (windeployqt)
+        run: |
+          mkdir build\dist
+          copy build\release\BmsONE.exe build\dist\
+          "%QT_ROOT_DIR%\bin\windeployqt.exe" --release --no-translations --compiler-runtime build\dist\BmsONE.exe
+          rem Safety net: ensure the MinGW runtime is present even if windeployqt skips it
+          for %%D in (libgcc_s_seh-1 libstdc++-6 libwinpthread-1) do copy "%QT_ROOT_DIR%\bin\%%D.dll" build\dist\ >nul 2>&1
+          dir /s /b build\dist
+
+      - name: Upload Windows Qt6 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-windows-x86_64-qt6-mingw
+          path: build/dist
+          if-no-files-found: error
