@@ -134,6 +134,7 @@ int main(int argc, char **argv) {
                 for (auto *ch : chs) { QMap<int, SoundNote> m; for (int i = 0; i < 50; i++) m.insert(i*20, SoundNote(i*20+4, (i%7)+1, 0, 0)); upd.insert(ch, m); }
                 ctx->Update(upd);
                 ctx->Finish();
+                delete ctx; // caller owns the context
                 pump();
             }
         }

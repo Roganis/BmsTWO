@@ -29,7 +29,7 @@ void EditHistory::MarkClean()
 	if (undoActions.empty()){
 		savedAction = nullptr;
 	}else{
-		savedAction = undoActions.top();
+		savedAction = undoActions.back().get();
 	}
 	emit OnHistoryChanged();
 }
@@ -45,30 +45,24 @@ bool EditHistory::IsDirty() const
 	if (undoActions.empty()){
 		return savedAction != nullptr || reservedAction;
 	}else{
-		return savedAction != undoActions.top() || reservedAction;
+		return savedAction != undoActions.back().get() || reservedAction;
 	}
 }
 
 void EditHistory::ClearFutureActions()
 {
-	while (!redoActions.empty()){
-		delete redoActions.top();
-		redoActions.pop();
-	}
+	redoActions.clear();
 }
 
 void EditHistory::ClearPastActions()
 {
-	while (!undoActions.empty()){
-		delete undoActions.top();
-		undoActions.pop();
-	}
+	undoActions.clear();
 }
 
 void EditHistory::Add(EditAction *action)
 {
 	ClearFutureActions();
-	undoActions.push(action);
+	undoActions.push_back(std::unique_ptr<EditAction>(action));
 	emit OnHistoryChanged();
 }
 
@@ -77,7 +71,7 @@ bool EditHistory::CanUndo(QString *out_name) const
 	if (undoActions.empty())
 		return false;
 	if (out_name){
-		*out_name = undoActions.top()->GetName();
+		*out_name = undoActions.back()->GetName();
 	}
 	return true;
 }
@@ -87,7 +81,7 @@ bool EditHistory::CanRedo(QString *out_name) const
 	if (redoActions.empty())
 		return false;
 	if (out_name){
-		*out_name = redoActions.top()->GetName();
+		*out_name = redoActions.back()->GetName();
 	}
 	return true;
 }
@@ -101,11 +95,11 @@ void EditHistory::Undo()
 	if (undoActions.empty())
 		return;
 	try{
-		auto *action = undoActions.top();
+		EditAction *action = undoActions.back().get();
 		action->Undo();
 		action->Show();
-		undoActions.pop();
-		redoActions.push(action);
+		redoActions.push_back(std::move(undoActions.back()));
+		undoActions.pop_back();
 		emit OnHistoryChanged();
 	}catch(EditActionException &e){
 		//---
@@ -122,11 +116,11 @@ void EditHistory::Redo()
 	if (redoActions.empty())
 		return;
 	try{
-		auto *action = redoActions.top();
+		EditAction *action = redoActions.back().get();
 		action->Redo();
 		action->Show();
-		redoActions.pop();
-		undoActions.push(action);
+		undoActions.push_back(std::move(redoActions.back()));
+		redoActions.pop_back();
 		emit OnHistoryChanged();
 	}catch(EditActionException &e){
 		throw;
