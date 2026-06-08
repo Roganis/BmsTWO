@@ -434,8 +434,8 @@ void SoundChannel::DrawRmsGraph(double location, double resolution, std::functio
 				auto itRms = rmsCacheLibrary.find(ixPacket);
 				if (itRms != rmsCacheLibrary.end() && itRms->size() > 0){
 					const QList<RmsCacheEntry> &entries = *itRms;
-					int bxBegin = std::max(0, std::min(entries.size()-1, (iPos - ixPacket) / SoundChannelResourceManager::RmsCacheBlockSize));
-					int bxEnd = std::max(bxBegin+1, std::min(entries.size(), (iNextPos - ixPacket) / SoundChannelResourceManager::RmsCacheBlockSize));
+					int bxBegin = std::max(0, std::min((int)entries.size()-1, (iPos - ixPacket) / SoundChannelResourceManager::RmsCacheBlockSize));
+					int bxEnd = std::max(bxBegin+1, std::min((int)entries.size(), (iNextPos - ixPacket) / SoundChannelResourceManager::RmsCacheBlockSize));
 					// assume (bxEnd-bxBegin) < 2^16
 					unsigned int rmsL=0;
 					unsigned int rmsR=0;

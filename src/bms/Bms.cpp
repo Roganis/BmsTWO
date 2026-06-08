@@ -1,6 +1,7 @@
 
 #include "Bms.h"
 #include "../MainWindow.h"
+#include <QRegularExpression>
 #include <cstdlib>
 #include <ctime>
 
@@ -148,17 +149,15 @@ QVariant Bms::BmsReader::GetDefaultValue() const
 QMap<QString, QString> Bms::BmsReader::GenerateEncodingPreviewMap()
 {
 	QMap<QString, QString> map;
+	file.seek(0);
+	const QByteArray raw = file.read(4000);
     for (const auto &codec : std::as_const(BmsReaderConfig::AvailableCodecs)) {
-        in.seek(0);
-		if (codec.isEmpty()){
-			in.setCodec(QTextCodec::codecForLocale());
-		}else{
-			in.setCodec(QTextCodec::codecForName(codec.toLatin1()));
-		}
-		QString preview = in.read(1000);
-		map.insert(codec, preview + "...");
+		QTextCodec *tc = codec.isEmpty() ? QTextCodec::codecForLocale()
+										 : QTextCodec::codecForName(codec.toLatin1());
+		QString preview = tc ? tc->toUnicode(raw) : QString::fromLocal8Bit(raw);
+		map.insert(codec, preview.left(1000) + "...");
     }
-    in.seek(0);
+    file.seek(0);
 	return map;
 }
 
@@ -185,11 +184,15 @@ static qreal ToReal(const QString &s, qreal defaultValue){
 
 void Bms::BmsReader::StartWithCodec(QString codec)
 {
-	if (codec.isNull() || codec.isEmpty()){
-		in.setCodec(QTextCodec::codecForLocale());
-	}else{
-		in.setCodec(QTextCodec::codecForName(codec.toLatin1()));
-	}
+	// Decode the whole file with the chosen codec and stream from the string.
+	// (Qt6 removed QTextStream::setCodec; QTextCodec comes from Core5Compat.)
+	QTextCodec *tc = (codec.isNull() || codec.isEmpty())
+			? QTextCodec::codecForLocale()
+			: QTextCodec::codecForName(codec.toLatin1());
+	file.seek(0);
+	const QByteArray raw = file.readAll();
+	contentString = tc ? tc->toUnicode(raw) : QString::fromLocal8Bit(raw);
+	in.setString(&contentString, QIODevice::ReadOnly);
 	lineCount = 0;
 	while (!in.atEnd()){
 		in.readLine();
@@ -253,7 +256,7 @@ void Bms::BmsReader::InitCommandHandlers()
 
 void Bms::BmsReader::LoadMain()
 {
-	static QRegExp rexpDelimiter("[:\\s]");
+	static QRegularExpression rexpDelimiter("[:\\s]");
 
     cont = [this]([[maybe_unused]] QVariant arg){
 		LoadMain();
@@ -308,7 +311,7 @@ void Bms::BmsReader::LoadMain()
 				headerCommandHandlers[command](value);
 				return;
 			}
-			QString defCommandName = command.mid(0, std::max(0, command.length() - 2));
+			QString defCommandName = command.mid(0, std::max(0, (int)command.length() - 2));
 			if (headerZZDefCommandHandlers.contains(defCommandName)){
 				int num = BmsUtil::ZZtoInt(command.mid(command.length()-2, 2));
 				if (num >= 0){

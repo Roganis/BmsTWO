@@ -13,6 +13,7 @@
 #include <QTypeInfo>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
+#include "PcmFormat.h"
 
 
 // Portable interleaved-stereo sample frame. Qt6 removed QAudioBuffer's
@@ -55,7 +56,7 @@ public:
 
 protected:
 	int error;
-	QAudioFormat format;
+	PcmFormat format;
 	quint64 bytes;
 	quint64 frames;
 	quint64 current; // in frames
@@ -65,7 +66,7 @@ public:
 	~AudioStreamSource(){}
 
 	int Error() const{ return error; }
-	QAudioFormat GetFormat() const{ return format; }
+	PcmFormat GetFormat() const{ return format; }
 	quint64 GetTotalBytes() const{ return bytes; }
 	quint64 GetFrameCount() const{ return frames; }
 	quint64 GetCurrentFrame() const{ return current; }
@@ -218,7 +219,7 @@ public:
 private:
 	int err;
     int fmt;
-	QAudioFormat format;
+	PcmFormat format;
 	void *data;
 	quint64 frames;
 	quint64 bytes;
@@ -237,7 +238,7 @@ public:
 
 	int error() const{ return err; }
 
-	QAudioFormat GetFormat() const{ return format; }
+	PcmFormat GetFormat() const{ return format; }
 	const void *GetRawData() const{ return data; }
 	quint64 GetFrameCount() const{ return frames; }
 };
