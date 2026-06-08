@@ -1476,6 +1476,22 @@ static qreal easing(qreal t){
 	return t*t*(3 - 2*t);
 }
 
+void SequenceView::ScheduleChannelsRelayout()
+{
+	// Coalesce the relayout triggered by channel insert/remove/move. Bulk
+	// operations (e.g. dropping many sound files at once) would otherwise run a
+	// full O(n) relayout - including a master back-buffer rebuild - per channel,
+	// making the whole operation O(n^2). Defer to a single relayout per event
+	// loop turn.
+	if (channelsRelayoutScheduled)
+		return;
+	channelsRelayoutScheduled = true;
+	QTimer::singleShot(0, this, [this]{
+		channelsRelayoutScheduled = false;
+		OnViewportResize();
+	});
+}
+
 void SequenceView::SetChannelsGeometry()
 {
 	bool animContinues = false;
@@ -1576,7 +1592,7 @@ void SequenceView::SoundChannelInserted(int index, SoundChannel *channel)
 	footer->installEventFilter(this);
 	footer->setMouseTracking(true);
 	soundChannelFooters.insert(index, footer);
-	OnViewportResize();
+	ScheduleChannelsRelayout();
 }
 
 void SequenceView::SoundChannelRemoved(int index, [[maybe_unused]] SoundChannel *channel)
@@ -1585,7 +1601,7 @@ void SequenceView::SoundChannelRemoved(int index, [[maybe_unused]] SoundChannel 
 	//delete soundChannelHeaders.takeAt(index);
 	delete soundChannelFooters.takeAt(index);
 	delete soundChannels.takeAt(index);
-	OnViewportResize();
+	ScheduleChannelsRelayout();
 }
 
 void SequenceView::SoundChannelMoved(int indexBefore, int indexAfter)
@@ -1594,7 +1610,7 @@ void SequenceView::SoundChannelMoved(int indexBefore, int indexAfter)
 	soundChannels.insert(indexAfter, soundChannels.takeAt(indexBefore));
 	//soundChannelHeaders.insert(indexAfter, soundChannelHeaders.takeAt(indexBefore));
 	soundChannelFooters.insert(indexAfter, soundChannelFooters.takeAt(indexBefore));
-	OnViewportResize();
+	ScheduleChannelsRelayout();
 }
 
 void SequenceView::TotalLengthChanged([[maybe_unused]] int totalLength)
