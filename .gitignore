@@ -33,5 +33,12 @@ Makefile*
 deploy/*.bat
 deploy/*.command
 deploy/*/
+# ...but keep the Linux packaging assets used by CI
+!deploy/linux/
+!deploy/linux/*
+
+# Local build output
+
+/build/
 
 

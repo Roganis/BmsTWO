@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=BmsONE
+GenericName=bmson Editor
+Comment=Editor for bmson music-game charts
+Exec=BmsONE %f
+Icon=bmsone64
+Categories=AudioVideo;Audio;Music;
+Terminal=false
+MimeType=application/json;

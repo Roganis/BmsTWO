@@ -1,0 +1,60 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (Qt5 / AppImage)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt5 and build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            qtbase5-dev \
+            qtmultimedia5-dev \
+            qttools5-dev-tools \
+            libqt5multimedia5-plugins \
+            libgl1-mesa-dev
+
+      - name: Build (release)
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../src/bmsone.pro CONFIG-=debug CONFIG+=release
+          make -j"$(nproc)"
+
+      - name: Assemble AppDir
+        run: |
+          cd build
+          make INSTALL_ROOT="$PWD/AppDir" install || true
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/64x64/apps
+          cp BmsONE AppDir/usr/bin/BmsONE
+          cp ../deploy/linux/BmsONE.desktop AppDir/usr/share/applications/BmsONE.desktop
+          cp ../src/images/bmsone64.png AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png
+
+      - name: Package AppImage (linuxdeployqt)
+        run: |
+          cd build
+          wget -q https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt-continuous-x86_64.AppImage
+          ./linuxdeployqt-continuous-x86_64.AppImage --appimage-extract
+          export VERSION="${GITHUB_SHA::8}"
+          ./squashfs-root/AppRun \
+            AppDir/usr/share/applications/BmsONE.desktop \
+            -appimage -no-translations \
+            -extra-plugins=audio,mediaservice,platforms
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-linux-x86_64-AppImage
+          path: build/BmsONE*.AppImage
+          if-no-files-found: error

@@ -24,6 +24,14 @@ linux-g++ {
     QMAKE_CXXFLAGS_DEBUG += -ggdb -O0 # For use with GDB
 }
 
+# libogg / libvorbis are compiled from the bundled sources listed in SOURCES
+# below (same as the win32 build), so no system ogg/vorbis packages are linked.
+# To use system libraries instead, drop the libogg/libvorbis entries from
+# SOURCES/HEADERS and uncomment the block below.
+#unix:!macx {
+#    LIBS += -logg -lvorbis -lvorbisfile
+#}
+
 macx_clang {
     QMAKE_CXXFLAGS += -std=c++17 -stdlib=libc++
     QMAKE_CXXFLAGS_DEBUG += -g3 -O0 # For use with other debuggers.

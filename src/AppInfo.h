@@ -8,13 +8,11 @@
 #define APP_URL "https://github.com/excln/BmsONE"
 #define ORGANIZATION_NAME "ExclusionBms"
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX)
 #define APP_PLATFORM_NAME "Linux"
-#endif
-#if Q_OS_WIN
+#elif defined(Q_OS_WIN)
 #define APP_PLATFORM_NAME "Windows"
-#endif
-#if Q_OS_MACOS
+#elif defined(Q_OS_MACOS)
 #define APP_PLATFORM_NAME "macOS"
 #endif
 
