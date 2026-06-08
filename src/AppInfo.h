@@ -4,8 +4,8 @@
 #include <QtGlobal>
 
 #define APP_NAME "BmsONE"
-#define APP_VERSION_STRING "beta 0.2.1"
-#define APP_URL "https://github.com/excln/BmsONE"
+#define APP_VERSION_STRING "0.3.0"
+#define APP_URL "https://github.com/Roganis/BmsTWO"
 #define ORGANIZATION_NAME "ExclusionBms"
 
 #if defined(Q_OS_LINUX)
