@@ -300,6 +300,10 @@ void MiniMapView::UpdateBuffer()
 				t2 = rmsCacheOfTicks.size();
 			if (t < 0)
 				t = 0;
+			// After clamping, an empty/short RMS cache can leave t2 == t,
+			// which would divide by zero below. Skip degenerate rows.
+			if (t2 <= t)
+				continue;
 			Rms rms(0.0f, 0.0f);
 			Rms peak(0.0f, 0.0f);
 			for (int i=t; i<t2; i++){
@@ -589,6 +593,10 @@ void MasterLaneView::UpdateBackBuffer(const QRect &rect)
 				t2 = mview->rmsCacheOfTicks.size();
 			if (t < 0)
 				t = 0;
+			// After clamping, an empty/short RMS cache can leave t2 == t,
+			// which would divide by zero below. Skip degenerate rows.
+			if (t2 <= t)
+				continue;
 			Rms rms(0.0f, 0.0f);
 			Rms peak(0.0f, 0.0f);
 			for (int i=t; i<t2; i++){

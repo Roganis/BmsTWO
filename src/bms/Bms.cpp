@@ -484,7 +484,12 @@ void Bms::BmsReader::HandleRANDOM(QString value)
 		randoms.push(v);
 		skipping = config.skipBetweenRandomAndIf;
 
-		LoadMain();
+		// Resume parsing on the next driver iteration instead of recursing
+		// into LoadMain(). Recursing here grows the stack by one frame per
+		// #RANDOM, so gimmick/extreme charts with many #RANDOM overflowed the
+		// stack and crashed the importer (issue #15).
+		status = STATUS_CONTINUE;
+		cont = [this](QVariant){ LoadMain(); return status; };
 		return status;
 	};
 
