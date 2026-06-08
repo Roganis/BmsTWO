@@ -152,3 +152,57 @@ jobs:
           name: BmsONE-windows-x86_64-qt6-mingw
           path: build/dist
           if-no-files-found: error
+
+  linux-qt6:
+    name: Linux (Qt6 / AppImage)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt6 and build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            qt6-base-dev \
+            qt6-multimedia-dev \
+            libqt6core5compat6-dev \
+            qt6-tools-dev-tools \
+            libgl1-mesa-dev libfuse2 libxcb-cursor0
+
+      - name: Build (release)
+        run: |
+          mkdir -p build
+          cd build
+          qmake6 ../src/bmsone.pro CONFIG-=debug CONFIG+=release
+          make -j"$(nproc)"
+
+      - name: Assemble AppDir
+        run: |
+          cd build
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/64x64/apps
+          cp BmsONE AppDir/usr/bin/BmsONE
+          cp ../deploy/linux/BmsONE.desktop AppDir/usr/share/applications/BmsONE.desktop
+          cp ../src/images/bmsone64.png AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png
+
+      - name: Package AppImage (linuxdeploy + qt plugin)
+        run: |
+          cd build
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          export QMAKE="$(which qmake6)"
+          export OUTPUT=BmsONE-x86_64-qt6.AppImage
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir \
+            -d AppDir/usr/share/applications/BmsONE.desktop \
+            -i AppDir/usr/share/icons/hicolor/64x64/apps/bmsone64.png \
+            --plugin qt --output appimage
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-linux-x86_64-qt6-AppImage
+          path: build/BmsONE*-qt6.AppImage
+          if-no-files-found: error

@@ -17,7 +17,7 @@
 #endif
 
 #define QT_URL "http://www.qt.io/"
-#define OGG_VERSION_STRING "Xiph.Org libOgg 1.3.2"
+#define OGG_VERSION_STRING "Xiph.Org libOgg 1.3.5"
 #define OGG_URL "https://www.xiph.org/"
 #define VORBIS_URL "https://www.xiph.org/"
 
