@@ -58,3 +58,44 @@ jobs:
           name: BmsONE-linux-x86_64-AppImage
           path: build/BmsONE*.AppImage
           if-no-files-found: error
+
+  windows:
+    name: Windows (Qt5 / MinGW)
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt5 (MinGW 8.1)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: windows
+          target: desktop
+          arch: win64_mingw81
+          modules: qtmultimedia
+          tools: 'tools_mingw,qt.tools.win64_mingw810'
+          add-tools-to-path: true
+          cache: true
+
+      - name: Build (release)
+        run: |
+          mkdir build
+          cd build
+          qmake ..\src\bmsone.pro CONFIG-=debug CONFIG+=release
+          mingw32-make -j2
+
+      - name: Deploy Qt runtime (windeployqt)
+        run: |
+          mkdir build\dist
+          copy build\release\BmsONE.exe build\dist\
+          windeployqt --release --no-translations build\dist\BmsONE.exe
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BmsONE-windows-x86_64-mingw
+          path: build/dist
+          if-no-files-found: error
