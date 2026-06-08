@@ -287,7 +287,7 @@ void SequenceView::ReplaceSkin(Skin *newSkin)
 		}
 		case SkinProperty::PROP_ENUM: {
 			auto prop = p->ToEnumProperty();
-			auto menu = new QMenu(prop->GetDisplayName());
+			auto menu = new QMenu(prop->GetDisplayName(), menuView); // parent so it's freed with the menu bar
 			auto group = new QActionGroup(prop); // parent is ok?
 			for (int i=0; i<prop->GetDisplayChoices().size(); i++){
 				auto action = menu->addAction(prop->GetDisplayChoices()[i]);
