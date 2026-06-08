@@ -75,7 +75,8 @@ jobs:
           host: windows
           target: desktop
           arch: win64_mingw81
-          modules: qtmultimedia
+          # Qt Multimedia ships in the Qt 5.15 base install (it is not a
+          # separate add-on module as it is in Qt 6), so no `modules:` needed.
           tools: 'tools_mingw,qt.tools.win64_mingw810'
           add-tools-to-path: true
           cache: true
