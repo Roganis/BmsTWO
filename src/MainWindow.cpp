@@ -267,11 +267,11 @@ MainWindow::MainWindow(QSettings *settings)
 	auto *menuEdit = menuBar()->addMenu(tr("Edit"));
 	menuEdit->addAction(actionEditUndo);
 	menuEdit->addAction(actionEditRedo);
-#if 0
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditCut);
 	menuEdit->addAction(actionEditCopy);
 	menuEdit->addAction(actionEditPaste);
+#if 0 // Select All is not implemented yet
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditSelectAll);
 #endif
