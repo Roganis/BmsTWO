@@ -14,16 +14,19 @@ class ResolutionUtil
 public:
 	static int ConvertTicks(int original, int newResolution, int oldResolution)
 	{
+		if (oldResolution <= 0) return original;
 		return original * newResolution / oldResolution;
 	}
 	static int GetAcceptableDivider(QSet<int> locs){
-		if (locs.isEmpty()) return 0;
-		int n = *locs.begin();
-        for (auto i=++locs.begin(); i!=locs.end(); i++){
-			int l = (*i) % n;
-			if (l != 0){
-				n = gcd(n, l);
-			}
+		// GCD of all note locations. A location of 0 lies on every grid, so it
+		// must be skipped; otherwise `n` could become 0 and the modulo in gcd()
+		// would divide by zero (QSet iteration order is unspecified, so a 0 may
+		// be the first element). Returns 0 when there are no positive locations.
+		int n = 0;
+		for (int loc : locs){
+			if (loc <= 0)
+				continue;
+			n = (n == 0) ? loc : gcd(n, loc);
 		}
 		return n;
 	}
