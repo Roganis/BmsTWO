@@ -255,8 +255,8 @@ public:
 	void RemoveBpmEvents(QList<int> locations);
 
 	// STOP editing (undoable). Keyed by location; duration is in pulses.
-	// Note: the timing engine does not yet slow playback at stops; these are
-	// edited and saved to bmson but not applied to absolute-time mapping.
+	// Honored by the absolute-time mapping (GetAbsoluteTime/FromAbsoluteTime),
+	// so playback and WAV export pause at stops.
 	bool InsertStopEvent(StopEvent event);
 	bool RemoveStopEvent(int location);
 

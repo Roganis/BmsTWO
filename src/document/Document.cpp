@@ -381,32 +381,70 @@ void Document::SetOutputVersion(BmsonIO::BmsonVersion version)
 
 double Document::GetAbsoluteTime(int ticks) const
 {
-    int tt=0;
+    const double resolution = info.GetResolution();
+    int tt = 0;
     double seconds = 0;
     double bpm = info.GetInitBpm();
-    for (QMap<int, BpmEvent>::const_iterator i=bpmEvents.begin(); i!=bpmEvents.end() && i.key() < ticks; i++){
-        seconds += (i.key() - tt) * 60.0 / (bpm * info.GetResolution());
-        tt = i.key();
-        bpm = i->value;
+    auto ib = bpmEvents.begin();
+    auto is = stopEvents.begin();
+    // Walk BPM and STOP events in location order. A STOP at location s pauses
+    // playback for `duration` pulses' worth of time at the BPM in effect there.
+    while (true){
+        int nb = (ib != bpmEvents.end()) ? ib.key() : INT_MAX;
+        int ns = (is != stopEvents.end()) ? is.key() : INT_MAX;
+        int next = std::min(nb, ns);
+        if (next >= ticks)
+            break;
+        seconds += (next - tt) * 60.0 / (bpm * resolution);
+        tt = next;
+        if (ns == next){
+            // stop duration uses the BPM currently in effect (before any
+            // simultaneous BPM change)
+            seconds += is->value * 60.0 / (bpm * resolution);
+            ++is;
+        }
+        if (nb == next){
+            bpm = ib->value;
+            ++ib;
+        }
     }
-    return seconds + (ticks - tt) * 60.0 / (bpm * info.GetResolution());
+    return seconds + (ticks - tt) * 60.0 / (bpm * resolution);
 }
 
 int Document::FromAbsoluteTime(double destSeconds) const
 {
+    const double resolution = info.GetResolution();
     int tt = 0;
     double seconds = 0;
     double bpm = info.GetInitBpm();
-    for (QMap<int, BpmEvent>::const_iterator i=bpmEvents.begin(); i!=bpmEvents.end(); i++){
-        double next_seconds = seconds + (i.key() - tt) * 60.0 / (bpm * info.GetResolution());
-        if (next_seconds >= destSeconds){
+    auto ib = bpmEvents.begin();
+    auto is = stopEvents.begin();
+    while (true){
+        int nb = (ib != bpmEvents.end()) ? ib.key() : INT_MAX;
+        int ns = (is != stopEvents.end()) ? is.key() : INT_MAX;
+        int next = std::min(nb, ns);
+        if (next == INT_MAX)
             break;
+        double seg = (next - tt) * 60.0 / (bpm * resolution);
+        if (seconds + seg >= destSeconds)
+            break; // destination lies within the current linear segment
+        seconds += seg;
+        tt = next;
+        if (ns == next){
+            double stopSeconds = is->value * 60.0 / (bpm * resolution);
+            if (seconds + stopSeconds >= destSeconds){
+                // destination falls during the stop: tick stays put
+                return tt;
+            }
+            seconds += stopSeconds;
+            ++is;
         }
-        tt = i.key();
-        bpm = i->value;
-        seconds = next_seconds;
+        if (nb == next){
+            bpm = ib->value;
+            ++ib;
+        }
     }
-    return tt + (destSeconds - seconds) * (bpm * info.GetResolution()) / 60.0;
+    return tt + (destSeconds - seconds) * (bpm * resolution) / 60.0;
 }
 
 int Document::GetTotalLength() const
