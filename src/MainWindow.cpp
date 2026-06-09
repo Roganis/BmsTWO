@@ -6,6 +6,7 @@
 #include "StopView.h"
 #include "StatsView.h"
 #include "SelectionView.h"
+#include "ChartsView.h"
 #include "BpmEditTool.h"
 #include "NoteEditTool.h"
 #include "document/History.h"
@@ -515,6 +516,14 @@ MainWindow::MainWindow(QSettings *settings)
 	menuViewDockBars->insertAction(actionViewDockSeparator, dockSelection->toggleViewAction());
 	selectionView->Bind(sequenceView);
 	connect(sequenceView, SIGNAL(SelectionChanged()), selectionView, SLOT(Refresh()));
+
+	auto dockCharts = new QDockWidget(tr("Charts"));
+	UIUtil::SetFont(dockCharts);
+	dockCharts->setObjectName("Charts");
+	dockCharts->setWidget(chartsView = new ChartsView(this));
+	addDockWidget(Qt::LeftDockWidgetArea, dockCharts);
+	dockCharts->hide(); // off by default; available from View > Docks
+	menuViewDockBars->insertAction(actionViewDockSeparator, dockCharts->toggleViewAction());
 
 	selectedObjectsDockWidget = new QDockWidget(tr("Selected Objects"));
 	UIUtil::SetFont(selectedObjectsDockWidget);
@@ -1248,6 +1257,7 @@ void MainWindow::ReplaceDocument(Document *newDocument)
 	bgaView->ReplaceDocument(document);
 	stopView->ReplaceDocument(document);
 	statsView->ReplaceDocument(document);
+	chartsView->ReplaceDocument(document);
 	sequenceView->ReplaceDocument(document);
 	externalViewer->ReplaceDocument(document);
 
