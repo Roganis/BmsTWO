@@ -221,6 +221,11 @@ public:
 	void Save();
 	void SaveAs(const QString &filePath);
 
+	// Adopt a file path for a document loaded from a crash-recovery snapshot:
+	// points it at the original location (may be empty for an untitled file)
+	// and marks it dirty so the user is prompted to re-save.
+	void SetRecoveredFilePath(const QString &filePath);
+
 	void SetOutputVersion(BmsonIO::BmsonVersion version);
 
 	DocumentInfo *GetInfo(){ return &info; }

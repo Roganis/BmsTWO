@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QCheckBox>
 #include <QSlider>
+#include <QSpinBox>
 
 class Preferences;
 
@@ -23,6 +24,8 @@ private:
 	QCheckBox *snappedHitTestInEditMode;
 	QCheckBox *alwaysShowCursorLineInEditMode;
 	QCheckBox *snappedSelectionInEditMode;
+	QCheckBox *enableAutosave;
+	QSpinBox *autosaveInterval;
 
 public:
 	PrefEditPage(QWidget *parent);

@@ -1,5 +1,6 @@
 #include "EditConfig.h"
 #include "MainWindow.h"
+#include <algorithm>
 
 EditConfig *EditConfig::instance = nullptr;
 
@@ -9,6 +10,7 @@ EditConfig::EditConfig()
 	alwaysShowCursorLineInEditMode = App::Instance()->GetSettings()->value(SettingsAlwaysShowCursorLineInEditModeKey, false).toBool();
 	snappedSelectionInEditMode = App::Instance()->GetSettings()->value(SettingsSnappedSelectionInEditModeKey, true).toBool();
 	lockKeysoundLane = App::Instance()->GetSettings()->value(SettingsLockKeysoundLaneKey, false).toBool();
+	// autosave config is read on demand (see GetEnableAutosave / GetAutosaveInterval)
 }
 
 EditConfig *EditConfig::Instance()
@@ -30,6 +32,8 @@ const char* EditConfig::SettingsSnappedHitTestInEditModeKey = "SequenceView/Snap
 const char* EditConfig::SettingsAlwaysShowCursorLineInEditModeKey = "SequenceView/AlwaysShowCursorLineInEditMode";
 const char* EditConfig::SettingsSnappedSelectionInEditModeKey = "SequenceView/SnappedSelectionInEditMode";
 const char* EditConfig::SettingsLockKeysoundLaneKey = "SequenceView/LockKeysoundLane";
+const char* EditConfig::SettingsEnableAutosaveKey = "Edit/EnableAutosave";
+const char* EditConfig::SettingsAutosaveIntervalKey = "Edit/AutosaveIntervalSec";
 
 
 bool EditConfig::GetEnableMasterChannel()
@@ -146,6 +150,30 @@ bool EditConfig::LockKeysoundLane()
 void EditConfig::SetLockKeysoundLane(bool value)
 {
 	App::Instance()->GetSettings()->setValue(SettingsLockKeysoundLaneKey, Instance()->lockKeysoundLane = value);
+}
+
+bool EditConfig::GetEnableAutosave()
+{
+	return App::Instance()->GetSettings()->value(SettingsEnableAutosaveKey, true).toBool();
+}
+
+int EditConfig::GetAutosaveInterval()
+{
+	int seconds = App::Instance()->GetSettings()->value(SettingsAutosaveIntervalKey, 180).toInt();
+	// clamp to a sane range: 15s .. 1h
+	return std::max(15, std::min(3600, seconds));
+}
+
+void EditConfig::SetEnableAutosave(bool value)
+{
+	App::Instance()->GetSettings()->setValue(SettingsEnableAutosaveKey, value);
+	emit Instance()->AutosaveConfigChanged();
+}
+
+void EditConfig::SetAutosaveInterval(int seconds)
+{
+	App::Instance()->GetSettings()->setValue(SettingsAutosaveIntervalKey, std::max(15, std::min(3600, seconds)));
+	emit Instance()->AutosaveConfigChanged();
 }
 
 

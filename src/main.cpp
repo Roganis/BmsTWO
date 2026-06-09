@@ -80,7 +80,10 @@ App::App(int argc, char *argv[])
 	Theme::Apply(this);
 
 	mainWindow = new MainWindow(settings);
-	if (arguments().size() > 1){
+	// Offer to recover work left behind by a crashed session before we touch
+	// any file the user asked to open on the command line.
+	bool recovered = mainWindow->CheckForCrashRecovery();
+	if (arguments().size() > 1 && !recovered){
 		QStringList filePaths = arguments().mid(1);
 		mainWindow->OpenFiles(filePaths);
 	}

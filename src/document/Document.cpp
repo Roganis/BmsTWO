@@ -371,6 +371,13 @@ void Document::SaveAs(const QString &filePath)
     Save();
     emit FilePathChanged();
 }
+void Document::SetRecoveredFilePath(const QString &filePath)
+{
+    this->filePath = filePath;
+    this->directory = filePath.isEmpty() ? QDir::root() : QFileInfo(filePath).absoluteDir();
+    history->MarkAbsolutelyDirty();
+    emit FilePathChanged();
+}
 
 void Document::SetOutputVersion(BmsonIO::BmsonVersion version)
 {
