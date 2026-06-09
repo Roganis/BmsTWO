@@ -308,6 +308,38 @@ int main(int argc, char **argv) {
         QFile::remove(snap);
     }
 
+    fprintf(stderr, "=== case: toggle long note (in-place length update) ===\n");
+    {
+        Document doc;
+        doc.Initialize();
+        const int R = doc.GetInfo()->GetResolution();
+        doc.InsertNewSoundChannels(QList<QString>() << "a.ogg");
+        pump();
+        auto chs = doc.GetSoundChannels();
+        if (chs.isEmpty()) { fprintf(stderr, "FAIL: no channel\n"); return 1; }
+        SoundChannel *ch = chs.first();
+        // sparse notes (2 beats apart) so extending by 1 beat never overlaps
+        QMultiMap<SoundChannel*, SoundNote> notes;
+        for (int i = 0; i < 10; i++) notes.insert(ch, SoundNote(i * 2 * R, 1, 0, 0));
+        doc.MultiChannelUpdateSoundNotes(notes);
+        pump();
+        // toggle -> long notes (length = one beat)
+        QMultiMap<SoundChannel*, SoundNote> upd;
+        for (int i = 0; i < 10; i++) upd.insert(ch, SoundNote(i * 2 * R, 1, R, 0));
+        doc.MultiChannelUpdateSoundNotes(upd);
+        pump();
+        if (ch->GetNotes().size() != 10) { fprintf(stderr, "FAIL: note count changed by LN toggle\n"); return 1; }
+        for (auto it = ch->GetNotes().begin(); it != ch->GetNotes().end(); ++it)
+            if (it.value().length != R) { fprintf(stderr, "FAIL: length not applied\n"); return 1; }
+        // toggle back -> normal notes
+        QMultiMap<SoundChannel*, SoundNote> upd2;
+        for (int i = 0; i < 10; i++) upd2.insert(ch, SoundNote(i * 2 * R, 1, 0, 0));
+        doc.MultiChannelUpdateSoundNotes(upd2);
+        pump();
+        for (auto it = ch->GetNotes().begin(); it != ch->GetNotes().end(); ++it)
+            if (it.value().length != 0) { fprintf(stderr, "FAIL: length not reverted\n"); return 1; }
+    }
+
     fprintf(stderr, "=== case: shortcut manager (register / rebind / conflict / reset) ===\n");
     {
         QMenuBar bar;

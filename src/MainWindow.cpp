@@ -198,6 +198,14 @@ MainWindow::MainWindow(QSettings *settings)
 	actionEditGoTo->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_G));
 	connect(actionEditGoTo, SIGNAL(triggered()), this, SLOT(EditGoTo()));
 
+	actionEditToggleLongNote = new QAction(tr("Toggle Long Note"), this);
+	SharedUIHelper::RegisterGlobalShortcut(actionEditToggleLongNote);
+	actionEditToggleLongNote->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_L));
+	actionEditToggleLongNote->setStatusTip(tr("Flip selected notes between normal and long notes"));
+	connect(actionEditToggleLongNote, &QAction::triggered, this, [this](){
+		if (sequenceView) sequenceView->ToggleLongNotes();
+	});
+
 	actionEditPlay = new QAction(tr("Play"), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionEditPlay);
 	actionEditPlay->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_P));
@@ -321,6 +329,7 @@ MainWindow::MainWindow(QSettings *settings)
 	menuEdit->addAction(actionEditFillNotes);
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditToggleBarLine);
+	menuEdit->addAction(actionEditToggleLongNote);
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditModeEdit);
 	menuEdit->addAction(actionEditModeWrite);

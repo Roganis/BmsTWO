@@ -2267,6 +2267,21 @@ void SequenceView::GoToLocation(int location)
 	ScrollToLocation(location, playingPane->height() / 2);
 }
 
+void SequenceView::ToggleLongNotes()
+{
+	if (!document || selectedNotes.isEmpty())
+		return;
+	const int defLen = document->GetInfo()->GetResolution(); // one beat
+	QMultiMap<SoundChannel*, SoundNote> updates;
+	for (SoundNoteView *nview : selectedNotes){
+		SoundChannel *ch = nview->GetChannelView()->GetChannel();
+		SoundNote note = nview->GetNote();
+		note.length = (note.length > 0) ? 0 : defLen;
+		updates.insert(ch, note);
+	}
+	document->MultiChannelUpdateSoundNotes(updates);
+}
+
 QList<SequenceView::SelectedNoteInfo> SequenceView::GetSelectedNotesInfo() const
 {
 	QList<SelectedNoteInfo> result;

@@ -156,6 +156,7 @@ private:
 	QAction *actionEditLockDeletion;
 	QAction *actionEditLockVerticalMove;
 	QAction *actionEditGoTo;
+	QAction *actionEditToggleLongNote;
 	QAction *actionEditPlay;
 	QAction *actionEditClearMasterCache;
 	QAction *actionEditPreferences;
