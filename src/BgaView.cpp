@@ -96,9 +96,10 @@ BgaView::~BgaView()
 
 void BgaView::ReplaceDocument(Document *newDocument)
 {
-	if (document){
-		disconnect(document, nullptr, this, nullptr);
-	}
+	// The previous document has already been deleted by MainWindow before this
+	// is called, so we must NOT disconnect from it (that would dereference a
+	// freed pointer). Qt drops the old connections when the document is
+	// destroyed; we only bind to the new one.
 	document = newDocument;
 	if (document){
 		connect(document, SIGNAL(BgaChanged()), this, SLOT(OnBgaChanged()));
