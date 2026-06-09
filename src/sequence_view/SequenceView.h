@@ -341,6 +341,10 @@ public:
 
 	struct SelectedNoteInfo { int location; int lane; QString channel; double seconds; };
 	QList<SelectedNoteInfo> GetSelectedNotesInfo() const;
+
+	// Flip each selected note between a normal note and a default-length long
+	// note (one beat). Undoable.
+	void ToggleLongNotes();
 	SoundChannelView *GetSoundChannelView(SoundChannel *channel);
 	int GetFooterHeight() const{ return footerHeight; }
 	int SetFooterHeight(int height);
