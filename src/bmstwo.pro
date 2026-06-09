@@ -87,6 +87,7 @@ SOURCES += main.cpp\
     MasterOutDialog.cpp \
     PrefBms.cpp \
     PrefShortcuts.cpp \
+    StatsView.cpp \
     util/ShortcutManager.cpp \
         sequence_view/SequenceView.cpp \
         sequence_view/SequenceViewInternal.cpp \
@@ -177,6 +178,7 @@ HEADERS  += MainWindow.h \
     BpmEditTool.h \
     PrefBms.h \
     PrefShortcuts.h \
+    StatsView.h \
     util/ShortcutManager.h \
         sequence_view/SequenceView.h \
         sequence_view/SequenceDef.h \
