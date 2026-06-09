@@ -223,6 +223,29 @@ int main(int argc, char **argv) {
         pump();
     }
 
+    fprintf(stderr, "=== case: stop affects absolute time ===\n");
+    {
+        auto absd = [](double x){ return x < 0 ? -x : x; };
+        Document doc;
+        doc.Initialize();
+        doc.GetInfo()->SetInitBpm(120.0);
+        const int R = doc.GetInfo()->GetResolution();
+        const double spp = 60.0 / (120.0 * R); // seconds per pulse
+        // before any stop, time is linear in ticks
+        if (absd(doc.GetAbsoluteTime(2*R) - 2*R*spp) > 1e-9){ fprintf(stderr, "FAIL: linear time\n"); return 1; }
+        // a STOP of R pulses at location R adds R pulses' worth of time afterwards
+        doc.InsertStopEvent(StopEvent(R, (double)R));
+        if (absd(doc.GetAbsoluteTime(2*R) - 3*R*spp) > 1e-9){ fprintf(stderr, "FAIL: stop not added\n"); return 1; }
+        // arriving exactly at the stop location excludes its own pause
+        if (absd(doc.GetAbsoluteTime(R) - R*spp) > 1e-9){ fprintf(stderr, "FAIL: stop counted at its own loc\n"); return 1; }
+        // inverse round-trips, and a time inside the pause maps back to the stop tick
+        if (absd(doc.FromAbsoluteTime(doc.GetAbsoluteTime(2*R)) - 2*R) > 1){ fprintf(stderr, "FAIL: inverse\n"); return 1; }
+        if (doc.FromAbsoluteTime(R*spp + 0.5*R*spp) != R){ fprintf(stderr, "FAIL: time-in-stop maps to stop tick\n"); return 1; }
+        // undo removes the stop and restores linear time
+        doc.GetHistory()->Undo();
+        if (absd(doc.GetAbsoluteTime(2*R) - 2*R*spp) > 1e-9){ fprintf(stderr, "FAIL: undo stop\n"); return 1; }
+    }
+
     fprintf(stderr, "ALL CASES DONE\n");
     return 0;
 }
