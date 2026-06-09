@@ -24,6 +24,7 @@ class BgaView;
 class StopView;
 class StatsView;
 class SelectionView;
+class ChartsView;
 class BpmEditView;
 class NoteEditView;
 class ExternalViewer;
@@ -118,6 +119,7 @@ private:
 	StopView *stopView;
 	StatsView *statsView;
 	SelectionView *selectionView;
+	ChartsView *chartsView;
 	ExternalViewer *externalViewer;
 
 	QDockWidget *selectedObjectsDockWidget;
