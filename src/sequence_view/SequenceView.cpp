@@ -2261,6 +2261,12 @@ void SequenceView::ScrollToLocation(int location, int y)
 	verticalScrollBar()->setValue(scrollY);
 }
 
+void SequenceView::GoToLocation(int location)
+{
+	// Center the requested location in the playing pane.
+	ScrollToLocation(location, playingPane->height() / 2);
+}
+
 /*
 bool SequenceView::paintEventPlayingHeader(QWidget *widget, QPaintEvent *event)
 {
