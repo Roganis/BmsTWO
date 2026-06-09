@@ -7,6 +7,7 @@
 #include <QMetaType>
 #include "document/SoundChannelDef.h"
 #include "util/CrashHandler.h"
+#include "util/Theme.h"
 
 
 int main(int argc, char *argv[])
@@ -67,6 +68,9 @@ App::App(int argc, char *argv[])
 	if (qtBaseTranslator->load("qtbase_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))){
 		installTranslator(qtBaseTranslator);
 	}
+
+	// Phase 4: modern dark look via Fusion + a centralized dark palette.
+	Theme::Apply(this);
 
 	mainWindow = new MainWindow(settings);
 	if (arguments().size() > 1){

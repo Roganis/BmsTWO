@@ -2,6 +2,7 @@
 #include "SequenceViewInternal.h"
 #include "MainWindow.h"
 #include "BpmEditTool.h"
+#include "../util/Theme.h"
 #include <cmath>
 #include <cstdlib>
 
@@ -41,6 +42,27 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
         QSet<int> barSet(bars.keyBegin(), bars.keyEnd());
         QSet<int> coarseGrids = CoarseGridsInRange(tBegin, tEnd) - barSet;
         QSet<int> fineGrids = FineGridsInRange(tBegin, tEnd) - barSet - coarseGrids;
+		// Phase 4: subtle alternating per-measure shading to give the grid
+		// hierarchy (defeats the flat "spreadsheet" look). Odd-numbered
+		// measures get a faint overlay; band edges are clamped to the viewport.
+		if (!bars.isEmpty()){
+			const QColor shade = Theme::MeasureShade();
+			const QList<int> ticks = bars.keys();
+			for (int k = 0; k < ticks.size(); k++){
+				int measureNo = bars[ticks[k]].first;
+				int yBottom = std::round(Time2Y(ticks[k]));
+				int yTop = (k+1 < ticks.size()) ? std::round(Time2Y(ticks[k+1])) : top;
+				if (measureNo % 2 != 0 && yBottom > yTop){
+					painter.fillRect(QRect(left, yTop, right-left, yBottom-yTop), shade);
+				}
+			}
+			// the partial measure below the lowest visible bar
+			int firstMeasureNo = bars[ticks.first()].first;
+			int yFirst = std::round(Time2Y(ticks.first()));
+			if ((firstMeasureNo-1) % 2 != 0 && bottom > yFirst){
+				painter.fillRect(QRect(left, yFirst, right-left, bottom-yFirst), shade);
+			}
+		}
 		{
 			QVector<QLine> lines;
 			for (int t : fineGrids){

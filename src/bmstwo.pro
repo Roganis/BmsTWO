@@ -98,6 +98,7 @@ SOURCES += main.cpp\
         util/ScrollableForm.cpp \
         util/QuasiModalEdit.cpp \
         util/CrashHandler.cpp \
+        util/Theme.cpp \
         util/CollapseButton.cpp \
         util/JsonExtension.cpp \
         util/Util.cpp \
@@ -182,6 +183,7 @@ HEADERS  += MainWindow.h \
         sequence_view/SequenceViewContexts.h \
         util/QuasiModalEdit.h \
         util/CrashHandler.h \
+        util/Theme.h \
         util/ScrollableForm.h \
         util/CollapseButton.h \
         util/SignalFunction.h \
