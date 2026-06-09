@@ -147,6 +147,17 @@ int main(int argc, char **argv) {
         pump();
     }
 
+    fprintf(stderr, "=== case: ln up-field round-trip ===\n");
+    {
+        // `up` must survive a bmson round-trip, and must NOT be written when false.
+        SoundNote n(480, 0, 240, 0, true);
+        SoundNote n2(n.AsJson());
+        if (!(n2.up && n2.length == 240 && n2.location == 480)) { fprintf(stderr, "FAIL: up round-trip\n"); return 1; }
+        SoundNote m(480, 0, 240, 0, false);
+        if (m.AsJson().contains("up")) { fprintf(stderr, "FAIL: up written when false\n"); return 1; }
+        if (!(SoundNote(m.AsJson()).up == false)) { fprintf(stderr, "FAIL: up default\n"); return 1; }
+    }
+
     fprintf(stderr, "=== case: stop events ===\n");
     {
         Document doc;

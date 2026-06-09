@@ -629,9 +629,41 @@ void SoundChannel::UpdateCache()
 	if (!waveSummary.IsValid()){
 		return;
 	}
-	QMap<int, SoundNote>::const_iterator iNote = notes.begin();
+	// LN key-up sound (#8): a note flagged `up` re-triggers its sound at the
+	// release point (location+length). We feed the cache builder a superset of
+	// start-points -- the real notes plus a synthetic restart note at each
+	// release -- so the delicate cache state machine below is left untouched.
+	// When no `up` notes exist this is byte-identical to iterating `notes`.
+	const QMap<int, SoundNote> *startNotesPtr = &notes;
+	QMap<int, SoundNote> augmentedNotes;
+	{
+		bool needAugment = false;
+		for (auto i=notes.begin(); i!=notes.end(); i++){
+			if (i->up && i->length > 0 && !notes.contains(i->location + i->length)){
+				needAugment = true;
+				break;
+			}
+		}
+		if (needAugment){
+			augmentedNotes = notes;
+			for (auto i=notes.begin(); i!=notes.end(); i++){
+				if (i->up && i->length > 0){
+					int rel = i->location + i->length;
+					if (!augmentedNotes.contains(rel)){
+						// synthetic restart: a plain start note (noteType 0); lane is
+						// irrelevant to per-channel cache timing.
+						augmentedNotes.insert(rel, SoundNote(rel, i->lane, 0, 0, false));
+					}
+				}
+			}
+			startNotesPtr = &augmentedNotes;
+		}
+	}
+	const QMap<int, SoundNote> &startNotes = *startNotesPtr;
+
+	QMap<int, SoundNote>::const_iterator iNote = startNotes.begin();
 	QMap<int, BpmEvent>::const_iterator iTempo = document->GetBpmEvents().begin();
-	for (; iNote != notes.end() && iNote->noteType != 0; iNote++);
+	for (; iNote != startNotes.end() && iNote->noteType != 0; iNote++);
 	int loc = 0;
 	int soundEndsAt = -1;
 	CacheEntry entry;
@@ -641,7 +673,7 @@ void SoundChannel::UpdateCache()
 	const double ticksPerBeat = document->GetInfo()->GetResolution();
 	double currentSamplesPerTick = samplesPerSec * 60.0 / (entry.currentTempo * ticksPerBeat);
 	while (true){
-		if (iNote != notes.end() && (iTempo == document->GetBpmEvents().end() || iNote->location < iTempo->location)){
+		if (iNote != startNotes.end() && (iTempo == document->GetBpmEvents().end() || iNote->location < iTempo->location)){
 			if (entry.currentSamplePosition < 0){
 				// START
 				entry.prevSamplePosition = -1;
@@ -651,7 +683,7 @@ void SoundChannel::UpdateCache()
 				cache.insert(loc, entry);
 				//if (this->GetName() == "d_cym")qDebug() << "insert: START " << loc;
 				soundEndsAt = loc + int(waveSummary.FrameCount / currentSamplesPerTick);
-				for (iNote++; iNote != notes.end() && iNote->noteType != 0; iNote++);
+				for (iNote++; iNote != startNotes.end() && iNote->noteType != 0; iNote++);
 			}else if (soundEndsAt < iNote->location){
 				// END before RESTART
 				entry.prevSamplePosition = waveSummary.FrameCount;
@@ -670,9 +702,9 @@ void SoundChannel::UpdateCache()
 				cache.insert(loc, entry);
 				//if (this->GetName() == "d_cym")qDebug() << "insert: RESTART before END " << loc;
 				soundEndsAt = loc + int(waveSummary.FrameCount / currentSamplesPerTick);
-				for (iNote++; iNote != notes.end() && iNote->noteType != 0; iNote++);
+				for (iNote++; iNote != startNotes.end() && iNote->noteType != 0; iNote++);
 			}
-		}else if (iNote != notes.end() && iTempo != document->GetBpmEvents().end() && iNote->location == iTempo->location){
+		}else if (iNote != startNotes.end() && iTempo != document->GetBpmEvents().end() && iNote->location == iTempo->location){
 			if (entry.currentSamplePosition < 0){
 				// START & BPM
 				entry.prevSamplePosition = -1;
@@ -684,7 +716,7 @@ void SoundChannel::UpdateCache()
 				cache.insert(loc, entry);
 				//if (this->GetName() == "d_cym")qDebug() << "insert: START & BPM " << loc;
 				soundEndsAt = loc + int(waveSummary.FrameCount / currentSamplesPerTick);
-				for (iNote++; iNote != notes.end() && iNote->noteType != 0; iNote++);
+				for (iNote++; iNote != startNotes.end() && iNote->noteType != 0; iNote++);
 				iTempo++;
 			}else if (soundEndsAt < iNote->location){
 				// END before RESTART & BPM
@@ -706,7 +738,7 @@ void SoundChannel::UpdateCache()
 				cache.insert(loc, entry);
 				//if (this->GetName() == "d_cym")qDebug() << "insert: RESTART & BPM before END " << loc;
 				soundEndsAt = loc + int(waveSummary.FrameCount / currentSamplesPerTick);
-				for (iNote++; iNote != notes.end() && iNote->noteType != 0; iNote++);
+				for (iNote++; iNote != startNotes.end() && iNote->noteType != 0; iNote++);
 				iTempo++;
 			}
 		}else if (iTempo != document->GetBpmEvents().end()){
@@ -805,6 +837,7 @@ SoundNote::SoundNote(const QJsonValue &json)
 	location = bmsonFields[Bmson::Note::LocationKey].toInt();
 	length = bmsonFields[Bmson::Note::LengthKey].toInt();
 	noteType = bmsonFields[Bmson::Note::ContinueKey].toBool() ? 1 : 0;
+	up = bmsonFields[Bmson::Note::UpKey].toBool();
 }
 
 QJsonValue SoundNote::SaveBmson()
@@ -813,6 +846,11 @@ QJsonValue SoundNote::SaveBmson()
 	bmsonFields[Bmson::Note::LocationKey] = location;
 	bmsonFields[Bmson::Note::LengthKey] = length;
 	bmsonFields[Bmson::Note::ContinueKey] = noteType > 0;
+	if (up){
+		bmsonFields[Bmson::Note::UpKey] = true;
+	}else{
+		bmsonFields.remove(Bmson::Note::UpKey);
+	}
 	return bmsonFields;
 }
 
@@ -823,7 +861,8 @@ QMap<QString, QJsonValue> SoundNote::GetExtraFields() const
 		if (i.key() != Bmson::Note::LocationKey
 			&& i.key() != Bmson::Note::LaneKey
 			&& i.key() != Bmson::Note::LengthKey
-			&& i.key() != Bmson::Note::ContinueKey)
+			&& i.key() != Bmson::Note::ContinueKey
+			&& i.key() != Bmson::Note::UpKey)
 		{
 			fields.insert(i.key(), i.value());
 		}
@@ -838,7 +877,8 @@ void SoundNote::SetExtraFields(const QMap<QString, QJsonValue> &fields)
 		if (i.key() != Bmson::Note::LocationKey
 			&& i.key() != Bmson::Note::LaneKey
 			&& i.key() != Bmson::Note::LengthKey
-			&& i.key() != Bmson::Note::ContinueKey)
+			&& i.key() != Bmson::Note::ContinueKey
+			&& i.key() != Bmson::Note::UpKey)
 		{
 			bmsonFields[i.key()] = i.value();
 		}
@@ -852,6 +892,11 @@ QJsonObject SoundNote::AsJson() const
 	obj[Bmson::Note::LocationKey] = location;
 	obj[Bmson::Note::LengthKey] = length;
 	obj[Bmson::Note::ContinueKey] = noteType > 0;
+	if (up){
+		obj[Bmson::Note::UpKey] = true;
+	}else{
+		obj.remove(Bmson::Note::UpKey);
+	}
 	return obj;
 }
 

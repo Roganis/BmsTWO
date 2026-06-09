@@ -27,8 +27,9 @@ struct SoundNote : public BmsonObject
 	int lane;
 	int length;
 	int noteType;
+	bool up = false; // non-standard "up": re-trigger the sound at the LN release
 	SoundNote(){}
-	SoundNote(int location, int lane, int length, int noteType) : location(location), lane(lane), length(length), noteType(noteType){}
+	SoundNote(int location, int lane, int length, int noteType, bool up=false) : location(location), lane(lane), length(length), noteType(noteType), up(up){}
 
 	SoundNote(const QJsonValue &json);
 	QJsonValue SaveBmson();

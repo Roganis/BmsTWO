@@ -40,6 +40,7 @@ const char* Note::LaneKey = "x";
 const char* Note::LocationKey = "y";
 const char* Note::LengthKey = "l";
 const char* Note::ContinueKey = "c";
+const char* Note::UpKey = "up";
 
 const char* BpmEvent::LocationKey = "y";
 const char* BpmEvent::BpmKey = "bpm";

@@ -31,6 +31,9 @@ NoteEditView::NoteEditView(MainWindow *mainWindow)
 		layout->addRow(captionLayout);
 	}
 	layout->addRow(tr("Length:"), editLength = new QuasiModalEdit());
+	checkUp = new QCheckBox(tr("Re-trigger sound at LN release"));
+	checkUp->setToolTip(tr("Play this channel's sound again when the long note ends (non-standard 'up' field)."));
+	layout->addRow(tr("LN end sound:"), checkUp);
 	layout->addRow(tr("Extra fields:"), buttonShowExtraFields = new CollapseButton(editExtraFields = new QuasiModalMultiLineEdit(), this));
 	layout->addRow(editExtraFields);
 	layout->addRow(dummy = new QWidget());
@@ -54,6 +57,8 @@ NoteEditView::NoteEditView(MainWindow *mainWindow)
 
 	connect(editLength, SIGNAL(editingFinished()), this, SLOT(LengthEdited()));
 	connect(editLength, SIGNAL(EscPressed()), this, SLOT(LengthEscPressed()));
+
+	connect(checkUp, SIGNAL(clicked()), this, SLOT(UpToggled()));
 
 	connect(editExtraFields, SIGNAL(EditingFinished()), this, SLOT(ExtraFieldsEdited()));
 	connect(editExtraFields, SIGNAL(EscPressed()), this, SLOT(ExtraFieldsEscPressed()));
@@ -121,6 +126,7 @@ void NoteEditView::Update()
 		editLength->SetTextAutomated(QString());
 		editLength->setEnabled(false);
 		editLength->setPlaceholderText(QString());
+		SetUp(false, true, false);
 		mainWindow->UnsetSelectedObjectsView(this);
 	}else{
 		if (notes.count() > 1){
@@ -133,6 +139,9 @@ void NoteEditView::Update()
 		bool lengthUniform = true;
 		QMap<QString, QJsonValue> extraFields = notes.first().GetExtraFields();
 		bool extraFieldsUniform = true;
+		bool up = notes.first().up;
+		bool upUniform = true;
+		bool anyLong = false;
 		for (auto note : notes){
 			if (note.length != length){
 				lengthUniform = false;
@@ -145,7 +154,14 @@ void NoteEditView::Update()
 				break;
 			}
 		}
+		for (auto note : notes){
+			if (note.up != up)
+				upUniform = false;
+			if (note.length > 0)
+				anyLong = true;
+		}
 		SetLength(length, lengthUniform);
+		SetUp(up, upUniform, anyLong);
 		SetExtraFields(extraFields, extraFieldsUniform);
 		mainWindow->SetSelectedObjectsView(this);
 	}
@@ -161,6 +177,32 @@ void NoteEditView::SetLength(int length, bool uniform)
 		editLength->SetTextAutomated(QString());
 		editLength->setPlaceholderText(tr("multiple values"));
 	}
+}
+
+void NoteEditView::SetUp(bool up, bool uniform, bool enabled)
+{
+	checkUp->setEnabled(enabled);
+	checkUp->setTristate(!uniform);
+	if (!uniform){
+		checkUp->setCheckState(Qt::PartiallyChecked);
+	}else{
+		checkUp->setCheckState(up ? Qt::Checked : Qt::Unchecked);
+	}
+}
+
+void NoteEditView::UpToggled()
+{
+	if (automated || notes.empty()){
+		return;
+	}
+	bool up = checkUp->isChecked();
+	// settle a (possibly tristate / mixed) box into a definite state
+	checkUp->setTristate(false);
+	checkUp->setCheckState(up ? Qt::Checked : Qt::Unchecked);
+	for (auto i=notes.begin(); i!=notes.end(); i++){
+		i->up = up;
+	}
+	Updated();
 }
 
 void NoteEditView::SetExtraFields(const QMap<QString, QJsonValue> &fields, bool uniform)
