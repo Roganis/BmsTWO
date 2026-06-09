@@ -124,6 +124,18 @@ PrefGeneralPage::PrefGeneralPage(QWidget *parent)
 		language->setToolTip(language->whatsThis());
 	}
 	{
+		auto subLayout = new QHBoxLayout();
+		subLayout->setSpacing(10);
+		subLayout->setContentsMargins(0, 0, 0, 0);
+		modernTheme = new QCheckBox(tr("Modern dark theme"));
+		subLayout->addWidget(modernTheme);
+		subLayout->addWidget(new QLabel(tr("(Requires restart)")));
+		subLayout->addStretch(1);
+		layout->addRow(tr("Appearance:"), subLayout);
+		modernTheme->setWhatsThis(tr("Use the modern dark theme. Turn this off for the classic BMS-editor look. After changing this, restart BmsTWO."));
+		modernTheme->setToolTip(modernTheme->whatsThis());
+	}
+	{
 		outputFormat = new QComboBox();
 		outputFormatList = BmsonIO::SaveFormatStringList();
 		QStringList strs = BmsonIO::SaveFormatDescriptionList();
@@ -213,6 +225,7 @@ void PrefGeneralPage::load()
 {
 	outputFormat->setCurrentText(BmsonIO::GetSaveFormatString());
 	language->setCurrentIndex(LanguageIndexOf(App::Instance()->GetSettings()->value(App::SettingsLanguageKey).toString()));
+	modernTheme->setChecked(App::Instance()->GetSettings()->value(App::SettingsModernThemeKey, true).toBool());
 	saveJsonFormat->setCurrentText(BmsonIO::GetSaveJsonFormatString());
 
 	uiFontDefault = App::Instance()->GetSettings()->value(UIUtil::SettingsUIFontIsDefaultKey, true).toBool();
@@ -229,6 +242,8 @@ void PrefGeneralPage::store()
 	// Language
 	QString languageKey = LanguageKeyOf(language->currentIndex());
 	App::Instance()->GetSettings()->setValue(App::SettingsLanguageKey, languageKey);
+	// Appearance (restart-applied)
+	App::Instance()->GetSettings()->setValue(App::SettingsModernThemeKey, modernTheme->isChecked());
 	// Format
 	BmsonIO::SetSaveFormatString(outputFormatList[outputFormat->currentIndex()]);
 	// Json Format

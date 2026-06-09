@@ -286,6 +286,7 @@ class App : public QApplication
 
 public:
 	static const char* SettingsLanguageKey;
+	static const char* SettingsModernThemeKey;
 
 private:
 	static const char* SettingsVersionKey;

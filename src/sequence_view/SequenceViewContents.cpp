@@ -5,6 +5,7 @@
 #include "../util/Theme.h"
 #include <cmath>
 #include <cstdlib>
+#include <algorithm>
 
 
 bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *event)
@@ -107,6 +108,8 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 
 	// notes
 	{
+		const bool modern = Theme::IsModern();
+		painter.setRenderHint(QPainter::Antialiasing, modern);
 		for (auto pair : allNotes){
 			SoundChannelView *cview = pair.first;
 			SoundNoteView* nview = pair.second;
@@ -132,9 +135,16 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 				}
 				painter.setBrush(QBrush(g));
 				painter.setPen(QPen(QBrush(g2), 1));
-				painter.drawRect(rect);
+				if (modern){
+					// Rounded note objects; long notes read as capsules.
+					qreal r = std::min<qreal>(4.0, rect.width()/3.0);
+					painter.drawRoundedRect(rect, r, r);
+				}else{
+					painter.drawRect(rect);
+				}
 			}
 		}
+		painter.setRenderHint(QPainter::Antialiasing, false);
 	}
 
 	// horz. cursor line
@@ -146,12 +156,20 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 
 	// selected notes or cursor(hover) (border)
 	{
-		auto drawFocusLines = [this](QPainter &painter, SoundNote note){
+		const bool modern = Theme::IsModern();
+		painter.setRenderHint(QPainter::Antialiasing, modern);
+		auto drawFocusLines = [this, modern](QPainter &painter, SoundNote note){
 			LaneDef &laneDef = lanes[note.lane];
 			QRect rect(laneDef.left+1,
 						std::round(Time2Y(note.location + note.length) - 8),
 						laneDef.width-2,
 						std::round(Time2Y(note.location)) - std::round(Time2Y(note.location + note.length)) + 7);
+			if (modern){
+				// Rounded selection/hover outline matching the note objects.
+				qreal r = std::min<qreal>(4.0, rect.width()/3.0);
+				painter.drawRoundedRect(rect, r, r);
+				return;
+			}
 			switch (note.noteType){
 			case 0: {
 				QPolygon polygon;
@@ -195,7 +213,8 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 					//QLinearGradient g2(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
 					//SetNoteColor(g, g2, note.lane, channelView->IsCurrent());
 					//painter.setPen(QPen(QBrush(g2), 3, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
-					painter.setPen(QPen(QBrush(QColor(255, 0, 0)), 3, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+					QColor selColor = modern ? Theme::Accent() : QColor(255, 0, 0);
+					painter.setPen(QPen(QBrush(selColor), 3, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
 					drawFocusLines(painter, note);
 				}
 			}
@@ -215,6 +234,7 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 				}
 			}
 		}
+		painter.setRenderHint(QPainter::Antialiasing, false);
 	}
 
 	// conflict marks
