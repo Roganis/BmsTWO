@@ -178,6 +178,7 @@ private:
 	DocumentInfo info;
 	QMap<int, BarLine> barLines;
 	QMap<int, BpmEvent> bpmEvents;
+	QMap<int, StopEvent> stopEvents;
 	Bga bga;
 	QList<SoundChannel*> soundChannels;
 	QMap<SoundChannel*, int> soundChannelLength;
@@ -225,6 +226,7 @@ public:
 	DocumentInfo *GetInfo(){ return &info; }
 	const QMap<int, BarLine> &GetBarLines() const{ return barLines; }
 	const QMap<int, BpmEvent> &GetBpmEvents() const{ return bpmEvents; }
+	const QMap<int, StopEvent> &GetStopEvents() const{ return stopEvents; }
 	const Bga &GetBga() const{ return bga; }
 	const QMap<int, BgaEvent> &GetBgaEvents(BgaLayer layer) const;
 	const QList<SoundChannel*> &GetSoundChannels() const{ return soundChannels; }
@@ -251,6 +253,12 @@ public:
 	bool RemoveBpmEvent(int location);
 	void UpdateBpmEvents(QList<BpmEvent> events);
 	void RemoveBpmEvents(QList<int> locations);
+
+	// STOP editing (undoable). Keyed by location; duration is in pulses.
+	// Note: the timing engine does not yet slow playback at stops; these are
+	// edited and saved to bmson but not applied to absolute-time mapping.
+	bool InsertStopEvent(StopEvent event);
+	bool RemoveStopEvent(int location);
 
 	// BGA editing (undoable). Headers are keyed by id; events by location.
 	bool InsertBgaHeader(BgaHeader header);
@@ -287,6 +295,9 @@ signals:
 	void TotalLengthChanged(int length);
 
 	void BarLinesChanged();
+
+	// emitted when a STOP event is added/removed/updated.
+	void StopEventsChanged();
 
 	// emitted when BGA headers or any BGA event lane changes.
 	void BgaChanged();
