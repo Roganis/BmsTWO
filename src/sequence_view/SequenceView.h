@@ -338,6 +338,9 @@ public:
 	QList<SoundChannel*> GetSelectedSoundChannels() const; // multi-track sample preview (#16)
 	int GetCurrentLocation() const;
 	void GoToLocation(int location); // scroll so `location` is centered vertically
+
+	struct SelectedNoteInfo { int location; int lane; QString channel; double seconds; };
+	QList<SelectedNoteInfo> GetSelectedNotesInfo() const;
 	SoundChannelView *GetSoundChannelView(SoundChannel *channel);
 	int GetFooterHeight() const{ return footerHeight; }
 	int SetFooterHeight(int height);

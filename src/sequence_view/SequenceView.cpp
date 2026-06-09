@@ -2267,6 +2267,21 @@ void SequenceView::GoToLocation(int location)
 	ScrollToLocation(location, playingPane->height() / 2);
 }
 
+QList<SequenceView::SelectedNoteInfo> SequenceView::GetSelectedNotesInfo() const
+{
+	QList<SelectedNoteInfo> result;
+	for (SoundNoteView *nview : selectedNotes){
+		const SoundNote note = nview->GetNote();
+		SelectedNoteInfo info;
+		info.location = note.location;
+		info.lane = note.lane;
+		info.channel = nview->GetChannelView()->GetChannel()->GetName();
+		info.seconds = document ? document->GetAbsoluteTime(note.location) : 0.0;
+		result.append(info);
+	}
+	return result;
+}
+
 /*
 bool SequenceView::paintEventPlayingHeader(QWidget *widget, QPaintEvent *event)
 {

@@ -5,6 +5,7 @@
 #include "BgaView.h"
 #include "StopView.h"
 #include "StatsView.h"
+#include "SelectionView.h"
 #include "BpmEditTool.h"
 #include "NoteEditTool.h"
 #include "document/History.h"
@@ -495,6 +496,16 @@ MainWindow::MainWindow(QSettings *settings)
 	addDockWidget(Qt::LeftDockWidgetArea, dockStats);
 	dockStats->hide(); // off by default; available from View > Docks
 	menuViewDockBars->insertAction(actionViewDockSeparator, dockStats->toggleViewAction());
+
+	auto dockSelection = new QDockWidget(tr("Selection"));
+	UIUtil::SetFont(dockSelection);
+	dockSelection->setObjectName("Selection");
+	dockSelection->setWidget(selectionView = new SelectionView(this));
+	addDockWidget(Qt::LeftDockWidgetArea, dockSelection);
+	dockSelection->hide(); // off by default; available from View > Docks
+	menuViewDockBars->insertAction(actionViewDockSeparator, dockSelection->toggleViewAction());
+	selectionView->Bind(sequenceView);
+	connect(sequenceView, SIGNAL(SelectionChanged()), selectionView, SLOT(Refresh()));
 
 	selectedObjectsDockWidget = new QDockWidget(tr("Selected Objects"));
 	UIUtil::SetFont(selectedObjectsDockWidget);

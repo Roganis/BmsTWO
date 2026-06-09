@@ -23,6 +23,7 @@ class ChannelInfoView;
 class BgaView;
 class StopView;
 class StatsView;
+class SelectionView;
 class BpmEditView;
 class NoteEditView;
 class ExternalViewer;
@@ -116,6 +117,7 @@ private:
 	BgaView *bgaView;
 	StopView *stopView;
 	StatsView *statsView;
+	SelectionView *selectionView;
 	ExternalViewer *externalViewer;
 
 	QDockWidget *selectedObjectsDockWidget;
