@@ -25,6 +25,7 @@ class StopView;
 class StatsView;
 class SelectionView;
 class ChartsView;
+class KeysoundView;
 class BpmEditView;
 class NoteEditView;
 class ExternalViewer;
@@ -120,6 +121,7 @@ private:
 	StatsView *statsView;
 	SelectionView *selectionView;
 	ChartsView *chartsView;
+	KeysoundView *keysoundView;
 	ExternalViewer *externalViewer;
 
 	QDockWidget *selectedObjectsDockWidget;
@@ -297,6 +299,9 @@ public:
 
 	int GetCurrentChannel() const{ return currentChannel; }
 	ViewMode *GetCurrentViewMode() const{ return viewMode; }
+	void AddKeysoundsInteractive(){ ChannelNew(); } // file-dialog add, for the Keysounds panel
+	void SelectChannelIndex(int idx);                // make a channel current (for the Keysounds panel)
+	SequenceView *GetSequenceView() const{ return sequenceView; }
 
 	void SetSelectedObjectsView(QWidget *view);
 	void UnsetSelectedObjectsView(QWidget *view);

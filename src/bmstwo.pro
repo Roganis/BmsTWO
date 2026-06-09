@@ -90,6 +90,7 @@ SOURCES += main.cpp\
     StatsView.cpp \
     SelectionView.cpp \
     ChartsView.cpp \
+    KeysoundView.cpp \
     util/ShortcutManager.cpp \
         sequence_view/SequenceView.cpp \
         sequence_view/SequenceViewInternal.cpp \
@@ -183,6 +184,7 @@ HEADERS  += MainWindow.h \
     StatsView.h \
     SelectionView.h \
     ChartsView.h \
+    KeysoundView.h \
     util/ShortcutManager.h \
         sequence_view/SequenceView.h \
         sequence_view/SequenceDef.h \
