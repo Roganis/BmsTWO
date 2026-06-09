@@ -30,6 +30,8 @@ class SequenceTools;
 class ChannelFindTools;
 class ExternalViewerTools;
 class MainWindow;
+class QTimer;
+class QLockFile;
 
 
 class StatusBarSection : public QWidget
@@ -192,6 +194,24 @@ private:
 	bool EnsureClosingFile();
 	static bool IsSourceFileExtension(const QString &ext);
 	static bool IsSoundFileExtension(const QString &ext);
+
+	// --- Autosave / crash recovery ---
+	QTimer *autosaveTimer;
+	QLockFile *recoveryLock;      // held for the session; lets a restart tell a crash from a live instance
+	QString recoverySessionId;    // unique per run
+	QString recoverySnapshotPath; // current snapshot file, empty until first write
+	static QString RecoveryDir();
+	void SetupAutosave();
+	void ReconfigureAutosave();
+	void PerformAutosave();
+	void DiscardRecoverySnapshot();
+	void OpenRecovery(const QString &snapshotPath, const QString &originalPath);
+
+public:
+	// Called once at startup (before opening CLI files) to offer recovery of
+	// snapshots left behind by a crashed session. Returns true if a document
+	// was recovered.
+	bool CheckForCrashRecovery();
 
 private slots:
 	void FileNew();

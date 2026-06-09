@@ -22,6 +22,12 @@
 #include "bmson/Bmson.h"
 #include "bms/Bms.h"
 #include "bms/BmsImportDialog.h"
+#include <QTimer>
+#include <QLockFile>
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QDir>
+#include <QFileInfo>
 
 
 const char* MainWindow::SettingsGroup = "MainWindow";
@@ -41,6 +47,8 @@ MainWindow::MainWindow(QSettings *settings)
     , viewMode(ViewMode::ViewModeEZ5k())
 	, currentChannel(-1)
 	, closing(false)
+	, autosaveTimer(nullptr)
+	, recoveryLock(nullptr)
 {
 	UIUtil::SetFontMainWindow(this);
 	setWindowIcon(QIcon(":/images/bmstwo64.png"));
@@ -503,6 +511,8 @@ MainWindow::MainWindow(QSettings *settings)
 	newDocument->Initialize();
 	ReplaceDocument(newDocument);
 
+	SetupAutosave();
+
 
 	// Load Settings for MainWindow
 	settings->beginGroup(SettingsGroup);
@@ -542,6 +552,170 @@ MainWindow::~MainWindow()
 	settings->setValue(SettingsWindowStateKey, (int)windowState());
 	settings->setValue(SettingsWidgetsStateKey, saveState());
 	settings->endGroup(); // MainWindow
+
+	if (recoveryLock){
+		recoveryLock->unlock();
+		delete recoveryLock;
+		recoveryLock = nullptr;
+	}
+}
+
+// ===================== Autosave / crash recovery =====================
+
+QString MainWindow::RecoveryDir()
+{
+	QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+	if (base.isEmpty())
+		base = QDir::tempPath();
+	return QDir(base).filePath("Recovery");
+}
+
+void MainWindow::SetupAutosave()
+{
+	recoverySessionId = QString::number(QCoreApplication::applicationPid())
+			+ "_" + QString::number(QDateTime::currentMSecsSinceEpoch());
+	autosaveTimer = new QTimer(this);
+	connect(autosaveTimer, &QTimer::timeout, this, &MainWindow::PerformAutosave);
+	connect(EditConfig::Instance(), &EditConfig::AutosaveConfigChanged, this, &MainWindow::ReconfigureAutosave);
+	ReconfigureAutosave();
+}
+
+void MainWindow::ReconfigureAutosave()
+{
+	if (!autosaveTimer)
+		return;
+	if (EditConfig::GetEnableAutosave()){
+		autosaveTimer->start(EditConfig::GetAutosaveInterval() * 1000);
+	}else{
+		autosaveTimer->stop();
+		DiscardRecoverySnapshot();
+	}
+}
+
+void MainWindow::PerformAutosave()
+{
+	if (!document)
+		return;
+	if (!document->GetHistory()->IsDirty()){
+		// nothing unsaved -> make sure no stale snapshot lingers
+		DiscardRecoverySnapshot();
+		return;
+	}
+	QDir dir(RecoveryDir());
+	if (!dir.exists())
+		QDir().mkpath(dir.path());
+	// Hold a session lock so a future launch can tell a crash (dead owner) from
+	// a still-running instance (live owner). Acquired lazily on first snapshot.
+	if (!recoveryLock){
+		recoveryLock = new QLockFile(dir.filePath("recovery_" + recoverySessionId + ".lock"));
+		recoveryLock->tryLock(10);
+	}
+	const QString snap = dir.filePath("recovery_" + recoverySessionId + ".bmson");
+	try{
+		document->ExportTo(snap); // does not touch the document's own save state
+	}catch(...){
+		return; // best-effort: never interrupt editing
+	}
+	recoverySnapshotPath = snap;
+	settings->beginGroup("Recovery");
+	settings->beginGroup(recoverySessionId);
+	settings->setValue("snapshot", snap);
+	settings->setValue("original", document->GetFilePath());
+	settings->setValue("time", QDateTime::currentDateTime().toString(Qt::ISODate));
+	settings->endGroup();
+	settings->endGroup();
+	settings->sync(); // make sure the registry survives a subsequent crash
+}
+
+void MainWindow::DiscardRecoverySnapshot()
+{
+	if (!recoverySnapshotPath.isEmpty()){
+		QFile::remove(recoverySnapshotPath);
+		recoverySnapshotPath.clear();
+	}
+	if (!recoverySessionId.isEmpty()){
+		settings->beginGroup("Recovery");
+		settings->remove(recoverySessionId);
+		settings->endGroup();
+		settings->sync();
+	}
+}
+
+void MainWindow::OpenRecovery(const QString &snapshotPath, const QString &originalPath)
+{
+	if (!EnsureClosingFile())
+		return;
+	try{
+		auto *doc = new Document(this);
+		doc->LoadFile(snapshotPath);
+		ReplaceDocument(doc);
+		// point it at the original location (or leave untitled) and mark dirty
+		doc->SetRecoveredFilePath(originalPath);
+	}catch(...){
+		QMessageBox::critical(this, tr("Error"), tr("Failed to load the recovery snapshot."));
+	}
+}
+
+bool MainWindow::CheckForCrashRecovery()
+{
+	settings->beginGroup("Recovery");
+	const QStringList sessions = settings->childGroups();
+	settings->endGroup();
+	if (sessions.isEmpty())
+		return false;
+
+	QDir dir(RecoveryDir());
+	bool recovered = false;
+	for (const QString &sid : sessions){
+		if (sid == recoverySessionId)
+			continue; // never our own live session
+
+		settings->beginGroup("Recovery");
+		settings->beginGroup(sid);
+		const QString snap = settings->value("snapshot").toString();
+		const QString original = settings->value("original").toString();
+		const QString time = settings->value("time").toString();
+		settings->endGroup();
+		settings->endGroup();
+
+		// Liveness check: if the owning instance is still running we can't take
+		// its lock -> it didn't crash, leave it alone.
+		QLockFile probe(dir.filePath("recovery_" + sid + ".lock"));
+		probe.setStaleLockTime(1000);
+		if (!probe.tryLock(10))
+			continue;
+		probe.unlock();
+
+		auto forget = [&](){
+			QFile::remove(dir.filePath("recovery_" + sid + ".lock"));
+			settings->beginGroup("Recovery");
+			settings->remove(sid);
+			settings->endGroup();
+		};
+
+		if (snap.isEmpty() || !QFile::exists(snap)){
+			forget();
+			continue;
+		}
+
+		const QString name = original.isEmpty() ? tr("(untitled)") : QFileInfo(original).fileName();
+		auto res = QMessageBox::question(
+			this, tr("Recover unsaved work?"),
+			tr("BmsTWO did not close normally.\n\nRecover unsaved changes to \"%1\"?\n(autosaved %2)")
+				.arg(name, time),
+			QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		if (res == QMessageBox::Yes){
+			OpenRecovery(snap, original);
+			QFile::remove(snap);
+			forget();
+			recovered = true;
+			break; // single-document: recover one, leave any others for next launch
+		}else{
+			QFile::remove(snap);
+			forget();
+		}
+	}
+	return recovered;
 }
 
 void MainWindow::FileNew()
@@ -632,6 +806,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 		return;
 	}
 	closing = true;
+	// Clean shutdown: drop the recovery snapshot so we don't offer to recover
+	// on the next launch.
+	DiscardRecoverySnapshot();
 	event->accept();
 }
 
@@ -1052,6 +1229,8 @@ bool MainWindow::Save()
 		}else{
 			document->Save();
 		}
+		// Saved successfully: there is nothing left to recover.
+		DiscardRecoverySnapshot();
 		return true;
 	}catch(...){
 		QMessageBox *msgbox = new QMessageBox(

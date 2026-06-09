@@ -19,6 +19,8 @@ private:
 	static const char* SettingsAlwaysShowCursorLineInEditModeKey;
 	static const char* SettingsSnappedSelectionInEditModeKey;
 	static const char* SettingsLockKeysoundLaneKey;
+	static const char* SettingsEnableAutosaveKey;
+	static const char* SettingsAutosaveIntervalKey;
 
 	static EditConfig *instance;
 	EditConfig();
@@ -60,6 +62,12 @@ public:
 	static bool LockKeysoundLane();
 	static void SetLockKeysoundLane(bool value);
 
+	// Autosave / crash recovery. Interval is in seconds (clamped to a sane range).
+	static bool GetEnableAutosave();
+	static int GetAutosaveInterval();
+	static void SetEnableAutosave(bool value);
+	static void SetAutosaveInterval(int seconds);
+
 signals:
 
 	void EnableMasterChannelChanged(bool value);
@@ -70,6 +78,8 @@ signals:
 
 	void CanShowMasterLaneChanged(bool value);
 	void CanShowMiniMapChanged(bool value);
+
+	void AutosaveConfigChanged();
 };
 
 

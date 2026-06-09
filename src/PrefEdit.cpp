@@ -51,6 +51,26 @@ PrefEditPage::PrefEditPage(QWidget *parent)
 		editModeGroup->setLayout(editModeLayout);
 		layout->addWidget(editModeGroup);
 	}
+	{
+		auto autosaveGroup = new QGroupBox(tr("Autosave"));
+		auto autosaveLayout = new QFormLayout();
+		{
+			enableAutosave = new QCheckBox(tr("Enable autosave (crash recovery)"));
+			enableAutosave->setWhatsThis(tr("Periodically writes a recovery snapshot of unsaved changes. If BmsTWO does not close normally, it offers to recover that work on the next launch."));
+			enableAutosave->setToolTip(enableAutosave->whatsThis());
+			autosaveLayout->addRow(enableAutosave);
+
+			autosaveInterval = new QSpinBox();
+			autosaveInterval->setRange(15, 3600);
+			autosaveInterval->setSingleStep(15);
+			autosaveInterval->setSuffix(tr(" s"));
+			autosaveLayout->addRow(tr("Autosave interval:"), autosaveInterval);
+		}
+		autosaveGroup->setLayout(autosaveLayout);
+		layout->addWidget(autosaveGroup);
+
+		connect(enableAutosave, SIGNAL(toggled(bool)), autosaveInterval, SLOT(setEnabled(bool)));
+	}
 	setLayout(layout);
 
 	connect(master, SIGNAL(toggled(bool)), this, SLOT(MasterChanged(bool)));
@@ -81,6 +101,11 @@ void PrefEditPage::load()
 	snappedHitTestInEditMode->setChecked(EditConfig::SnappedHitTestInEditMode());
 	alwaysShowCursorLineInEditMode->setChecked(EditConfig::AlwaysShowCursorLineInEditMode());
 	snappedSelectionInEditMode->setChecked(EditConfig::SnappedSelectionInEditMode());
+
+	bool vAutosave = EditConfig::GetEnableAutosave();
+	enableAutosave->setChecked(vAutosave);
+	autosaveInterval->setValue(EditConfig::GetAutosaveInterval());
+	autosaveInterval->setEnabled(vAutosave);
 }
 
 void PrefEditPage::store()
@@ -94,6 +119,9 @@ void PrefEditPage::store()
 	EditConfig::SetSnappedHitTestInEditMode(snappedHitTestInEditMode->isChecked());
 	EditConfig::SetAlwaysShowCursorLineInEditMode(alwaysShowCursorLineInEditMode->isChecked());
 	EditConfig::SetSnappedSelectionInEditMode(snappedSelectionInEditMode->isChecked());
+
+	EditConfig::SetEnableAutosave(enableAutosave->isChecked());
+	EditConfig::SetAutosaveInterval(autosaveInterval->value());
 }
 
 void PrefEditPage::MasterChanged(bool value)

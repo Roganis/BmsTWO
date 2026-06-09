@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QStandardPaths>
 #include <QDir>
+#include <QFile>
 #include <QSettings>
 #include <cstdio>
 
@@ -244,6 +245,55 @@ int main(int argc, char **argv) {
         // undo removes the stop and restores linear time
         doc.GetHistory()->Undo();
         if (absd(doc.GetAbsoluteTime(2*R) - 2*R*spp) > 1e-9){ fprintf(stderr, "FAIL: undo stop\n"); return 1; }
+    }
+
+    fprintf(stderr, "=== case: recovery snapshot round-trip (ExportTo -> LoadFile) ===\n");
+    {
+        // This is the core of crash recovery: ExportTo writes a snapshot without
+        // touching save state, and a fresh Document must load it back intact.
+        Document doc;
+        doc.Initialize();
+        doc.GetInfo()->SetInitBpm(150.0);
+        for (int i = 1; i <= 50; i++)
+            doc.InsertBpmEvent(BpmEvent(i * 24, 120.0 + (i % 30)));
+        for (int i = 1; i <= 20; i++)
+            doc.InsertStopEvent(StopEvent(i * 96, 48.0));
+        for (int i = 0; i < 8; i++)
+            doc.InsertBgaHeader(BgaHeader(i, QString("img%1.png").arg(i)));
+        doc.InsertNewSoundChannels(QList<QString>() << "a.ogg" << "b.ogg");
+        pump();
+        const auto chs = doc.GetSoundChannels();
+        QMultiMap<SoundChannel*, SoundNote> notes;
+        for (auto *ch : chs)
+            for (int i = 0; i < 30; i++)
+                notes.insert(ch, SoundNote(i * 20, (i % 5) + 1, 0, 0));
+        doc.MultiChannelUpdateSoundNotes(notes);
+        pump();
+
+        const QString snap = QDir(QDir::tempPath()).filePath("bmstwo_fuzz_recovery.bmson");
+        QFile::remove(snap);
+        bool exported = true;
+        try { doc.ExportTo(snap); } catch (...) { exported = false; }
+        if (!exported || !QFile::exists(snap)) { fprintf(stderr, "FAIL: ExportTo did not write a snapshot\n"); return 1; }
+        // ExportTo must NOT clear the dirty flag (it's not a real save)
+        if (!doc.GetHistory()->IsDirty()) { fprintf(stderr, "FAIL: ExportTo cleared dirty state\n"); return 1; }
+
+        Document loaded;
+        loaded.Initialize();
+        bool ok = true;
+        try { loaded.LoadFile(snap); } catch (...) { ok = false; }
+        if (!ok) { fprintf(stderr, "FAIL: could not load snapshot back\n"); return 1; }
+        pump();
+        if (loaded.GetBpmEvents().size() != doc.GetBpmEvents().size()) { fprintf(stderr, "FAIL: bpm count mismatch\n"); return 1; }
+        if (loaded.GetStopEvents().size() != doc.GetStopEvents().size()) { fprintf(stderr, "FAIL: stop count mismatch\n"); return 1; }
+        if (loaded.GetBga().headers.size() != doc.GetBga().headers.size()) { fprintf(stderr, "FAIL: bga header count mismatch\n"); return 1; }
+        if (loaded.GetSoundChannels().size() != doc.GetSoundChannels().size()) { fprintf(stderr, "FAIL: channel count mismatch\n"); return 1; }
+
+        // SetRecoveredFilePath: adopt an original path and force dirty
+        loaded.SetRecoveredFilePath("/some/original/path.bmson");
+        if (loaded.GetFilePath() != "/some/original/path.bmson") { fprintf(stderr, "FAIL: recovered path not set\n"); return 1; }
+        if (!loaded.GetHistory()->IsDirty()) { fprintf(stderr, "FAIL: recovered doc not dirty\n"); return 1; }
+        QFile::remove(snap);
     }
 
     fprintf(stderr, "ALL CASES DONE\n");
