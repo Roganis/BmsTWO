@@ -25,6 +25,62 @@ The EZ2 mode support inherited from djkero is **kept as-is** in this fork:
   way — see `EZ2_INFO.txt` for the judgement/life delta reference).
 * `EZ2_TEMPLATE.bmson` is provided as a starting template.
 
+## What's new in BmsTWO
+
+Everything below was added on top of the `djkero/BmsONE` base. End-user
+documentation for these lives in the [project wiki](../../wiki) (source under
+[`docs/`](docs/)).
+
+### Editing & navigation
+
+* **Copy / cut / paste** of sound notes, pasting at the cursor and snapping to
+  the grid when snap is on.
+* **Fill notes** evenly between two selected notes.
+* **Custom bar division** — toggle a bar line at the cursor to split/merge
+  measures.
+* **BGA editing** — a dockable editor for BGA headers and the base / layer /
+  poor event lanes.
+* **STOP events** — editable, and now honored by the time/playback engine
+  (playback and WAV export pause at stops).
+* **Long notes** — a non-standard `up` flag re-triggers the keysound at an LN's
+  release, plus a one-key **Toggle Long Note** command.
+* **Keysound / lane lock** — stop note drags from accidentally reassigning a
+  note's lane (keysound).
+* **MIDI import** — drop a MIDI file onto a channel to lay out slice notes.
+* **Go To** — jump to a measure, pulse, or time.
+* **Richer selection** — select every note in a channel, and inspect/sort the
+  current selection in a dedicated panel.
+
+### Panels & workflow
+
+* **Statistics** dock — note counts, average / peak NPS, per-lane distribution.
+* **Charts** dock — list and switch between the charts in a song folder (sabun
+  workflow).
+* **Keysounds** panel — add / remove / reorder / replace the shared keysound
+  list in one place.
+* **Selection** dock — sortable list of the current selection; double-click to
+  jump.
+* **Autosave & crash recovery** — periodic snapshots of unsaved work, offered
+  back after an abnormal exit.
+* **Configurable keyboard shortcuts** — rebind any menu command, with conflict
+  detection, in Preferences.
+* **Multi-track sample preview** — preview several selected channels mixed
+  together.
+
+### Appearance
+
+* **Modern dark theme** (toggle in Preferences; *Classic* restores the original
+  look): Fusion palette, tiered gridlines, alternating measure shading, rounded
+  notes / long-note capsules, per-channel color-coding with custom overrides,
+  monospace numeric fields, and crisp high-DPI rendering.
+
+### Under the hood
+
+* **Qt 6 port** (still builds on Qt 5), a dependency-free **crash handler**,
+  numerous crash/UB/leak fixes, smart-pointer ownership refactors, faster bulk
+  channel operations, a headless ASan/UBSan fuzz harness, and CI that produces
+  Windows and Linux builds.
+
 ## Building
 
 This software is built with [Qt](https://www.qt.io/) (Qt 5; the project also
