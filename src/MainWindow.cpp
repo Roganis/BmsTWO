@@ -7,6 +7,7 @@
 #include "StatsView.h"
 #include "SelectionView.h"
 #include "ChartsView.h"
+#include "KeysoundView.h"
 #include "BpmEditTool.h"
 #include "NoteEditTool.h"
 #include "document/History.h"
@@ -525,6 +526,14 @@ MainWindow::MainWindow(QSettings *settings)
 	dockCharts->hide(); // off by default; available from View > Docks
 	menuViewDockBars->insertAction(actionViewDockSeparator, dockCharts->toggleViewAction());
 
+	auto dockKeysounds = new QDockWidget(tr("Keysounds"));
+	UIUtil::SetFont(dockKeysounds);
+	dockKeysounds->setObjectName("Keysounds");
+	dockKeysounds->setWidget(keysoundView = new KeysoundView(this));
+	addDockWidget(Qt::LeftDockWidgetArea, dockKeysounds);
+	dockKeysounds->hide(); // off by default; available from View > Docks
+	menuViewDockBars->insertAction(actionViewDockSeparator, dockKeysounds->toggleViewAction());
+
 	selectedObjectsDockWidget = new QDockWidget(tr("Selected Objects"));
 	UIUtil::SetFont(selectedObjectsDockWidget);
 	selectedObjectsDockWidget->setObjectName("SelectedObjectsDock");
@@ -949,6 +958,14 @@ void MainWindow::ChannelPrev()
 	emit CurrentChannelChanged(currentChannel);
 }
 
+void MainWindow::SelectChannelIndex(int idx)
+{
+	if (!document || idx < 0 || idx >= document->GetSoundChannels().size())
+		return;
+	currentChannel = idx;
+	emit CurrentChannelChanged(currentChannel);
+}
+
 void MainWindow::ChannelNext()
 {
 	if (!document || currentChannel < 0)
@@ -1258,6 +1275,7 @@ void MainWindow::ReplaceDocument(Document *newDocument)
 	stopView->ReplaceDocument(document);
 	statsView->ReplaceDocument(document);
 	chartsView->ReplaceDocument(document);
+	keysoundView->ReplaceDocument(document);
 	sequenceView->ReplaceDocument(document);
 	externalViewer->ReplaceDocument(document);
 
