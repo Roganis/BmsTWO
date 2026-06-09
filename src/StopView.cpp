@@ -1,5 +1,6 @@
 #include "StopView.h"
 #include "MainWindow.h"
+#include "util/Theme.h"
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QHeaderView>
@@ -20,6 +21,8 @@ StopView::StopView(MainWindow *mainWindow)
 	table->horizontalHeader()->setStretchLastSection(true);
 	table->verticalHeader()->setVisible(false);
 	table->setSelectionBehavior(QAbstractItemView::SelectRows);
+	if (Theme::IsModern())
+		table->setFont(Theme::MonospaceFont()); // numeric location/duration
 
 	addButton = new QPushButton(tr("Add"), this);
 	removeButton = new QPushButton(tr("Remove"), this);

@@ -2,6 +2,7 @@
 #include "MainWindow.h"
 #include "util/SymbolIconManager.h"
 #include "util/JsonExtension.h"
+#include "util/Theme.h"
 #include "sequence_view/SequenceView.h"
 #include "sequence_view/SequenceViewInternal.h"
 
@@ -31,6 +32,8 @@ NoteEditView::NoteEditView(MainWindow *mainWindow)
 		layout->addRow(captionLayout);
 	}
 	layout->addRow(tr("Length:"), editLength = new QuasiModalEdit());
+	if (Theme::IsModern())
+		editLength->setFont(Theme::MonospaceFont()); // numeric/tick field
 	checkUp = new QCheckBox(tr("Re-trigger sound at LN release"));
 	checkUp->setToolTip(tr("Play this channel's sound again when the long note ends (non-standard 'up' field)."));
 	layout->addRow(tr("LN end sound:"), checkUp);
