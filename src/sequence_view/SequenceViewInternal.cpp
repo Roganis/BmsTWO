@@ -42,6 +42,9 @@ SoundChannelView::SoundChannelView(SequenceView *sview, SoundChannel *channel)
 	actionClearColor = new QAction(tr("Clear Color"), this);
 	connect(actionClearColor, SIGNAL(triggered()), this, SLOT(ClearColor()));
 
+	actionSelectNotes = new QAction(tr("Select All Notes in Channel"), this);
+	connect(actionSelectNotes, SIGNAL(triggered()), this, SLOT(SelectNotes()));
+
 	actionDeleteNotes = new QAction(tr("Delete"), this);
 	connect(actionDeleteNotes, SIGNAL(triggered()), this, SLOT(DeleteNotes()));
 	actionTransferNotes = new QAction(tr("Move to Key Lanes"), this);
@@ -193,6 +196,15 @@ void SoundChannelView::ClearColor()
 void SoundChannelView::CustomColorChanged()
 {
 	update();
+	sview->playingPane->update();
+}
+
+void SoundChannelView::SelectNotes()
+{
+	sview->ClearNotesSelection();
+	sview->SetCurrentChannel(this, true);
+	for (SoundNoteView *nview : notes)
+		sview->SelectAdditionalNote(nview);
 	sview->playingPane->update();
 }
 
@@ -596,6 +608,8 @@ void SoundChannelView::OnChannelMenu(QContextMenuEvent *event)
 	menu.addSeparator();
 	menu.addAction(actionMoveLeft);
 	menu.addAction(actionMoveRight);
+	menu.addSeparator();
+	menu.addAction(actionSelectNotes);
 	menu.addSeparator();
 	menu.addAction(actionSetColor);
 	actionClearColor->setEnabled(channel->GetCustomColor().isValid());
