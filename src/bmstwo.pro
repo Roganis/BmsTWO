@@ -6,7 +6,7 @@
 #
 #-------------------------------------------------
 
-TARGET = BmsONE
+TARGET = BmsTWO
 CONFIG += c++17 warn_on
 FORMS    +=
 QT       += core concurrent gui multimedia
@@ -17,7 +17,7 @@ greaterThan(QT_MAJOR_VERSION, 5): QT += core5compat
 TEMPLATE = app
 INCLUDEPATH += $$PWD/ $$PWD/libvorbis
 DEPENDPATH += $$PWD/
-RESOURCES += bmsone.qrc
+RESOURCES += bmstwo.qrc
 #DISTFILES += images/symbols/sound_channel_lane.png
 TRANSLATIONS = i18n/ja.ts
 
@@ -235,8 +235,8 @@ HEADERS  += MainWindow.h \
     libvorbis/modes/setup_X.h
 
 
-macx: ICON = bmsone.icns
-win32: RC_ICONS = bmsone.ico
+macx: ICON = bmstwo.icns
+win32: RC_ICONS = bmstwo.ico
 
 
 

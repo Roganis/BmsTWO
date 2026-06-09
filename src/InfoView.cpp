@@ -107,7 +107,7 @@ InfoView::InfoView(MainWindow *mainWindow)
 	SetToolTip(editTitleImage, Bmson::BmsInfo::TitleImageKey, tyString, tr("The filename of an image that will be displayed before song starts."));
 	SetToolTip(editBanner, Bmson::BmsInfo::BannerKey, tyString, tr("The filename of an image that will be displayed in song selection or result screen."));
 	SetToolTip(editPreviewMusic, Bmson::BmsInfo::PreviewMusicKey, tyString, tr("The filename of a sound that will be used to preview the song."));
-	editExtraFields->setToolTip(tr("Enter extra fields that are not supported by BmsONE. Example:") +
+	editExtraFields->setToolTip(tr("Enter extra fields that are not supported by BmsTWO. Example:") +
 								"<pre>\"field_1\": \"14:00 2015/11/14\",\n\"field_2\": [0, 240, 480]</pre>");
 	buttonShowExtraFields->setToolTip(editExtraFields->toolTip());
 	layout->labelForField(buttonShowExtraFields)->setToolTip(editExtraFields->toolTip());

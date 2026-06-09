@@ -120,7 +120,7 @@ PrefGeneralPage::PrefGeneralPage(QWidget *parent)
 		subLayout->addWidget(language);
 		subLayout->addWidget(new QLabel(tr("(Requires restart)")));
 		layout->addRow(tr("Language:"), subLayout);
-		language->setWhatsThis(tr("Select a language used in this application. After selecting one, restart BmsONE."));
+		language->setWhatsThis(tr("Select a language used in this application. After selecting one, restart BmsTWO."));
 		language->setToolTip(language->whatsThis());
 	}
 	{
@@ -131,7 +131,7 @@ PrefGeneralPage::PrefGeneralPage(QWidget *parent)
 		//outputFormat->setEditable(true);
 		layout->addRow(tr("Save Format:"), outputFormat);
 		outputFormat->setWhatsThis(tr("<p>Select a version of BMSON format to save files in.</p>"
-									  "<p><b>Default</b> (recommended): the most suitable version for current BmsONE.</p>"));
+									  "<p><b>Default</b> (recommended): the most suitable version for current BmsTWO.</p>"));
 		outputFormat->setToolTip(outputFormat->whatsThis());
 	}
 	{

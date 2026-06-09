@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=BmsONE
+Name=BmsTWO
 GenericName=bmson Editor
 Comment=Editor for bmson music-game charts
-Exec=BmsONE %f
-Icon=bmsone64
+Exec=BmsTWO %f
+Icon=bmstwo64
 Categories=AudioVideo;Audio;Music;
 Terminal=false
 MimeType=application/json;

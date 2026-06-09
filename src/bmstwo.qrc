@@ -1,7 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>i18n/ja.qm</file>
-        <file>images/bmsone64.png</file>
+        <file>images/bmstwo64.png</file>
         <file>images/keys/scratch.png</file>
         <file>images/keys/wkey.png</file>
         <file>images/keys/bkey.png</file>

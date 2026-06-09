@@ -643,7 +643,7 @@ void SequenceView::DeleteSelectedNotes()
 }
 
 // Clipboard format for copy/paste of sound notes (issue #10).
-static const char *SoundNotesMimeType = "application/x-bmsone-soundnotes";
+static const char *SoundNotesMimeType = "application/x-bmstwo-soundnotes";
 
 void SequenceView::CopySelectedNotes()
 {
@@ -667,7 +667,7 @@ void SequenceView::CopySelectedNotes()
 	if (arr.isEmpty())
 		return;
 	QJsonObject root;
-	root["type"] = "bmsone/soundnotes";
+	root["type"] = "bmstwo/soundnotes";
 	root["notes"] = arr;
 	const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
 	auto *mime = new QMimeData();
@@ -695,7 +695,7 @@ bool SequenceView::CanPasteNotes() const
 	QJsonParseError err;
 	const QJsonObject root = QJsonDocument::fromJson(json, &err).object();
 	return err.error == QJsonParseError::NoError
-			&& root["type"].toString() == "bmsone/soundnotes";
+			&& root["type"].toString() == "bmstwo/soundnotes";
 }
 
 void SequenceView::PasteNotes()
@@ -710,7 +710,7 @@ void SequenceView::PasteNotes()
 			: (mime->hasText() ? mime->text().toUtf8() : QByteArray());
 	QJsonParseError err;
 	const QJsonObject root = QJsonDocument::fromJson(json, &err).object();
-	if (err.error != QJsonParseError::NoError || root["type"].toString() != "bmsone/soundnotes")
+	if (err.error != QJsonParseError::NoError || root["type"].toString() != "bmstwo/soundnotes")
 		return;
 	const QJsonArray arr = root["notes"].toArray();
 	const QList<SoundChannel*> &channels = document->GetSoundChannels();

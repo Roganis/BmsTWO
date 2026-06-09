@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
-	Q_INIT_RESOURCE(bmsone);
+	Q_INIT_RESOURCE(bmstwo);
 
 	App app(argc, argv);
 	return app.exec();
