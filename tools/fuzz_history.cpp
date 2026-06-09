@@ -147,6 +147,30 @@ int main(int argc, char **argv) {
         pump();
     }
 
+    fprintf(stderr, "=== case: stop events ===\n");
+    {
+        Document doc;
+        doc.Initialize();
+        EditHistory *h = doc.GetHistory();
+        for (int i = 1; i <= 300; i++)
+            doc.InsertStopEvent(StopEvent(i * 48, 24.0 + (i % 96)));
+        if (doc.GetStopEvents().size() != 300) { fprintf(stderr, "FAIL stop count %d\n", (int)doc.GetStopEvents().size()); return 1; }
+        // update path (same location, new duration)
+        for (int i = 1; i <= 300; i += 2)
+            doc.InsertStopEvent(StopEvent(i * 48, 200.0));
+        // identical re-insert must be a no-op
+        auto ev = doc.GetStopEvents().first();
+        if (doc.InsertStopEvent(ev)) { fprintf(stderr, "FAIL: identical stop re-insert not a no-op\n"); return 1; }
+        // remove subset
+        for (int i = 2; i <= 300; i += 3) doc.RemoveStopEvent(i * 48);
+        storm(h, 3);
+        pump();
+        undoAll(h);
+        if (!doc.GetStopEvents().isEmpty()) { fprintf(stderr, "FAIL: stops not empty after full undo\n"); return 1; }
+        redoAll(h);
+        pump();
+    }
+
     fprintf(stderr, "=== case: bga headers + timeline ===\n");
     {
         Document doc;

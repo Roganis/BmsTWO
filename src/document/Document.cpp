@@ -108,6 +108,11 @@ void Document::LoadFile(QString filePath)
     if (bmsonFields.contains(Bmson::Bms::BgaKey)){
         bga = Bga(bmsonFields[Bmson::Bms::BgaKey]);
     }
+    QJsonArray jsonStop = bmsonFields[Bmson::Bms::StopEventsKey].toArray();
+    for (int i=0; i<jsonStop.size(); i++){
+        StopEvent event(jsonStop[i]);
+        stopEvents.insert(event.location, event);
+    }
     QJsonArray soundChannelsJson = bmsonFields[Bmson::Bms::SoundChannelsKey].toArray();
     for (int i=0; i<soundChannelsJson.size(); i++){
         auto *channel = new SoundChannel(this);
@@ -182,8 +187,6 @@ void Document::LoadBms(const Bms::Bms &bms)
         }
     }
     {
-        QMap<int, StopEvent> stopEvents;
-
         // STOPイベント
         int pos = 0;
         for (int i=0; i<bms.sections.length(); i++){
@@ -200,12 +203,7 @@ void Document::LoadBms(const Bms::Bms &bms)
             }
             pos += sectionLength;
         }
-
-        QJsonArray jsonEvents;
-        for (const auto &ev : stopEvents) {
-            jsonEvents.append(ev.AsJson());
-        }
-        bmsonFields[Bmson::Bms::StopEventsKey] = jsonEvents;
+        // The live `stopEvents` model is now the source of truth; ExportTo serializes it.
     }
     {
         // BGAイベント
@@ -330,6 +328,11 @@ void Document::ExportTo(const QString &exportFilePath)
         jsonBpmEvents.append(event.SaveBmson());
     }
     bmsonFields[Bmson::Bms::BpmEventsKey] = jsonBpmEvents;
+    QJsonArray jsonStopEvents;
+    for (StopEvent event : std::as_const(stopEvents)){
+        jsonStopEvents.append(event.SaveBmson());
+    }
+    bmsonFields[Bmson::Bms::StopEventsKey] = jsonStopEvents;
     if (!bga.headers.empty() || !bga.bgaEvents.empty() || !bga.layerEvents.empty() || !bga.missEvents.empty()){
         bmsonFields[Bmson::Bms::BgaKey] = bga.AsJson();
     }
@@ -779,6 +782,50 @@ void Document::RemoveBpmEvents(QList<int> locations)
     actions->Finish(afterDo, afterDo);
     afterDo();
     history->Add(actions);
+}
+
+
+bool Document::InsertStopEvent(StopEvent event)
+{
+    if (stopEvents.contains(event.location)){
+        if (stopEvents[event.location] == event)
+            return false;
+        auto updater = [this](StopEvent value){
+            stopEvents.insert(value.location, value);
+            emit StopEventsChanged();
+        };
+        history->Add(new EditValueAction<StopEvent>(updater, stopEvents[event.location], event, tr("update STOP event"), true));
+        return true;
+    }else{
+        auto adder = [this](StopEvent value){
+            stopEvents.insert(value.location, value);
+            emit StopEventsChanged();
+        };
+        auto remover = [this](StopEvent value){
+            stopEvents.remove(value.location);
+            emit StopEventsChanged();
+        };
+        history->Add(new AddValueAction<StopEvent>(adder, remover, event, tr("add STOP event"), true));
+        return true;
+    }
+}
+
+bool Document::RemoveStopEvent(int location)
+{
+    if (!stopEvents.contains(location))
+        return false;
+    StopEvent event = stopEvents.take(location);
+    auto adder = [this](StopEvent value){
+        stopEvents.insert(value.location, value);
+        emit StopEventsChanged();
+    };
+    auto remover = [this](StopEvent value){
+        stopEvents.remove(value.location);
+        emit StopEventsChanged();
+    };
+    emit StopEventsChanged();
+    history->Add(new RemoveValueAction<StopEvent>(adder, remover, event, tr("remove STOP event"), false));
+    return true;
 }
 
 
