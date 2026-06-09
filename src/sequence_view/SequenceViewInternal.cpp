@@ -6,6 +6,7 @@
 #include "../util/SymbolIconManager.h"
 #include "../util/Theme.h"
 #include "EditConfig.h"
+#include <QColorDialog>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -36,6 +37,10 @@ SoundChannelView::SoundChannelView(SequenceView *sview, SoundChannel *channel)
 	connect(actionMoveRight, SIGNAL(triggered()), this, SLOT(MoveRight()));
 	actionDestroy = new QAction(tr("Delete"), this);
 	connect(actionDestroy, SIGNAL(triggered()), this, SLOT(Destroy()));
+	actionSetColor = new QAction(tr("Set Color..."), this);
+	connect(actionSetColor, SIGNAL(triggered()), this, SLOT(SetColor()));
+	actionClearColor = new QAction(tr("Clear Color"), this);
+	connect(actionClearColor, SIGNAL(triggered()), this, SLOT(ClearColor()));
 
 	actionDeleteNotes = new QAction(tr("Delete"), this);
 	connect(actionDeleteNotes, SIGNAL(triggered()), this, SLOT(DeleteNotes()));
@@ -50,6 +55,7 @@ SoundChannelView::SoundChannelView(SequenceView *sview, SoundChannel *channel)
 	connect(channel, &SoundChannel::NoteInserted, this, &SoundChannelView::NoteInserted);
 	connect(channel, &SoundChannel::NoteRemoved, this, &SoundChannelView::NoteRemoved);
 	connect(channel, &SoundChannel::NoteChanged, this, &SoundChannelView::NoteChanged);
+	connect(channel, &SoundChannel::CustomColorChanged, this, &SoundChannelView::CustomColorChanged);
 	connect(channel, &SoundChannel::RmsUpdated, this, &SoundChannelView::RmsUpdated);
 	connect(channel, &SoundChannel::NameChanged, this, &SoundChannelView::NameChanged);
 	connect(channel, &SoundChannel::Show, this, &SoundChannelView::Show);
@@ -167,6 +173,27 @@ void SoundChannelView::Destroy()
 {
 	// delete later
 	QMetaObject::invokeMethod(sview, "DestroySoundChannel", Qt::QueuedConnection, Q_ARG(SoundChannelView*, this));
+}
+
+void SoundChannelView::SetColor()
+{
+	QColor initial = channel->GetCustomColor();
+	if (!initial.isValid())
+		initial = QColor(120, 170, 230);
+	QColor color = QColorDialog::getColor(initial, this, tr("Channel Color"));
+	if (color.isValid())
+		channel->SetCustomColor(color);
+}
+
+void SoundChannelView::ClearColor()
+{
+	channel->SetCustomColor(QColor()); // invalid -> revert to default
+}
+
+void SoundChannelView::CustomColorChanged()
+{
+	update();
+	sview->playingPane->update();
 }
 
 void SoundChannelView::DeleteNotes()
@@ -569,6 +596,10 @@ void SoundChannelView::OnChannelMenu(QContextMenuEvent *event)
 	menu.addSeparator();
 	menu.addAction(actionMoveLeft);
 	menu.addAction(actionMoveRight);
+	menu.addSeparator();
+	menu.addAction(actionSetColor);
+	actionClearColor->setEnabled(channel->GetCustomColor().isValid());
+	menu.addAction(actionClearColor);
 	menu.addSeparator();
 	menu.addAction(actionDestroy);
 	menu.exec(event->globalPos());
