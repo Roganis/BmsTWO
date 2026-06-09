@@ -96,6 +96,26 @@ Or open `src/bmstwo.pro` in Qt Creator.
 libogg and libvorbis are bundled in the source code (under `src/libogg` and
 `src/libvorbis`), so no external audio libraries are required.
 
+## AI development & transparency
+
+In the interest of transparency, the BmsTWO fork was developed as a
+human-directed, AI-assisted project:
+
+* **The maintainer ([Roganis](https://github.com/Roganis))** owns and directs
+  the project: setting goals and priorities, making the design and scope
+  decisions, reviewing the work, running and validating the application
+  (interactive/GUI testing), and owning releases and overall responsibility for
+  the project.
+* **An AI coding assistant (Anthropic's Claude, via Claude Code)** did the
+  hands-on implementation under that direction: writing the feature code, bug
+  fixes, refactors, and this documentation, and verifying each change with
+  compiler builds and the headless AddressSanitizer/UBSan test harness.
+
+In short: the human decides *what* gets built and confirms it works in practice;
+the AI does most of the *writing* and automated checking. Automated verification
+(builds, sanitizer/fuzz harness) does **not** replace real-world use — please
+report anything that misbehaves.
+
 ## License
 
 BmsTWO is distributed under the **GNU General Public License v3.0**. See the
