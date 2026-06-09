@@ -145,6 +145,7 @@ private:
 	QAction *actionSetColor;
 	QAction *actionClearColor;
 
+	QAction *actionSelectNotes;
 	QAction *actionDeleteNotes;
 	QAction *actionTransferNotes;
 
@@ -172,6 +173,7 @@ private slots:
 	void SetColor();
 	void ClearColor();
 
+	void SelectNotes();
 	void DeleteNotes();
 	void TransferNotes();
 
