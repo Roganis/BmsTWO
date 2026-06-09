@@ -142,6 +142,8 @@ private:
 	QAction *actionMoveLeft;
 	QAction *actionMoveRight;
 	QAction *actionDestroy;
+	QAction *actionSetColor;
+	QAction *actionClearColor;
 
 	QAction *actionDeleteNotes;
 	QAction *actionTransferNotes;
@@ -155,6 +157,7 @@ private slots:
 	void NoteInserted(SoundNote note);
 	void NoteRemoved(SoundNote note);
 	void NoteChanged(int oldLocation, SoundNote note);
+	void CustomColorChanged();
 
 	void RmsUpdated();
 
@@ -166,6 +169,8 @@ private slots:
 	void MoveLeft();
 	void MoveRight();
 	void Destroy();
+	void SetColor();
+	void ClearColor();
 
 	void DeleteNotes();
 	void TransferNotes();

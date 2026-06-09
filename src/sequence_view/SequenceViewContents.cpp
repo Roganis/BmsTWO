@@ -125,13 +125,15 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 							std::round(Time2Y(note.location)) - std::round(Time2Y(note.location + note.length)) + 7);
 				QLinearGradient g(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
 				QLinearGradient g2(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
+				// Per-channel custom color override (invalid -> default lane color).
+				QColor cc = cview->GetChannel()->GetCustomColor();
 				if (cursor->GetState() == SequenceViewCursor::State::EXISTING_SOUND_NOTE && nview == cursor->GetExistingSoundNote()){
 					// hover
-					SetNoteColor(g, g2, note.lane, true);
+					SetNoteColor(g, g2, note.lane, true, cc);
 				}else if (selectedNotes.contains(nview)){
-					SetNoteColor(g, g2, note.lane, cview->IsCurrent());
+					SetNoteColor(g, g2, note.lane, cview->IsCurrent(), cc);
 				}else{
-					SetNoteColor(g, g2, note.lane, cview->IsCurrent());
+					SetNoteColor(g, g2, note.lane, cview->IsCurrent(), cc);
 				}
 				painter.setBrush(QBrush(g));
 				painter.setPen(QPen(QBrush(g2), 1));

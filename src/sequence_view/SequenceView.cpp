@@ -1325,11 +1325,12 @@ g:
 	return 0;
 }
 
-void SequenceView::SetNoteColor(QLinearGradient &g, QLinearGradient &g2, int lane, bool active) const
+void SequenceView::SetNoteColor(QLinearGradient &g, QLinearGradient &g2, int lane, bool active, QColor customColor) const
 {
 	if (!darkenNotesInInactiveChannels)
 		active = true;
-	QColor c = lane==0 ? QColor(210, 210, 210) : lanes[lane].noteColor;
+	QColor c = customColor.isValid() ? customColor
+			: (lane==0 ? QColor(210, 210, 210) : lanes[lane].noteColor);
 	QColor cl = active ? c : QColor(c.red()/2, c.green()/2, c.blue()/2);
 	QColor cd(cl.red()*2/3, cl.green()*2/3, cl.blue()*2/3);
 	g.setColorAt(0, cd);

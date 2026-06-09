@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
+#include <QColor>
 #include <QSettings>
 #include <cstdio>
 
@@ -269,6 +270,9 @@ int main(int argc, char **argv) {
                 notes.insert(ch, SoundNote(i * 20, (i % 5) + 1, 0, 0));
         doc.MultiChannelUpdateSoundNotes(notes);
         pump();
+        // per-channel custom color must round-trip through ExportTo/LoadFile
+        if (!chs.isEmpty())
+            chs.first()->SetCustomColor(QColor("#ff8800"));
 
         const QString snap = QDir(QDir::tempPath()).filePath("bmstwo_fuzz_recovery.bmson");
         QFile::remove(snap);
@@ -288,6 +292,10 @@ int main(int argc, char **argv) {
         if (loaded.GetStopEvents().size() != doc.GetStopEvents().size()) { fprintf(stderr, "FAIL: stop count mismatch\n"); return 1; }
         if (loaded.GetBga().headers.size() != doc.GetBga().headers.size()) { fprintf(stderr, "FAIL: bga header count mismatch\n"); return 1; }
         if (loaded.GetSoundChannels().size() != doc.GetSoundChannels().size()) { fprintf(stderr, "FAIL: channel count mismatch\n"); return 1; }
+        if (!loaded.GetSoundChannels().isEmpty()){
+            QColor lc = loaded.GetSoundChannels().first()->GetCustomColor();
+            if (!lc.isValid() || lc.name(QColor::HexRgb) != "#ff8800") { fprintf(stderr, "FAIL: custom channel color did not round-trip\n"); return 1; }
+        }
 
         // SetRecoveredFilePath: adopt an original path and force dirty
         loaded.SetRecoveredFilePath("/some/original/path.bmson");

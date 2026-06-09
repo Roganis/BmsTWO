@@ -114,6 +114,32 @@ void SoundChannel::SetSourceFile(const QString &absolutePath)
 	document->GetHistory()->Add(action);
 }
 
+QColor SoundChannel::GetCustomColor() const
+{
+	const QString hex = bmsonFields.value("x_color").toString();
+	return hex.isEmpty() ? QColor() : QColor(hex);
+}
+
+void SoundChannel::SetCustomColor(QColor color)
+{
+	const QString oldHex = bmsonFields.value("x_color").toString();
+	const QString newHex = color.isValid() ? color.name(QColor::HexRgb) : QString();
+	if (oldHex == newHex)
+		return;
+	auto setter = [this](QString hex){
+		if (hex.isEmpty())
+			bmsonFields.remove("x_color");
+		else
+			bmsonFields["x_color"] = hex;
+		emit CustomColorChanged();
+	};
+	auto shower = [this](){
+		emit Show();
+	};
+	auto *action = new EditValueAction<QString>(setter, oldHex, newHex, tr("set channel color"), true, shower);
+	document->GetHistory()->Add(action);
+}
+
 void SoundChannel::OnOverallWaveformReady()
 {
 	overallWaveform = resource->GetOverallWaveform();

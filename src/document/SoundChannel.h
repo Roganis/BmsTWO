@@ -3,6 +3,7 @@
 
 #include <QFileInfo>
 #include <QImage>
+#include <QColor>
 #include "DocumentDef.h"
 #include "SoundChannelDef.h"
 #include "../audio/Wave.h"
@@ -142,6 +143,11 @@ public:
 	bool InsertNote(SoundNote note);
 	bool RemoveNote(SoundNote note);
 
+	// Optional per-channel display color (saved with the document as a
+	// non-standard "x_color" field). Invalid QColor means "use the default".
+	QColor GetCustomColor() const;
+	void SetCustomColor(QColor color); // undoable
+
 	QString GetFileName() const{ return fileName; }
 	QString GetName() const{ return QFileInfo(fileName).baseName(); }
 	//double GetAdjustment() const{ return adjustment; }
@@ -164,6 +170,7 @@ signals:
 	void NoteInserted(SoundNote note);
 	void NoteRemoved(SoundNote note);
 	void NoteChanged(int oldLocation, SoundNote note);
+	void CustomColorChanged();
 
 	void NameChanged();
 	void WaveSummaryUpdated();
