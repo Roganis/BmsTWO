@@ -20,6 +20,10 @@ int main(int argc, char *argv[])
 	qRegisterMetaType<BmsonIO::BmsonVersion>("BmsonIO::BmsonVersion");
 
     QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	// Crisp rendering on fractional-DPI displays (blurriness reads as "old").
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
 
 	Q_INIT_RESOURCE(bmstwo);
 

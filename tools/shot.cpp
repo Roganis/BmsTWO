@@ -33,12 +33,15 @@ int main(int argc, char **argv)
 		pump();
 		const auto chs = doc->GetSoundChannels();
 		QMultiMap<SoundChannel*, SoundNote> notes;
-		if (!chs.isEmpty()){
-			SoundChannel *ch = chs.first();
+		// Channel 0: spread across the key lanes (visible in the playing pane
+		// when current); other channels get notes so their columns show their
+		// categorical color.
+		for (int c = 0; c < chs.size(); c++){
+			SoundChannel *ch = chs[c];
 			for (int i = 0; i < 24; i++){
-				int loc = i * 60;
-				int lane = (i % 5) + 1;             // spread across the 5 key lanes
-				int len = (i % 5 == 0) ? 180 : 0;   // lane 1 gets long-note capsules
+				int loc = i * 60 + c * 15;
+				int lane = c == 0 ? (i % 5) + 1 : 0; // ch0 → key lanes, others → BGM column
+				int len = (c == 0 && i % 5 == 0) ? 180 : 0;
 				notes.insert(ch, SoundNote(loc, lane, len, 0));
 			}
 		}
