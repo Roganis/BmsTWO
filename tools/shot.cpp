@@ -1,21 +1,55 @@
 // Offscreen screenshot harness: builds the real MainWindow (App ctor applies
-// the theme, opens any file passed in argv) and grabs it to a PNG so cosmetic
-// changes can be reviewed without a display. Not part of the app build.
+// the theme) and grabs it to a PNG so cosmetic changes can be reviewed without
+// a display. Not part of the app build.
+//
+// Env vars:
+//   SHOT_OUT   output PNG path (default /tmp/bmstwo_shot.png)
+//   SHOT_DEMO  if set, populate a synthetic chart (channels + key-lane notes,
+//              incl. long notes) so note styling is visible.
 #include "MainWindow.h"
+#include "sequence_view/SequenceView.h"
+#include "document/Document.h"
+#include "document/SoundChannel.h"
 #include <QApplication>
 #include <QPixmap>
 #include <QString>
 #include <cstdio>
+#include <cstdlib>
+
+static void pump() { QCoreApplication::processEvents(QEventLoop::AllEvents, 80); }
 
 int main(int argc, char **argv)
 {
-	App app(argc, argv); // applies Theme, creates + shows mainWindow, opens argv files
-	QCoreApplication::processEvents(QEventLoop::AllEvents, 300);
+	App app(argc, argv); // applies Theme, creates + shows mainWindow
+	pump();
 	MainWindow *mw = app.GetMainWindow();
 	if (!mw){ fprintf(stderr, "no mainwindow\n"); return 1; }
 	mw->resize(1280, 800);
-	for (int i = 0; i < 8; i++) QCoreApplication::processEvents(QEventLoop::AllEvents, 80);
-	const QString out = argc > 2 ? QString::fromLocal8Bit(argv[2]) : QStringLiteral("/tmp/bmstwo_shot.png");
+
+	if (qEnvironmentVariableIsSet("SHOT_DEMO")){
+		auto *doc = new Document();
+		doc->Initialize();
+		doc->InsertNewSoundChannels(QList<QString>() << "k1.ogg" << "k2.ogg" << "k3.ogg" << "k4.ogg" << "k5.ogg");
+		pump();
+		const auto chs = doc->GetSoundChannels();
+		QMultiMap<SoundChannel*, SoundNote> notes;
+		if (!chs.isEmpty()){
+			SoundChannel *ch = chs.first();
+			for (int i = 0; i < 24; i++){
+				int loc = i * 60;
+				int lane = (i % 5) + 1;             // spread across the 5 key lanes
+				int len = (i % 5 == 0) ? 180 : 0;   // lane 1 gets long-note capsules
+				notes.insert(ch, SoundNote(loc, lane, len, 0));
+			}
+		}
+		doc->MultiChannelUpdateSoundNotes(notes);
+		auto *sv = mw->GetActiveSequenceView();
+		sv->ReplaceDocument(doc);
+		sv->OnCurrentChannelChanged(0); // make the channel current so its key-lane notes render
+	}
+
+	for (int i = 0; i < 10; i++) pump();
+	const QString out = qEnvironmentVariable("SHOT_OUT", QStringLiteral("/tmp/bmstwo_shot.png"));
 	QPixmap pm = mw->grab();
 	if (!pm.save(out)){ fprintf(stderr, "save failed\n"); return 1; }
 	fprintf(stderr, "saved %s (%dx%d)\n", qPrintable(out), pm.width(), pm.height());

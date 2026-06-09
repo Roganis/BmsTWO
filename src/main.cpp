@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
 
 const char* App::SettingsVersionKey = "ConfigVersion";
 const char* App::SettingsLanguageKey = "Language";
+const char* App::SettingsModernThemeKey = "ModernTheme";
 const int App::SettingsVersion = 1;
 
 App::App(int argc, char *argv[])
@@ -69,7 +70,9 @@ App::App(int argc, char *argv[])
 		installTranslator(qtBaseTranslator);
 	}
 
-	// Phase 4: modern dark look via Fusion + a centralized dark palette.
+	// Phase 4: modern dark look via Fusion + a centralized dark palette,
+	// toggleable in Preferences (Classic = the original native look).
+	Theme::SetModern(settings->value(SettingsModernThemeKey, true).toBool());
 	Theme::Apply(this);
 
 	mainWindow = new MainWindow(settings);

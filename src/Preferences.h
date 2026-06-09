@@ -9,6 +9,7 @@
 #include <QFontDialog>
 #include <QPushButton>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QGroupBox>
@@ -26,6 +27,7 @@ class PrefGeneralPage : public QWidget
 
 private:
 	QComboBox *language;
+	QCheckBox *modernTheme;
 	QComboBox *outputFormat;
 	QStringList outputFormatList;
 	QComboBox *saveJsonFormat;
