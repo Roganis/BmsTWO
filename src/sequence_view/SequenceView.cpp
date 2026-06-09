@@ -6,6 +6,7 @@
 #include "../BpmEditTool.h"
 #include "../MasterView.h"
 #include "../EditConfig.h"
+#include "../util/Theme.h"
 #include <QActionGroup> // Qt6: no longer pulled in transitively
 #include <QApplication>
 #include <QClipboard>
@@ -89,11 +90,13 @@ SequenceView::SequenceView(MainWindow *parent)
 		penBigV.setCosmetic(true);
 		penV = QPen(QBrush(QColor(90, 90, 90)), 1);
 		penV.setCosmetic(true);
-		penBar = QPen(QBrush(QColor(180, 180, 180)), 1);
+		// Phase 4: tiered gridlines read from the central theme so the grid
+		// recedes (strong measures, medium beats, faint subdivisions).
+		penBar = QPen(QBrush(Theme::GridMeasure()), 1);
 		penBar.setCosmetic(true);
-		penBeat = QPen(QBrush(QColor(135, 135, 135)), 1);
+		penBeat = QPen(QBrush(Theme::GridBeat()), 1);
 		penBeat.setCosmetic(true);
-		penStep = QPen(QBrush(QColor(90, 90, 90)), 1);
+		penStep = QPen(QBrush(Theme::GridSubdiv()), 1);
 		penStep.setCosmetic(true);
 
 		imageWarningMark = QImage(":/images/sview/warning.png");
