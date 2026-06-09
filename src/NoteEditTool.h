@@ -2,6 +2,7 @@
 #define NOTEEDITVIEW_H
 
 #include <QLabel>
+#include <QCheckBox>
 #include "document/Document.h"
 #include "document/SoundChannel.h"
 #include "util/QuasiModalEdit.h"
@@ -24,6 +25,7 @@ private:
 	QFormLayout *formLayout;
 	QLabel *message;
 	QuasiModalEdit *editLength;
+	QCheckBox *checkUp;
 	CollapseButton *buttonShowExtraFields;
 	QuasiModalMultiLineEdit *editExtraFields;
 	QWidget *dummy;
@@ -34,6 +36,7 @@ private:
 private:
 	void Update();
 	void SetLength(int length, bool uniform=true);
+	void SetUp(bool up, bool uniform=true, bool enabled=true);
 	void SetExtraFields(const QMap<QString, QJsonValue> &fields, bool uniform=true);
 
 	void Updated();
@@ -41,6 +44,8 @@ private:
 private slots:
 	void LengthEdited();
 	void LengthEscPressed();
+
+	void UpToggled();
 
 	void ExtraFieldsEdited();
 	void ExtraFieldsEscPressed();
