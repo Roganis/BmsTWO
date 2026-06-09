@@ -18,6 +18,7 @@ private:
 	static const char* SettingsSnappedHitTestInEditModeKey;
 	static const char* SettingsAlwaysShowCursorLineInEditModeKey;
 	static const char* SettingsSnappedSelectionInEditModeKey;
+	static const char* SettingsLockKeysoundLaneKey;
 
 	static EditConfig *instance;
 	EditConfig();
@@ -25,6 +26,7 @@ private:
 	bool snappedHitTestInEditMode;
 	bool alwaysShowCursorLineInEditMode;
 	bool snappedSelectionInEditMode;
+	bool lockKeysoundLane;
 
 public:
 	static EditConfig *Instance();
@@ -52,6 +54,11 @@ public:
 	static void SetSnappedHitTestInEditMode(bool value);
 	static void SetAlwaysShowCursorLineInEditMode(bool value);
 	static void SetSnappedSelectionInEditMode(bool value);
+
+	// When enabled, dragging notes will not change their lane (keysound/key
+	// assignment); only intentional length edits (Shift+drag) still apply.
+	static bool LockKeysoundLane();
+	static void SetLockKeysoundLane(bool value);
 
 signals:
 

@@ -167,9 +167,15 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionEditLockDeletion);
 	actionEditLockDeletion->setShortcut(KeySeq(Qt::AltModifier, Qt::ShiftModifier, Qt::Key_D));
 
-	actionEditLockVerticalMove = new QAction(tr("Lock Vertical Move"), this);
+	actionEditLockVerticalMove = new QAction(tr("Lock Keysound (Lane Move)"), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionEditLockVerticalMove);
 	actionEditLockVerticalMove->setShortcut(KeySeq(Qt::AltModifier, Qt::ShiftModifier, Qt::Key_V));
+	actionEditLockVerticalMove->setCheckable(true);
+	actionEditLockVerticalMove->setChecked(EditConfig::LockKeysoundLane());
+	actionEditLockVerticalMove->setStatusTip(tr("Prevent dragging notes from changing their lane / keysound assignment"));
+	connect(actionEditLockVerticalMove, &QAction::triggered, this, [](bool checked){
+		EditConfig::SetLockKeysoundLane(checked);
+	});
 
 	actionEditPlay = new QAction(tr("Play"), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionEditPlay);

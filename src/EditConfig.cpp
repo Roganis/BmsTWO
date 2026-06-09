@@ -8,6 +8,7 @@ EditConfig::EditConfig()
 	snappedHitTestInEditMode = App::Instance()->GetSettings()->value(SettingsSnappedHitTestInEditModeKey, false).toBool();
 	alwaysShowCursorLineInEditMode = App::Instance()->GetSettings()->value(SettingsAlwaysShowCursorLineInEditModeKey, false).toBool();
 	snappedSelectionInEditMode = App::Instance()->GetSettings()->value(SettingsSnappedSelectionInEditModeKey, true).toBool();
+	lockKeysoundLane = App::Instance()->GetSettings()->value(SettingsLockKeysoundLaneKey, false).toBool();
 }
 
 EditConfig *EditConfig::Instance()
@@ -28,6 +29,7 @@ const char* EditConfig::SettingsMiniMapOpacityKey = "SequenceView/MiniMapOpacity
 const char* EditConfig::SettingsSnappedHitTestInEditModeKey = "SequenceView/SnappedHitTestInEditMode";
 const char* EditConfig::SettingsAlwaysShowCursorLineInEditModeKey = "SequenceView/AlwaysShowCursorLineInEditMode";
 const char* EditConfig::SettingsSnappedSelectionInEditModeKey = "SequenceView/SnappedSelectionInEditMode";
+const char* EditConfig::SettingsLockKeysoundLaneKey = "SequenceView/LockKeysoundLane";
 
 
 bool EditConfig::GetEnableMasterChannel()
@@ -134,6 +136,16 @@ void EditConfig::SetAlwaysShowCursorLineInEditMode(bool value)
 void EditConfig::SetSnappedSelectionInEditMode(bool value)
 {
 	App::Instance()->GetSettings()->setValue(SettingsSnappedSelectionInEditModeKey, Instance()->snappedSelectionInEditMode = value);
+}
+
+bool EditConfig::LockKeysoundLane()
+{
+	return Instance()->lockKeysoundLane;
+}
+
+void EditConfig::SetLockKeysoundLane(bool value)
+{
+	App::Instance()->GetSettings()->setValue(SettingsLockKeysoundLaneKey, Instance()->lockKeysoundLane = value);
 }
 
 
