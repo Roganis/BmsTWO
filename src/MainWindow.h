@@ -153,6 +153,7 @@ private:
 	QAction *actionEditLockCreation;
 	QAction *actionEditLockDeletion;
 	QAction *actionEditLockVerticalMove;
+	QAction *actionEditGoTo;
 	QAction *actionEditPlay;
 	QAction *actionEditClearMasterCache;
 	QAction *actionEditPreferences;
@@ -216,6 +217,7 @@ public:
 	bool CheckForCrashRecovery();
 
 private slots:
+	void EditGoTo();
 	void FileNew();
 	void FileOpen();
 	void FileOpen(QString path);

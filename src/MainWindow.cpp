@@ -26,6 +26,11 @@
 #include "bms/BmsImportDialog.h"
 #include <QTimer>
 #include <QLockFile>
+#include <QDialog>
+#include <QFormLayout>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QDialogButtonBox>
 #include <QStandardPaths>
 #include <QDateTime>
 #include <QDir>
@@ -187,6 +192,11 @@ MainWindow::MainWindow(QSettings *settings)
 		EditConfig::SetLockKeysoundLane(checked);
 	});
 
+	actionEditGoTo = new QAction(tr("Go To..."), this);
+	SharedUIHelper::RegisterGlobalShortcut(actionEditGoTo);
+	actionEditGoTo->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_G));
+	connect(actionEditGoTo, SIGNAL(triggered()), this, SLOT(EditGoTo()));
+
 	actionEditPlay = new QAction(tr("Play"), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionEditPlay);
 	actionEditPlay->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_P));
@@ -314,11 +324,13 @@ MainWindow::MainWindow(QSettings *settings)
 	menuEdit->addAction(actionEditModeEdit);
 	menuEdit->addAction(actionEditModeWrite);
 	//menuEdit->addAction(actionEditModeInteractive);
+	menuEdit->addSeparator();
+	menuEdit->addAction(actionEditLockVerticalMove); // keysound/lane lock (#1)
+	menuEdit->addAction(actionEditGoTo);
 #if 0
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditLockCreation);
 	menuEdit->addAction(actionEditLockDeletion);
-	menuEdit->addAction(actionEditLockVerticalMove);
 	menuEdit->addSeparator();
 	menuEdit->addAction(actionEditPlay);
 #endif
@@ -1278,6 +1290,52 @@ bool MainWindow::EnsureClosingFile()
 	default:
 		return false;
 	}
+}
+
+void MainWindow::EditGoTo()
+{
+	if (!document)
+		return;
+	QDialog dlg(this);
+	dlg.setWindowTitle(tr("Go To"));
+	auto *form = new QFormLayout(&dlg);
+	auto *combo = new QComboBox(&dlg);
+	combo->addItem(tr("Measure"));        // 0
+	combo->addItem(tr("Pulse (tick)"));   // 1
+	combo->addItem(tr("Time (seconds)")); // 2
+	auto *spin = new QDoubleSpinBox(&dlg);
+	spin->setRange(0, 1e9);
+	form->addRow(tr("Go to:"), combo);
+	form->addRow(tr("Value:"), spin);
+	auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+	form->addRow(buttons);
+	connect(buttons, SIGNAL(accepted()), &dlg, SLOT(accept()));
+	connect(buttons, SIGNAL(rejected()), &dlg, SLOT(reject()));
+	auto applyMode = [spin](int idx){ spin->setDecimals(idx == 2 ? 3 : 0); };
+	connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), &dlg, applyMode);
+	applyMode(0);
+
+	if (dlg.exec() != QDialog::Accepted)
+		return;
+
+	int tick = 0;
+	switch (combo->currentIndex()){
+	case 0: { // measure -> the location of that bar line
+		const QList<int> bars = document->GetBarLines().keys();
+		if (!bars.isEmpty()){
+			int m = qBound(0, int(spin->value()), bars.size() - 1);
+			tick = bars[m];
+		}
+		break;
+	}
+	case 1: // pulse
+		tick = int(spin->value());
+		break;
+	case 2: // seconds
+		tick = document->FromAbsoluteTime(spin->value());
+		break;
+	}
+	sequenceView->GoToLocation(tick);
 }
 
 bool MainWindow::IsSourceFileExtension(const QString &ext)
