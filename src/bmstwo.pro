@@ -88,6 +88,7 @@ SOURCES += main.cpp\
     PrefBms.cpp \
     PrefShortcuts.cpp \
     StatsView.cpp \
+    SelectionView.cpp \
     util/ShortcutManager.cpp \
         sequence_view/SequenceView.cpp \
         sequence_view/SequenceViewInternal.cpp \
@@ -179,6 +180,7 @@ HEADERS  += MainWindow.h \
     PrefBms.h \
     PrefShortcuts.h \
     StatsView.h \
+    SelectionView.h \
     util/ShortcutManager.h \
         sequence_view/SequenceView.h \
         sequence_view/SequenceDef.h \
