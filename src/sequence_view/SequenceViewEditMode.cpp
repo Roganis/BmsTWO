@@ -587,7 +587,10 @@ SequenceView::Context *SequenceView::EditModeDragNotesContext::PlayingPane_Mouse
 			updateNotesCxt->Update(notes);
 		}
 	}else{
-		if (laneX != dragNotesPreviousLaneX){
+		// Keysound/lane lock: a plain note drag only ever reassigns lanes, so
+		// when the lock is on we skip that entirely to protect keysound
+		// assignments from accidental drags.
+		if (laneX != dragNotesPreviousLaneX && !EditConfig::LockKeysoundLane()){
 			bool passBoundaryTest = true;
 			QMap<SoundChannel*, QMap<int, SoundNote>> notes;
 			QMap<SoundChannel*, QMap<int, SoundNote>> originalNotes = updateNotesCxt->GetOldNotes();
