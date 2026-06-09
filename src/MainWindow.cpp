@@ -4,6 +4,7 @@
 #include "ChannelInfoView.h"
 #include "BgaView.h"
 #include "StopView.h"
+#include "StatsView.h"
 #include "BpmEditTool.h"
 #include "NoteEditTool.h"
 #include "document/History.h"
@@ -474,6 +475,14 @@ MainWindow::MainWindow(QSettings *settings)
 	addDockWidget(Qt::LeftDockWidgetArea, dockStop);
 	dockStop->hide(); // off by default; available from View > Docks
 	menuViewDockBars->insertAction(actionViewDockSeparator, dockStop->toggleViewAction());
+
+	auto dockStats = new QDockWidget(tr("Statistics"));
+	UIUtil::SetFont(dockStats);
+	dockStats->setObjectName("Statistics");
+	dockStats->setWidget(statsView = new StatsView(this));
+	addDockWidget(Qt::LeftDockWidgetArea, dockStats);
+	dockStats->hide(); // off by default; available from View > Docks
+	menuViewDockBars->insertAction(actionViewDockSeparator, dockStats->toggleViewAction());
 
 	selectedObjectsDockWidget = new QDockWidget(tr("Selected Objects"));
 	UIUtil::SetFont(selectedObjectsDockWidget);
@@ -1206,6 +1215,7 @@ void MainWindow::ReplaceDocument(Document *newDocument)
 	channelInfoView->ReplaceDocument(document);
 	bgaView->ReplaceDocument(document);
 	stopView->ReplaceDocument(document);
+	statsView->ReplaceDocument(document);
 	sequenceView->ReplaceDocument(document);
 	externalViewer->ReplaceDocument(document);
 
