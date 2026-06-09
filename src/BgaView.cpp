@@ -1,5 +1,6 @@
 #include "BgaView.h"
 #include "MainWindow.h"
+#include "util/Theme.h"
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -59,6 +60,8 @@ BgaView::BgaView(MainWindow *mainWindow)
 		table->horizontalHeader()->setStretchLastSection(true);
 		table->verticalHeader()->setVisible(false);
 		table->setSelectionBehavior(QAbstractItemView::SelectRows);
+		if (Theme::IsModern())
+			table->setFont(Theme::MonospaceFont()); // numeric location/picture id
 		layout->addWidget(table);
 		auto *buttons = new QHBoxLayout();
 		auto *addButton = new QPushButton(tr("Add"), page);

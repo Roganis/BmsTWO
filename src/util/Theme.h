@@ -4,6 +4,7 @@
 #include <QColor>
 #include <QPalette>
 #include <QString>
+#include <QFont>
 
 class QApplication;
 
@@ -20,6 +21,9 @@ namespace Theme {
 	// Selected once at startup (App reads it from settings). Restart-applied.
 	void SetModern(bool modern);
 	bool IsModern();
+
+	// Platform monospace font for numeric / tick fields (modern mode).
+	QFont MonospaceFont();
 
 	// --- Elevation tiers (dark neutral surfaces, not pure black) ---
 	inline QColor Surface()       { return QColor(0x1e, 0x1f, 0x22); } // base window

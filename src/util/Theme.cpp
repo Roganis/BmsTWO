@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QStyleFactory>
 #include <QVector>
+#include <QFontDatabase>
 
 namespace Theme {
 
@@ -9,6 +10,11 @@ static bool g_modern = true;
 
 void SetModern(bool modern) { g_modern = modern; }
 bool IsModern() { return g_modern; }
+
+QFont MonospaceFont()
+{
+	return QFontDatabase::systemFont(QFontDatabase::FixedFont);
+}
 
 QColor GridSubdiv()
 {
