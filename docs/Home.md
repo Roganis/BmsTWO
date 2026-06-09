@@ -28,6 +28,15 @@ Most of the new panels are **dock widgets**. They are **off by default**; enable
 any of them from **View → Views**, then drag/tab/float them like any Qt dock.
 Your layout is remembered between sessions.
 
+## How this fork is built (transparency)
+
+BmsTWO is developed as a **human-directed, AI-assisted** project: the maintainer
+sets the goals, makes the design decisions, and validates the app in practice,
+while an AI coding assistant (Anthropic's Claude, via Claude Code) does most of
+the implementation and automated checking. See the
+[README](https://github.com/Roganis/BmsTWO#ai-development--transparency) for the
+full disclaimer.
+
 ## A note on "Classic" vs "Modern"
 
 BmsTWO ships a **Modern dark theme** that is on by default, plus a **Classic**
