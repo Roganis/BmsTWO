@@ -88,12 +88,50 @@ QPalette DarkPalette()
 	return p;
 }
 
+QString StyleSheet()
+{
+	if (!g_modern)
+		return QString();
+	return QStringLiteral(
+		// Tooltips
+		"QToolTip { background:#2b2d30; color:#e6e6e6; border:1px solid #45474b; padding:4px 6px; }"
+		// Menus
+		"QMenuBar::item { padding:4px 9px; background:transparent; }"
+		"QMenuBar::item:selected { background:#38393e; border-radius:4px; }"
+		"QMenu { background:#2b2d30; border:1px solid #45474b; padding:4px; }"
+		"QMenu::item { padding:4px 24px 4px 12px; border-radius:4px; }"
+		"QMenu::item:selected { background:#38393e; }"
+		"QMenu::separator { height:1px; background:#45474b; margin:4px 8px; }"
+		// Tables / lists: alternating rows, gridlines, row hover
+		"QTableView, QTreeView, QListView { background:#1b1c1e; alternate-background-color:#212327;"
+		" gridline-color:#303236; selection-background-color:#2f4d6b; selection-color:#ffffff; }"
+		"QTableView::item:hover, QTreeView::item:hover, QListView::item:hover { background:#2b2d30; }"
+		"QHeaderView::section { background:#2b2d30; color:#cfd1d4; padding:4px 6px; border:0px;"
+		" border-right:1px solid #303236; border-bottom:1px solid #303236; }"
+		// Slim modern scrollbars
+		"QScrollBar:vertical { background:transparent; width:12px; margin:0; }"
+		"QScrollBar::handle:vertical { background:#45474b; min-height:24px; border-radius:5px; margin:2px; }"
+		"QScrollBar::handle:vertical:hover { background:#5a5c61; }"
+		"QScrollBar:horizontal { background:transparent; height:12px; margin:0; }"
+		"QScrollBar::handle:horizontal { background:#45474b; min-width:24px; border-radius:5px; margin:2px; }"
+		"QScrollBar::handle:horizontal:hover { background:#5a5c61; }"
+		"QScrollBar::add-line, QScrollBar::sub-line { height:0; width:0; }"
+		"QScrollBar::add-page, QScrollBar::sub-page { background:transparent; }"
+		// Dock titles + tab bars: subtle elevation
+		"QDockWidget::title { background:#232427; padding:5px 8px; }"
+		"QTabBar::tab { padding:5px 10px; }"
+		// Inputs: a little breathing room (8px rhythm)
+		"QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QComboBox { padding:3px 5px; }"
+	);
+}
+
 void Apply(QApplication *app)
 {
 	if (!app || !g_modern)
 		return; // Classic mode keeps the platform's native style and palette.
 	app->setStyle(QStyleFactory::create("Fusion"));
 	app->setPalette(DarkPalette());
+	app->setStyleSheet(StyleSheet());
 }
 
 }

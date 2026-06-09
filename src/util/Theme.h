@@ -3,6 +3,7 @@
 
 #include <QColor>
 #include <QPalette>
+#include <QString>
 
 class QApplication;
 
@@ -46,6 +47,10 @@ namespace Theme {
 
 	// A Fusion-based dark palette built from the surfaces above.
 	QPalette DarkPalette();
+
+	// Modern QSS: row-hover, slim scrollbars, menu/table/dock spacing and
+	// subtle dividers (layered on top of the Fusion palette). Empty in Classic.
+	QString StyleSheet();
 
 	// Apply the chosen style: Fusion + dark palette in Modern; no-op (native)
 	// in Classic.
