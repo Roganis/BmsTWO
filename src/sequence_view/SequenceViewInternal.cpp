@@ -4,6 +4,7 @@
 #include "MainWindow.h"
 #include "BpmEditTool.h"
 #include "../util/SymbolIconManager.h"
+#include "../util/Theme.h"
 #include "EditConfig.h"
 #include <cmath>
 #include <cstdlib>
@@ -215,6 +216,17 @@ void SoundChannelView::paintEvent(QPaintEvent *event)
 	painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
 	// notes
+	// Modern mode color-codes each channel with a categorical hue (dimmed when
+	// the channel isn't the current one); classic mode keeps the original
+	// white/grey + red markers.
+	const bool modern = Theme::IsModern();
+	const QColor chColor = Theme::ChannelColor(sview->soundChannels.indexOf(this));
+	const QColor chColorDim = QColor(chColor.red()*7/10, chColor.green()*7/10, chColor.blue()*7/10);
+	const QColor noteLineColor = modern ? (current ? chColor : chColorDim)
+									   : (current ? QColor(255, 255, 255) : QColor(127, 127, 127));
+	const QColor noteLineColorKey = modern ? (current ? chColor : chColorDim)
+										  : (current ? QColor(187, 187, 187) : QColor(153, 153, 153));
+	const QColor markerColor = modern ? (current ? chColor : chColorDim) : QColor(255, 0, 0);
 	for (SoundNoteView *nview : notes){
 		SoundNote note = nview->GetNote();
 		if (note.location > tEnd){
@@ -272,7 +284,7 @@ void SoundChannelView::paintEvent(QPaintEvent *event)
 					break;
 				}
 			}else{
-				painter.setPen(QPen(QBrush(current ? QColor(255, 255, 255) : QColor(127, 127, 127)), 1));
+				painter.setPen(QPen(QBrush(noteLineColor), 1));
 				painter.setBrush(Qt::NoBrush);
 				switch (note.noteType){
 				case 0: {
@@ -293,12 +305,12 @@ void SoundChannelView::paintEvent(QPaintEvent *event)
 				}
 			}
 		}else{
-			painter.setPen(QPen(QBrush(current ? QColor(187, 187, 187) : QColor(153, 153, 153)), sview->selectedNotes.contains(nview) ? 3 : 1));
+			painter.setPen(QPen(QBrush(noteLineColorKey), sview->selectedNotes.contains(nview) ? 3 : 1));
 			painter.setBrush(Qt::NoBrush);
 			painter.drawLine(1, noteStartY, internalWidth-1, noteStartY);
 		}
 		if (note.noteType == 0){
-			painter.setBrush(QBrush(QColor(255, 0, 0)));
+			painter.setBrush(QBrush(markerColor));
 			painter.setPen(Qt::NoPen);
 			QPolygon polygon;
 			polygon.append(QPoint(0, noteStartY - 4));
