@@ -18,6 +18,7 @@
 #include "ExternalViewer.h"
 #include "ExternalViewerTools.h"
 #include "EditConfig.h"
+#include "util/ShortcutManager.h"
 #include "MasterOutDialog.h"
 #include "bmson/Bmson.h"
 #include "bms/Bms.h"
@@ -543,6 +544,10 @@ MainWindow::MainWindow(QSettings *settings)
 	// preparation for startup
 	bpmEditView->hide();
 	noteEditView->hide();
+
+	// Register all menu commands for user-configurable shortcuts and apply any
+	// saved overrides (done last so dynamically-added submenu items are included).
+	ShortcutManager::Instance()->RegisterMenuBar(menuBar());
 }
 
 MainWindow::~MainWindow()

@@ -6,7 +6,11 @@
 #include "document/History.h"
 #include "document/DocumentDef.h"
 #include "MainWindow.h"
+#include "util/ShortcutManager.h"
 #include <QApplication>
+#include <QMenuBar>
+#include <QMenu>
+#include <QAction>
 #include <QStandardPaths>
 #include <QDir>
 #include <QFile>
@@ -302,6 +306,35 @@ int main(int argc, char **argv) {
         if (loaded.GetFilePath() != "/some/original/path.bmson") { fprintf(stderr, "FAIL: recovered path not set\n"); return 1; }
         if (!loaded.GetHistory()->IsDirty()) { fprintf(stderr, "FAIL: recovered doc not dirty\n"); return 1; }
         QFile::remove(snap);
+    }
+
+    fprintf(stderr, "=== case: shortcut manager (register / rebind / conflict / reset) ===\n");
+    {
+        QMenuBar bar;
+        QMenu *m = bar.addMenu("TestCat");
+        QAction *a1 = m->addAction("Alpha");
+        a1->setShortcut(QKeySequence("Ctrl+1"));
+        QAction *a2 = m->addAction("Beta");
+        a2->setShortcut(QKeySequence("Ctrl+2"));
+        m->addSeparator();
+
+        auto *sm = ShortcutManager::Instance();
+        sm->RegisterMenuBar(&bar);
+        bool foundAlpha = false, foundBeta = false;
+        for (const auto &e : sm->Entries()){
+            if (e.id == "TestCat/Alpha") foundAlpha = true;
+            if (e.id == "TestCat/Beta")  foundBeta = true;
+        }
+        if (!foundAlpha || !foundBeta) { fprintf(stderr, "FAIL: entries not registered\n"); return 1; }
+        // rebind applies live to the QAction
+        sm->SetShortcut("TestCat/Alpha", QKeySequence("Ctrl+9"));
+        if (a1->shortcut() != QKeySequence("Ctrl+9")) { fprintf(stderr, "FAIL: rebind not applied\n"); return 1; }
+        // conflict detection
+        sm->SetShortcut("TestCat/Beta", QKeySequence("Ctrl+9"));
+        if (sm->Conflicts(QKeySequence("Ctrl+9"), "TestCat/Alpha").isEmpty()) { fprintf(stderr, "FAIL: conflict not detected\n"); return 1; }
+        // reset restores the compiled-in default
+        sm->ResetToDefault("TestCat/Alpha");
+        if (a1->shortcut() != QKeySequence("Ctrl+1")) { fprintf(stderr, "FAIL: reset to default failed\n"); return 1; }
     }
 
     fprintf(stderr, "ALL CASES DONE\n");

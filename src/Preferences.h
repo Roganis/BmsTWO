@@ -68,6 +68,7 @@ private:
 	PrefEditPage *editPage;
 	PrefPreviewPage *previewPage;
 	PrefBmsPage *bmsPage;
+	class PrefShortcutsPage *shortcutsPage;
 
 	virtual void showEvent(QShowEvent *event);
 	virtual void hideEvent(QHideEvent *event);

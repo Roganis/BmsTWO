@@ -3,6 +3,7 @@
 #include "PrefEdit.h"
 #include "PrefPreview.h"
 #include "PrefBms.h"
+#include "PrefShortcuts.h"
 
 
 Preferences::Preferences(MainWindow *mainWindow)
@@ -58,6 +59,14 @@ Preferences::Preferences(MainWindow *mainWindow)
 	bmsItem->setText(tr("BMS Import"));
 	bmsItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
+	// SHORTCUTS
+	shortcutsPage = new PrefShortcutsPage(this);
+	pages->addWidget(shortcutsPage);
+	auto shortcutsItem = new QListWidgetItem(list);
+	shortcutsItem->setIcon(QIcon(":/images/config/edit.png"));
+	shortcutsItem->setText(tr("Shortcuts"));
+	shortcutsItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
 	list->setCurrentRow(0);
 
 	auto bodyLayout = new QHBoxLayout();
@@ -83,6 +92,7 @@ void Preferences::showEvent(QShowEvent *event)
 	editPage->load();
 	previewPage->load();
 	bmsPage->load();
+	shortcutsPage->load();
 	QDialog::showEvent(event);
 }
 
@@ -92,6 +102,7 @@ void Preferences::hideEvent(QHideEvent *event)
 	editPage->store();
 	previewPage->store();
 	bmsPage->store();
+	shortcutsPage->store();
 	QDialog::hideEvent(event);
 }
 
