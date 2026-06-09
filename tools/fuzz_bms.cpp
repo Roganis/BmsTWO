@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     {
         QString dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
         QString ini = dir.isEmpty() ? QString() : QDir(dir).filePath("Settings.ini");
-        QSettings *s = ini.isEmpty() ? new QSettings("ExclusionBms", "BmsONE")
+        QSettings *s = ini.isEmpty() ? new QSettings("ExclusionBms", "BmsTWO")
                                      : new QSettings(ini, QSettings::IniFormat);
         s->setValue("ConfigVersion", 1);
         s->setValue("BmsReader/AskTextEncoding", false);

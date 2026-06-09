@@ -50,7 +50,7 @@ static LONG WINAPI WinExceptionFilter(EXCEPTION_POINTERS *info)
 	for (int fi = 0; fi < 2; fi++) {
 		FILE *f = files[fi];
 		if (!f) continue;
-		fprintf(f, "\n*** BmsONE crashed (exception 0x%08lx) ***\n", (unsigned long)code);
+		fprintf(f, "\n*** BmsTWO crashed (exception 0x%08lx) ***\n", (unsigned long)code);
 		for (USHORT i = 0; i < n; i++) {
 			DWORD64 addr = (DWORD64)(uintptr_t)frames[i];
 			if (SymFromAddr(process, addr, 0, symbol)) {
@@ -102,7 +102,7 @@ static void PosixHandler(int sig)
 	for (int k = 0; k < 2; k++) {
 		int fd = fds[k];
 		if (fd < 0) continue;
-		SafeWrite(fd, "\n*** BmsONE crashed (signal ");
+		SafeWrite(fd, "\n*** BmsTWO crashed (signal ");
 		SafeWriteInt(fd, sig);
 		SafeWrite(fd, ") ***\n");
 		backtrace_symbols_fd(frames, n, fd);
@@ -147,7 +147,7 @@ QString Install(const QString &logDir)
 {
 	QDir().mkpath(logDir);
 	QString path = QDir(logDir).filePath(
-		QString("BmsONE-crash-%1.log").arg(QCoreApplication::applicationPid()));
+		QString("BmsTWO-crash-%1.log").arg(QCoreApplication::applicationPid()));
 	QByteArray utf8 = path.toLocal8Bit();
 	qstrncpy(g_logPath, utf8.constData(), sizeof(g_logPath));
 	InstallPlatform();

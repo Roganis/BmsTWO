@@ -243,7 +243,7 @@ bool ExternalViewer::PrepareTempFile()
 
 	QDir dir = document->GetProjectDirectory();
 	for (int i=0; i<99; i++){
-		tempFilePath = dir.absoluteFilePath(QString("__bmsone_temp_%1.bmson").arg(i));
+		tempFilePath = dir.absoluteFilePath(QString("__bmstwo_temp_%1.bmson").arg(i));
 		if (!QFile::exists(tempFilePath)){
 			document->ExportTo(tempFilePath);
 			tempFile.setFileName(tempFilePath);

@@ -7,7 +7,7 @@
 # Usage:
 #   1) Configure a sanitizer build:
 #        mkdir build-asan && cd build-asan
-#        qmake ../src/bmsone.pro CONFIG+=debug CONFIG+=sanitizer \
+#        qmake ../src/bmstwo.pro CONFIG+=debug CONFIG+=sanitizer \
 #              CONFIG+=sanitize_address CONFIG+=sanitize_undefined
 #        make -j$(nproc)
 #   2) From the repo root:  tools/run_fuzz_bms.sh build-asan

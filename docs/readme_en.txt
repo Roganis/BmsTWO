@@ -1,8 +1,8 @@
-BmsONE
+BmsTWO
 
 1. What is this
 
-BmsONE is an editor for bmson files.
+BmsTWO is an editor for bmson files.
 Bmson is a new music game format derived from BMS. See [6. Links] for more information about bmson.
 
 This application currently supports v1.0 and v0.21 bmson, but some features cannot be edited yet.
@@ -17,7 +17,7 @@ http://sky.geocities.jp/exclusion_bms/bmsone.html
 
 If an error like "MSVCP140.dll is missing" occurs on Windows, then please install
 Visual C++ Redistributable for Visual Studio 2015 at the following URL.
-(Please choose "x86" or "x64" matching the version of BmsONE.)
+(Please choose "x86" or "x64" matching the version of BmsTWO.)
 https://www.microsoft.com/en-us/download/details.aspx?id=48145
 
 This software is under development, so the current version lacks some features and often goes wrong.
@@ -76,8 +76,8 @@ Only extra data in BMSInfo can be edited by writing fragments of JSON directly a
   "registered_with": "The Forgetalia"
 
 A configuration file is stored in a directory such as:
-  [Windows] C:\Users\<USER>\AppData\Local\BmsONE
-  [Mac OS X] ~/Library/Preferences/BmsONE
+  [Windows] C:\Users\<USER>\AppData\Local\BmsTWO
+  [Mac OS X] ~/Library/Preferences/BmsTWO
 
 If this application often crashes when scrolling Sequence View, please choose [View] -
 [Sound Channel Lane Display] - [Simple] so that drawing process becomes stable though

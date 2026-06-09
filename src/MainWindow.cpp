@@ -43,7 +43,7 @@ MainWindow::MainWindow(QSettings *settings)
 	, closing(false)
 {
 	UIUtil::SetFontMainWindow(this);
-	setWindowIcon(QIcon(":/images/bmsone64.png"));
+	setWindowIcon(QIcon(":/images/bmstwo64.png"));
 	resize(960,640);
 	setDockOptions(QMainWindow::AnimatedDocks | QMainWindow::AllowTabbedDocks | QMainWindow::AllowNestedDocks | QMainWindow::GroupedDragging);
 	setUnifiedTitleAndToolBarOnMac(true);
@@ -252,7 +252,7 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionChannelPreviewSource);
 	connect(actionChannelPreviewSource, SIGNAL(triggered(bool)), this, SLOT(ChannelPreviewSource()));
 
-	actionHelpAbout = new QAction(tr("About BmsONE..."), this);
+	actionHelpAbout = new QAction(tr("About BmsTWO..."), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionHelpAbout);
 	connect(actionHelpAbout, SIGNAL(triggered()), this, SLOT(HelpAbout()));
 #if defined(Q_OS_OSX) || defined(Q_OS_MACOS)
@@ -789,7 +789,9 @@ void MainWindow::HelpAbout()
 {
 	QString text = "<h2>" APP_NAME "</h2>"
 			"<p>version " APP_VERSION_STRING " " APP_PLATFORM_NAME " (" __DATE__ " " __TIME__ ")</p>"
-			"<p>Copyright 2015-2017 <a href=\"" APP_URL "\">exclusion</a></p>"
+			"<p><a href=\"" APP_URL "\">" APP_NAME "</a> is a continuation fork of "
+			"<a href=\"https://github.com/excln/BmsONE\">BmsONE</a> by exclusion (Copyright 2015-2017), "
+			"by way of the <a href=\"https://github.com/djkero/BmsONE\">djkero</a> fork.</p>"
 			"<hr>"
 			"Libraries Information:"
 			"<ul>"
@@ -797,7 +799,7 @@ void MainWindow::HelpAbout()
 			"<li>" "<a href=\"" OGG_URL "\">libogg</a> " OGG_VERSION_STRING
 			"<li>" "<a href=\"" VORBIS_URL "\">libvorbis</a> " + QString(vorbis_version_string()) +
 			"</ul>";
-	QMessageBox::about(this, tr("About BmsONE"), text);
+	QMessageBox::about(this, tr("About BmsTWO"), text);
 }
 
 void MainWindow::FilePathChanged()

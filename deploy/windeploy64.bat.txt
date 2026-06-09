@@ -1,14 +1,14 @@
 @echo off
 
 set QtDir=C:\Qt\5.7\msvc2015_64
-set BuildDir=..\build-bmsone-Desktop_Qt_5_7_0_MSVC2015_64bit-Release
-set OutDir=BmsONE
+set BuildDir=..\build-bmstwo-Desktop_Qt_5_7_0_MSVC2015_64bit-Release
+set OutDir=BmsTWO
 
 rm -rf %OutDir%
 mkdir %OutDir%
 
-cp %BuildDir%\release\BmsONE.exe %OutDir%\BmsONE.exe
-%QtDir%\bin\windeployqt %OutDir%\BmsONE.exe
+cp %BuildDir%\release\BmsTWO.exe %OutDir%\BmsTWO.exe
+%QtDir%\bin\windeployqt %OutDir%\BmsTWO.exe
 cp %QtDir%\bin\translations\qtbase_*.qm %OutDir%\translations
 
 cp ..\docs\readme*.txt %OutDir%

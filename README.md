@@ -1,9 +1,9 @@
-# BmsONE (BmsTWO fork)
+# BmsTWO
 
-BmsONE is an editor for [bmson](https://bmson.nekokan.dyndns.info/) files, the
+BmsTWO is an editor for [bmson](https://bmson.nekokan.dyndns.info/) files, the
 music-game format derived from BMS.
 
-This repository is **BmsTWO**, a continuation fork. Its lineage is:
+BmsTWO is a continuation fork of BmsONE. Its lineage is:
 
 * [`excln/BmsONE`](https://github.com/excln/BmsONE) — original upstream
   (last binary release: beta 0.2.1, Sept 2017).
@@ -31,18 +31,18 @@ This software is built with [Qt](https://www.qt.io/) (Qt 5; the project also
 compiles under Qt 6) and C++17, using qmake.
 
 ```sh
-qmake src/bmsone.pro
+qmake src/bmstwo.pro
 make
 ```
 
-Or open `src/bmsone.pro` in Qt Creator.
+Or open `src/bmstwo.pro` in Qt Creator.
 
 libogg and libvorbis are bundled in the source code (under `src/libogg` and
 `src/libvorbis`), so no external audio libraries are required.
 
 ## License
 
-BmsONE is distributed under the **GNU General Public License v3.0**. See the
+BmsTWO is distributed under the **GNU General Public License v3.0**. See the
 [`LICENSE`](LICENSE) file for the full text.
 
 Third-party components:

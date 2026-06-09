@@ -958,8 +958,8 @@ All files (*.*)</source>
     </message>
     <message>
         <location filename="../InfoView.cpp" line="106"/>
-        <source>Enter extra fields that are not supported by BmsONE. Example:</source>
-        <translation>BmsONEでサポートされていない拡張フィールドを入力します。例:</translation>
+        <source>Enter extra fields that are not supported by BmsTWO. Example:</source>
+        <translation>BmsTWOでサポートされていない拡張フィールドを入力します。例:</translation>
     </message>
     <message>
         <location filename="../InfoView.cpp" line="500"/>
@@ -1237,8 +1237,8 @@ All files (*.*)</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="237"/>
-        <source>About BmsONE...</source>
-        <translation>BmsONE について...</translation>
+        <source>About BmsTWO...</source>
+        <translation>BmsTWO について...</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="243"/>
@@ -1256,8 +1256,8 @@ All files (*.*)</source>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="745"/>
-        <source>About BmsONE</source>
-        <translation>BmsONE について</translation>
+        <source>About BmsTWO</source>
+        <translation>BmsTWO について</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="248"/>
@@ -1813,7 +1813,7 @@ All files (*.*)</source>
     </message>
     <message>
         <location filename="../Preferences.cpp" line="123"/>
-        <source>Select a language used in this application. After selecting one, restart BmsONE.</source>
+        <source>Select a language used in this application. After selecting one, restart BmsTWO.</source>
         <translation>このアプリケーションで使用される言語を選択します。選択後、アプリケーションを再起動してください。</translation>
     </message>
     <message>
@@ -1823,8 +1823,8 @@ All files (*.*)</source>
     </message>
     <message>
         <location filename="../Preferences.cpp" line="133"/>
-        <source>&lt;p&gt;Select a version of BMSON format to save files in.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (recommended): the most suitable version for current BmsONE.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;保存する際の BMSON フォーマットのバージョンを選択します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (推奨): 現在のBmsONEに最も適したバージョンが選択されます。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Select a version of BMSON format to save files in.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (recommended): the most suitable version for current BmsTWO.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;保存する際の BMSON フォーマットのバージョンを選択します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (推奨): 現在のBmsTWOに最も適したバージョンが選択されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../Preferences.cpp" line="141"/>
@@ -1925,7 +1925,7 @@ All files (*.*)</source>
         <translation>言語:</translation>
     </message>
     <message>
-        <source>Select a language used in this application. After selecting one, restart BmsONE.</source>
+        <source>Select a language used in this application. After selecting one, restart BmsTWO.</source>
         <translation>このアプリケーションで使用される言語を選択します。選択後、アプリケーションを再起動してください。</translation>
     </message>
     <message>
@@ -1933,8 +1933,8 @@ All files (*.*)</source>
         <translation>保存フォーマット:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a version of BMSON format to save files in.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (recommended): the most suitable version for current BmsONE.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;保存する際の BMSON フォーマットのバージョンを選択します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (推奨): 現在のBmsONEに最も適したバージョンが選択されます。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Select a version of BMSON format to save files in.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (recommended): the most suitable version for current BmsTWO.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;保存する際の BMSON フォーマットのバージョンを選択します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;Default&lt;/b&gt; (推奨): 現在のBmsTWOに最も適したバージョンが選択されます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../Preferences.cpp" line="15"/>
