@@ -91,6 +91,7 @@ SOURCES += main.cpp\
     SelectionView.cpp \
     ChartsView.cpp \
     KeysoundView.cpp \
+    util/SampleGrouping.cpp \
     util/ShortcutManager.cpp \
         sequence_view/SequenceView.cpp \
         sequence_view/SequenceViewInternal.cpp \
@@ -185,6 +186,7 @@ HEADERS  += MainWindow.h \
     SelectionView.h \
     ChartsView.h \
     KeysoundView.h \
+    util/SampleGrouping.h \
     util/ShortcutManager.h \
         sequence_view/SequenceView.h \
         sequence_view/SequenceDef.h \

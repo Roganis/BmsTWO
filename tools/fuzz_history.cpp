@@ -7,6 +7,7 @@
 #include "document/DocumentDef.h"
 #include "MainWindow.h"
 #include "util/ShortcutManager.h"
+#include "util/SampleGrouping.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QMenu>
@@ -367,6 +368,53 @@ int main(int argc, char **argv) {
         // reset restores the compiled-in default
         sm->ResetToDefault("TestCat/Alpha");
         if (a1->shortcut() != QKeySequence("Ctrl+1")) { fprintf(stderr, "FAIL: reset to default failed\n"); return 1; }
+    }
+
+    fprintf(stderr, "=== case: sample grouping (name pattern + overlap sub-lanes) ===\n");
+    {
+        using namespace SampleGrouping;
+        // group-key derivation
+        if (GroupKeyOf("piano_03.wav") != "piano") { fprintf(stderr, "FAIL: key piano_03\n"); return 1; }
+        if (GroupKeyOf("key_0348") != "key") { fprintf(stderr, "FAIL: key key_0348\n"); return 1; }
+        if (GroupKeyOf("BASS2") != "BASS") { fprintf(stderr, "FAIL: key BASS2\n"); return 1; }
+        if (GroupKeyOf("kick.ogg") != "kick") { fprintf(stderr, "FAIL: key kick\n"); return 1; }
+
+        // non-overlapping piano_* notes collapse to a single sub-lane; drum is its own group
+        {
+            QStringList names; names << "piano_01.wav" << "piano_02.wav" << "drum.wav";
+            QList<QList<QPair<int,int>>> notes;
+            notes << (QList<QPair<int,int>>() << qMakePair(0,0) << qMakePair(480,0));
+            notes << (QList<QPair<int,int>>() << qMakePair(240,0) << qMakePair(720,0));
+            notes << (QList<QPair<int,int>>() << qMakePair(0,0));
+            auto groups = BuildGroups(names, notes);
+            if (groups.size() != 2) { fprintf(stderr, "FAIL: group count %d\n", (int)groups.size()); return 1; }
+            // sorted by key: "drum", "piano"
+            if (groups[0].key != "drum" || groups[1].key != "piano") { fprintf(stderr, "FAIL: group keys\n"); return 1; }
+            if (groups[1].subLaneCount != 1) { fprintf(stderr, "FAIL: piano should need 1 sub-lane, got %d\n", groups[1].subLaneCount); return 1; }
+            if (groups[1].placements.size() != 4) { fprintf(stderr, "FAIL: piano placement count\n"); return 1; }
+        }
+        // two samples at the same instant -> the group expands to 2 sub-lanes
+        {
+            QStringList names; names << "piano_01" << "piano_02";
+            QList<QList<QPair<int,int>>> notes;
+            notes << (QList<QPair<int,int>>() << qMakePair(0,0));
+            notes << (QList<QPair<int,int>>() << qMakePair(0,0));
+            auto groups = BuildGroups(names, notes);
+            if (groups.size() != 1 || groups[0].subLaneCount != 2) { fprintf(stderr, "FAIL: overlap should need 2 sub-lanes\n"); return 1; }
+            // the two notes must land on different sub-lanes
+            if (groups[0].placements.size() == 2 && groups[0].placements[0].subLane == groups[0].placements[1].subLane) {
+                fprintf(stderr, "FAIL: overlapping notes share a sub-lane\n"); return 1;
+            }
+        }
+        // a long note overlapping a later point note also forces 2 sub-lanes
+        {
+            QStringList names; names << "pad_1" << "pad_2";
+            QList<QList<QPair<int,int>>> notes;
+            notes << (QList<QPair<int,int>>() << qMakePair(0,500));
+            notes << (QList<QPair<int,int>>() << qMakePair(100,0));
+            auto groups = BuildGroups(names, notes);
+            if (groups.size() != 1 || groups[0].subLaneCount != 2) { fprintf(stderr, "FAIL: LN overlap should need 2 sub-lanes\n"); return 1; }
+        }
     }
 
     fprintf(stderr, "ALL CASES DONE\n");
