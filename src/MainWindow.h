@@ -170,6 +170,7 @@ private:
 	QAction *actionViewFullScreen;
 	QAction *actionViewSnapToGrid;
 	QAction *actionViewDarkenNotesInInactiveChannels;
+	QAction *actionViewGroupedBgm;
 	QAction *actionViewZoomIn;
 	QAction *actionViewZoomOut;
 	QAction *actionViewZoomReset;

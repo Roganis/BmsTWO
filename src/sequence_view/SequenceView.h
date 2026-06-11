@@ -14,6 +14,7 @@
 #include "../document/Document.h"
 #include "../document/SoundChannel.h"
 #include "../ViewMode.h"
+#include "../util/SampleGrouping.h"
 
 
 class MainWindow;
@@ -157,6 +158,14 @@ private:
 	bool fixMiniMap;
 	SequenceViewChannelLaneMode channelLaneMode;
 
+	// Grouped BGM lanes view (for pre-cut sample charts): renders sample channels
+	// merged into name-grouped, overlap-packed lanes instead of one column each.
+	bool groupedBgmView = false;
+	QWidget *groupedBgmPane = nullptr;
+	QList<SampleGrouping::Group> bgmGroups;
+	QList<int> bgmGroupLeft;  // content-x (px) of each group's left edge
+	int bgmContentWidth = 0;
+
 	qreal zoomY;	// pixels per tick
 	qreal zoomXKey;	// 1 = default
 	qreal zoomXBgm;	// 1 = default
@@ -247,6 +256,9 @@ private:
 	bool channelsRelayoutScheduled = false;
 	void SetChannelsGeometry();
 	void AnimateChannelsGeometry();
+	void RebuildBgmGroups();
+	bool paintEventGroupedBgm(QWidget *widget, QPaintEvent *event);
+	bool mouseEventGroupedBgm(QWidget *widget, QMouseEvent *event);
 
 	bool enterEventTimeLine(QWidget *timeLine, QEvent *event);
 	bool mouseEventTimeLine(QWidget *timeLine, QMouseEvent *event);
@@ -308,6 +320,8 @@ public slots:
 	void NoteEditToolSelectedNotesUpdated(QMultiMap<SoundChannel *, SoundNote> notes);
 	void SetChannelLaneMode(SequenceViewChannelLaneMode mode);
 	void ChannelDisplayFilteringConditionsChanged(bool hideOthers, QString keyword, bool filterActive);
+	void SetGroupedBgmView(bool on);
+	bool GetGroupedBgmView() const{ return groupedBgmView; }
 
 signals:
 	void CurrentChannelChanged(int index);
