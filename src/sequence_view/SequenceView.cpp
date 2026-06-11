@@ -1840,6 +1840,12 @@ void SequenceView::MakeVisibleCurrentChannel()
 	if (currentChannel < 0){
 		return;
 	}
+	if (groupedBgmView){
+		// Columns are hidden; their stale geometry must not drive the scroll.
+		if (groupedBgmPane)
+			groupedBgmPane->update();
+		return;
+	}
 	int scrollX = horizontalScrollBar()->value();
 	QRect rectChannel = soundChannels[currentChannel]->geometry();
 	if (rectChannel.left() < 0){
@@ -2109,18 +2115,42 @@ void SequenceView::RebuildBgmGroups()
 bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaintEvent *event)
 {
 	QPainter p(widget);
-	p.fillRect(widget->rect(), palette().dark().color());
+	// Match the channel-column look exactly (background, grid hierarchy) so the
+	// grouped view reads as part of the editor, not a separate canvas.
+	p.fillRect(widget->rect(), QColor(42, 42, 42));
 	if (!document)
 		return true;
 	const int hscroll = horizontalScrollBar()->value();
 	const int paneW = widget->width();
 	const int paneH = widget->height();
 	const auto &channels = document->GetSoundChannels();
+	const bool modern = Theme::IsModern();
 	// visible time range (for culling)
 	qreal tBegin = Y2Time(paneH);
 	qreal tEnd = Y2Time(0);
 	if (tBegin > tEnd) std::swap(tBegin, tEnd);
 
+	// horizontal time grid — same colors as the channel columns
+	{
+		QMap<int, QPair<int, BarLine>> bars = BarsInRange(tBegin, tEnd);
+		QSet<int> barSet(bars.keyBegin(), bars.keyEnd());
+		QSet<int> coarseGrids = CoarseGridsInRange(tBegin, tEnd) - barSet;
+		QSet<int> fineGrids = FineGridsInRange(tBegin, tEnd) - barSet - coarseGrids;
+		QVector<QLine> lines;
+		for (int t : fineGrids){ int y = std::round(Time2Y(t)) - 1; lines.append(QLine(0, y, paneW, y)); }
+		p.setPen(QPen(QBrush(QColor(34, 34, 34)), 1));
+		p.drawLines(lines);
+		lines.clear();
+		for (int t : coarseGrids){ int y = std::round(Time2Y(t)) - 1; lines.append(QLine(0, y, paneW, y)); }
+		p.setPen(QPen(QBrush(QColor(17, 17, 17)), 1));
+		p.drawLines(lines);
+		lines.clear();
+		for (int t : bars.keys()){ int y = std::round(Time2Y(t)) - 1; lines.append(QLine(0, y, paneW, y)); }
+		p.setPen(QPen(QBrush(QColor(0, 0, 0)), 1));
+		p.drawLines(lines);
+	}
+
+	p.setRenderHint(QPainter::Antialiasing, modern);
 	for (int gi = 0; gi < bgmGroups.size(); gi++){
 		const auto &g = bgmGroups[gi];
 		const int groupLeft = bgmGroupLeft[gi] - hscroll;
@@ -2128,32 +2158,54 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 		if (groupLeft + groupW < 0 || groupLeft > paneW)
 			continue; // off-screen horizontally
 
-		// group separator
-		p.setPen(palette().shadow().color());
+		// sub-lane separators (subtle) + group separator (strong)
+		p.setPen(QPen(QBrush(QColor(34, 34, 34)), 1));
+		for (int sl = 1; sl < g.subLaneCount; sl++){
+			int x = groupLeft + sl * BgmSubLaneWidth;
+			p.drawLine(x, BgmLabelHeight, x, paneH);
+		}
+		p.setPen(QPen(QBrush(QColor(0, 0, 0)), 1));
 		p.drawLine(groupLeft - BgmGroupGap/2, 0, groupLeft - BgmGroupGap/2, paneH);
 
-		// notes
+		// notes — same color vocabulary as the rest of the editor: the channel's
+		// categorical/custom color, dimmed when not the current channel; the
+		// current channel's notes get the white selected-style outline.
 		for (const auto &pl : g.placements){
 			if (pl.location + std::max(pl.length, 1) < tBegin || pl.location > tEnd)
 				continue;
-			const int x = groupLeft + pl.subLane * BgmSubLaneWidth;
-			const qreal yTop = Time2Y(pl.location + pl.length);
-			const qreal yBot = Time2Y(pl.location);
+			const bool isCurrent = (pl.channelIndex == currentChannel);
 			QColor c = (pl.channelIndex >= 0 && pl.channelIndex < channels.size())
 					? channels[pl.channelIndex]->GetCustomColor() : QColor();
 			if (!c.isValid())
-				c = QColor::fromHsv(int(qHash(g.key) % 360), 150, 220); // stable per-group hue
-			QRectF r(x + 1, yTop - 2, BgmSubLaneWidth - 2, std::max<qreal>(3.0, yBot - yTop + 4));
-			p.fillRect(r, c);
-			p.setPen(c.darker());
-			p.drawRect(r);
+				c = Theme::ChannelColor(pl.channelIndex);
+			if (darkenNotesInInactiveChannels && !isCurrent)
+				c = QColor(c.red()*7/10, c.green()*7/10, c.blue()*7/10);
+			const int x = groupLeft + pl.subLane * BgmSubLaneWidth;
+			const qreal yTop = Time2Y(pl.location + pl.length);
+			const qreal yBot = Time2Y(pl.location);
+			QRectF r(x + 1.5, yTop - 3, BgmSubLaneWidth - 3, std::max<qreal>(4.0, yBot - yTop + 5));
+			p.setBrush(c);
+			p.setPen(isCurrent ? QPen(QBrush(QColor(255, 255, 255)), 1.5) : QPen(c.darker(150), 1));
+			if (modern){
+				qreal rad = std::min<qreal>(3.0, r.width()/3.0);
+				p.drawRoundedRect(r, rad, rad);
+			}else{
+				p.drawRect(r);
+			}
 		}
 
-		// group label strip (fixed at top)
-		p.fillRect(QRect(groupLeft, 0, groupW, BgmLabelHeight), palette().window().color());
+		// group label strip (fixed at top), styled like the surrounding chrome
+		p.setRenderHint(QPainter::Antialiasing, false);
+		p.fillRect(QRect(groupLeft - BgmGroupGap/2, 0, groupW + BgmGroupGap, BgmLabelHeight), palette().window().color());
+		p.setPen(QPen(palette().dark(), 1));
+		p.drawLine(groupLeft - BgmGroupGap/2, BgmLabelHeight, groupLeft + groupW + BgmGroupGap/2, BgmLabelHeight);
 		p.setPen(palette().text().color());
-		p.drawText(QRect(groupLeft + 1, 0, groupW - 2, BgmLabelHeight),
+		QFont f = p.font();
+		f.setPixelSize(10);
+		p.setFont(f);
+		p.drawText(QRect(groupLeft + 2, 0, groupW + BgmGroupGap/2 - 4, BgmLabelHeight),
 				   Qt::AlignLeft | Qt::AlignVCenter, g.key);
+		p.setRenderHint(QPainter::Antialiasing, modern);
 	}
 	return true;
 }
@@ -2163,24 +2215,48 @@ bool SequenceView::mouseEventGroupedBgm([[maybe_unused]] QWidget *widget, QMouse
 	if (event->type() != QEvent::MouseButtonPress || !document)
 		return false;
 	const int hscroll = horizontalScrollBar()->value();
+	const qreal clickTime = Y2Time(event->y());
 	for (int gi = 0; gi < bgmGroups.size(); gi++){
 		const auto &g = bgmGroups[gi];
 		const int groupLeft = bgmGroupLeft[gi] - hscroll;
-		if (event->x() < groupLeft || event->x() >= groupLeft + g.subLaneCount * BgmSubLaneWidth)
+		const int groupW = g.subLaneCount * BgmSubLaneWidth;
+		if (event->x() < groupLeft - BgmGroupGap/2 || event->x() >= groupLeft + groupW + BgmGroupGap/2)
 			continue;
-		const int subLane = (event->x() - groupLeft) / BgmSubLaneWidth;
-		for (const auto &pl : g.placements){
-			if (pl.subLane != subLane)
-				continue;
-			const qreal yTop = Time2Y(pl.location + pl.length);
-			const qreal yBot = Time2Y(pl.location);
-			if (event->y() >= yTop - 3 && event->y() <= yBot + 3){
-				SetCurrentChannelInternal(pl.channelIndex);
-				emit CurrentChannelChanged(pl.channelIndex);
-				groupedBgmPane->update();
-				return true;
+		// Clicking anywhere in a sub-lane selects the sample of the note nearest
+		// in time within that sub-lane (so empty space between notes works too);
+		// clicking the group label selects the group's first sample.
+		int channelIndex = -1;
+		if (event->y() <= BgmLabelHeight){
+			if (!g.placements.isEmpty())
+				channelIndex = g.placements.first().channelIndex;
+		}else{
+			const int subLane = std::min(g.subLaneCount - 1,
+										 std::max(0, (event->x() - groupLeft) / BgmSubLaneWidth));
+			qreal best = -1;
+			for (const auto &pl : g.placements){
+				if (pl.subLane != subLane)
+					continue;
+				// distance 0 inside the note's extent, else gap to nearest edge
+				qreal d;
+				if (clickTime >= pl.location && clickTime <= pl.location + std::max(pl.length, 1))
+					d = 0;
+				else
+					d = std::min(std::abs(clickTime - pl.location),
+								 std::abs(clickTime - (pl.location + pl.length)));
+				if (best < 0 || d < best){
+					best = d;
+					channelIndex = pl.channelIndex;
+				}
 			}
+			// empty sub-lane: fall back to the group's first sample
+			if (channelIndex < 0 && !g.placements.isEmpty())
+				channelIndex = g.placements.first().channelIndex;
 		}
+		if (channelIndex >= 0 && channelIndex < soundChannels.size()){
+			SetCurrentChannel(soundChannels[channelIndex]); // canonical path: selects + notifies
+			groupedBgmPane->update();
+		}
+		return true;
 	}
 	return false;
 }
