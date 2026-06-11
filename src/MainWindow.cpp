@@ -227,6 +227,14 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionViewFullScreen);
 	connect(actionViewFullScreen, SIGNAL(triggered()), this, SLOT(ViewFullScreen()));
 
+	actionViewGroupedBgm = new QAction(tr("Grouped BGM Lanes (pre-cut samples)"), this);
+	actionViewGroupedBgm->setCheckable(true);
+	actionViewGroupedBgm->setStatusTip(tr("Merge sample channels into name-grouped background lanes — a usable layout for charts with hundreds of pre-cut samples"));
+	SharedUIHelper::RegisterGlobalShortcut(actionViewGroupedBgm);
+	connect(actionViewGroupedBgm, &QAction::triggered, this, [this](bool checked){
+		if (sequenceView) sequenceView->SetGroupedBgmView(checked);
+	});
+
 	actionViewSnapToGrid = new QAction(tr("Snap to Grid"), this);
 	actionViewSnapToGrid->setShortcut(KeySeq(Qt::ControlModifier, Qt::Key_T));
 	SharedUIHelper::RegisterGlobalShortcut(actionViewSnapToGrid);
@@ -366,6 +374,7 @@ MainWindow::MainWindow(QSettings *settings)
 	menuViewZoom->addSeparator();
 	menuViewZoom->addAction(actionViewZoomReset);
 	menuViewChannelLane = menuView->addMenu(tr("Sound Channel Lanes Display"));
+	menuView->addAction(actionViewGroupedBgm);
 	menuView->addSeparator();
 	menuView->addAction(actionViewFullScreen);
 
@@ -463,6 +472,7 @@ MainWindow::MainWindow(QSettings *settings)
 
 	sequenceView = new SequenceView(this);
 	setCentralWidget(sequenceView);
+	actionViewGroupedBgm->setChecked(sequenceView->GetGroupedBgmView());
 	//sequenceView->installEventFilter(this);
 
 	preferences = new Preferences(this);

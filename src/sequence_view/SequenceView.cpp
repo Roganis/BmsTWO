@@ -32,6 +32,7 @@ static const char* SettingsCoarseGridKey = "CoarseGrid";
 static const char* SettingsFineGridKey = "FineGrid";
 static const char* SettingsFooterHeight = "FooterHeight";
 static const char* SettingsSoundChannelLaneMode = "SoundChannelLaneMode";
+static const char* SettingsGroupedBgmView = "GroupedBgmView";
 }
 using namespace SequenceViewSettings;
 
@@ -40,6 +41,10 @@ static const int FooterGripWidth = 6;
 static const int MinFooterHeight = 48 + FooterGripWidth * 2, MaxFooterHeight = 180;
 static const int LargeSoundChannelWidth = 64;
 static const int SmallSoundChannelWidth = 32;
+// Grouped-BGM view metrics
+static const int BgmSubLaneWidth = 14;  // px per sub-lane within a group
+static const int BgmGroupGap = 8;       // px between groups
+static const int BgmLabelHeight = 16;   // group label strip at the top
 }
 using namespace SequenceViewDefaultMetrics;
 
@@ -130,6 +135,8 @@ SequenceView::SequenceView(MainWindow *parent)
 	grabGesture(Qt::PinchGesture);
 	timeLine = NewWidget(&SequenceView::paintEventTimeLine, &SequenceView::mouseEventTimeLine, &SequenceView::enterEventTimeLine);
 	playingPane = NewWidget(&SequenceView::paintEventPlayingPane, &SequenceView::mouseEventPlayingPane, &SequenceView::enterEventPlayingPane);
+	groupedBgmPane = NewWidget(&SequenceView::paintEventGroupedBgm, &SequenceView::mouseEventGroupedBgm);
+	groupedBgmPane->hide(); // shown only in the grouped-BGM view
 	//headerChannelsArea = NewWidget(&SequenceView::paintEventHeaderArea);
 	//headerCornerEntry = NewWidget(&SequenceView::paintEventHeaderEntity);
 	//headerPlayingEntry = NewWidget(&SequenceView::paintEventPlayingHeader);
@@ -197,6 +204,7 @@ SequenceView::SequenceView(MainWindow *parent)
 		}else{
 			channelLaneMode = SequenceViewChannelLaneMode::NORMAL;
 		}
+		groupedBgmView = settings->value(SettingsGroupedBgmView, false).toBool();
 	}
 	settings->endGroup();
 
@@ -259,6 +267,7 @@ SequenceView::~SequenceView()
 			channelLaneModeString = "normal";
 		}
 		settings->setValue(SettingsSoundChannelLaneMode, channelLaneModeString);
+		settings->setValue(SettingsGroupedBgmView, groupedBgmView);
 	}
 	settings->endGroup();
 }
@@ -441,6 +450,8 @@ void SequenceView::ReplaceDocument(Document *newDocument)
 		cview->update();
 	}
 	UpdateVerticalScrollBar(0);
+	if (groupedBgmView)
+		RebuildBgmGroups(); // grouped layout depends on the freshly loaded channels
 	OnViewportResize();
 }
 
@@ -1507,6 +1518,9 @@ void SequenceView::scrollContentsBy(int dx, int dy)
 	if (miniMap->IsPresent()){
 		miniMap->update();
 	}
+	if (groupedBgmView && groupedBgmPane){
+		groupedBgmPane->update(); // grouped pane repaints fully on scroll
+	}
 	VisibleRangeChanged();
 }
 
@@ -1566,6 +1580,28 @@ void SequenceView::ScheduleChannelsRelayout()
 
 void SequenceView::SetChannelsGeometry()
 {
+	if (groupedBgmView){
+		// Grouped-BGM view: hide the per-channel columns and drive the grouped
+		// overlay pane + its horizontal scroll range instead.
+		for (int i=0; i<soundChannels.size(); i++){
+			soundChannels[i]->hide();
+			soundChannelFooters[i]->hide();
+		}
+		const int paneW = viewport()->width();
+		horizontalScrollBar()->setRange(0, std::max(0, bgmContentWidth - paneW));
+		horizontalScrollBar()->setPageStep(paneW);
+		horizontalScrollBar()->setSingleStep(BgmSubLaneWidth);
+		if (groupedBgmPane){
+			groupedBgmPane->setGeometry(viewport()->geometry());
+			groupedBgmPane->raise();
+			groupedBgmPane->show();
+			groupedBgmPane->update();
+		}
+		return;
+	}
+	if (groupedBgmPane)
+		groupedBgmPane->hide();
+
 	bool animContinues = false;
 	QRect vr = viewport()->geometry();
 	int channelLaneWidth = ChannelLaneWidth();
@@ -2027,6 +2063,126 @@ void SequenceView::SetChannelLaneMode(SequenceViewChannelLaneMode mode)
 	}
 	OnViewportResize();
 	emit ChannelLaneModeChanged(channelLaneMode);
+}
+
+void SequenceView::SetGroupedBgmView(bool on)
+{
+	if (groupedBgmView == on)
+		return;
+	groupedBgmView = on;
+	if (on)
+		RebuildBgmGroups();
+	OnViewportResize(); // re-lay-out: show/hide the grouped pane vs. the columns
+	if (groupedBgmPane)
+		groupedBgmPane->update();
+}
+
+void SequenceView::RebuildBgmGroups()
+{
+	bgmGroups.clear();
+	bgmGroupLeft.clear();
+	bgmContentWidth = 0;
+	if (!document)
+		return;
+	const auto &channels = document->GetSoundChannels();
+	QStringList names;
+	QList<QList<QPair<int,int>>> notesPer;
+	names.reserve(channels.size());
+	notesPer.reserve(channels.size());
+	for (SoundChannel *ch : channels){
+		names << ch->GetName();
+		QList<QPair<int,int>> ns;
+		const auto &notes = ch->GetNotes();
+		for (auto it = notes.begin(); it != notes.end(); ++it)
+			ns.append(qMakePair(it.value().location, it.value().length));
+		notesPer.append(ns);
+	}
+	bgmGroups = SampleGrouping::BuildGroups(names, notesPer);
+	int x = 0;
+	for (const auto &g : bgmGroups){
+		bgmGroupLeft.append(x);
+		x += g.subLaneCount * BgmSubLaneWidth + BgmGroupGap;
+	}
+	bgmContentWidth = x;
+}
+
+bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaintEvent *event)
+{
+	QPainter p(widget);
+	p.fillRect(widget->rect(), palette().dark().color());
+	if (!document)
+		return true;
+	const int hscroll = horizontalScrollBar()->value();
+	const int paneW = widget->width();
+	const int paneH = widget->height();
+	const auto &channels = document->GetSoundChannels();
+	// visible time range (for culling)
+	qreal tBegin = Y2Time(paneH);
+	qreal tEnd = Y2Time(0);
+	if (tBegin > tEnd) std::swap(tBegin, tEnd);
+
+	for (int gi = 0; gi < bgmGroups.size(); gi++){
+		const auto &g = bgmGroups[gi];
+		const int groupLeft = bgmGroupLeft[gi] - hscroll;
+		const int groupW = g.subLaneCount * BgmSubLaneWidth;
+		if (groupLeft + groupW < 0 || groupLeft > paneW)
+			continue; // off-screen horizontally
+
+		// group separator
+		p.setPen(palette().shadow().color());
+		p.drawLine(groupLeft - BgmGroupGap/2, 0, groupLeft - BgmGroupGap/2, paneH);
+
+		// notes
+		for (const auto &pl : g.placements){
+			if (pl.location + std::max(pl.length, 1) < tBegin || pl.location > tEnd)
+				continue;
+			const int x = groupLeft + pl.subLane * BgmSubLaneWidth;
+			const qreal yTop = Time2Y(pl.location + pl.length);
+			const qreal yBot = Time2Y(pl.location);
+			QColor c = (pl.channelIndex >= 0 && pl.channelIndex < channels.size())
+					? channels[pl.channelIndex]->GetCustomColor() : QColor();
+			if (!c.isValid())
+				c = QColor::fromHsv(int(qHash(g.key) % 360), 150, 220); // stable per-group hue
+			QRectF r(x + 1, yTop - 2, BgmSubLaneWidth - 2, std::max<qreal>(3.0, yBot - yTop + 4));
+			p.fillRect(r, c);
+			p.setPen(c.darker());
+			p.drawRect(r);
+		}
+
+		// group label strip (fixed at top)
+		p.fillRect(QRect(groupLeft, 0, groupW, BgmLabelHeight), palette().window().color());
+		p.setPen(palette().text().color());
+		p.drawText(QRect(groupLeft + 1, 0, groupW - 2, BgmLabelHeight),
+				   Qt::AlignLeft | Qt::AlignVCenter, g.key);
+	}
+	return true;
+}
+
+bool SequenceView::mouseEventGroupedBgm([[maybe_unused]] QWidget *widget, QMouseEvent *event)
+{
+	if (event->type() != QEvent::MouseButtonPress || !document)
+		return false;
+	const int hscroll = horizontalScrollBar()->value();
+	for (int gi = 0; gi < bgmGroups.size(); gi++){
+		const auto &g = bgmGroups[gi];
+		const int groupLeft = bgmGroupLeft[gi] - hscroll;
+		if (event->x() < groupLeft || event->x() >= groupLeft + g.subLaneCount * BgmSubLaneWidth)
+			continue;
+		const int subLane = (event->x() - groupLeft) / BgmSubLaneWidth;
+		for (const auto &pl : g.placements){
+			if (pl.subLane != subLane)
+				continue;
+			const qreal yTop = Time2Y(pl.location + pl.length);
+			const qreal yBot = Time2Y(pl.location);
+			if (event->y() >= yTop - 3 && event->y() <= yBot + 3){
+				SetCurrentChannelInternal(pl.channelIndex);
+				emit CurrentChannelChanged(pl.channelIndex);
+				groupedBgmPane->update();
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 void SequenceView::ChannelDisplayFilteringConditionsChanged(bool hideOthers, QString keyword, bool filterActive)
