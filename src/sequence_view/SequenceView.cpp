@@ -2080,6 +2080,31 @@ void SequenceView::SetChannelLaneMode(SequenceViewChannelLaneMode mode)
 	emit ChannelLaneModeChanged(channelLaneMode);
 }
 
+int SequenceView::FindSampleChannelAtTime(int location) const
+{
+	QString grp;
+	if (currentChannel >= 0 && currentChannel < soundChannels.size())
+		grp = SampleGrouping::GroupKeyOf(soundChannels[currentChannel]->GetChannel()->GetName());
+	int bestSameGroupBgm = -1, bestBgm = -1, bestSameGroup = -1, bestAny = -1;
+	for (int i = 0; i < soundChannels.size(); i++){
+		SoundChannel *ch = soundChannels[i]->GetChannel();
+		const auto &notes = ch->GetNotes();
+		auto it = notes.find(location);
+		if (it == notes.end())
+			continue;
+		const bool bgm = (it.value().lane == 0);
+		const bool sameGroup = !grp.isEmpty() && SampleGrouping::GroupKeyOf(ch->GetName()) == grp;
+		if (bgm && sameGroup && bestSameGroupBgm < 0) bestSameGroupBgm = i;
+		if (bgm && bestBgm < 0) bestBgm = i;
+		if (sameGroup && bestSameGroup < 0) bestSameGroup = i;
+		if (bestAny < 0) bestAny = i;
+	}
+	if (bestSameGroupBgm >= 0) return bestSameGroupBgm;
+	if (bestBgm >= 0) return bestBgm;
+	if (bestSameGroup >= 0) return bestSameGroup;
+	return bestAny;
+}
+
 void SequenceView::SetGroupedBgmView(bool on)
 {
 	if (groupedBgmView == on)

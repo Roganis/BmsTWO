@@ -370,6 +370,27 @@ int main(int argc, char **argv) {
         if (a1->shortcut() != QKeySequence("Ctrl+1")) { fprintf(stderr, "FAIL: reset to default failed\n"); return 1; }
     }
 
+    fprintf(stderr, "=== case: keying a BGM sample relocates its note in place ===\n");
+    {
+        // Underpins grouped-BGM charting: a channel holds one note per location,
+        // so inserting a key-lane note where a BGM note already sits MOVES it
+        // (same sample/time, new lane) rather than duplicating the sound.
+        Document doc;
+        doc.Initialize();
+        doc.InsertNewSoundChannels(QList<QString>() << "piano_01.wav");
+        pump();
+        auto chs = doc.GetSoundChannels();
+        if (chs.isEmpty()) { fprintf(stderr, "FAIL: no channel\n"); return 1; }
+        SoundChannel *ch = chs.first();
+        const int R = doc.GetInfo()->GetResolution();
+        if (!ch->InsertNote(SoundNote(R, 0, 0, 0))) { fprintf(stderr, "FAIL: insert BGM note\n"); return 1; }
+        if (ch->GetNotes().size() != 1 || ch->GetNotes().value(R).lane != 0) { fprintf(stderr, "FAIL: BGM note state\n"); return 1; }
+        // key it: same location, lane 1
+        if (!ch->InsertNote(SoundNote(R, 1, 0, 0))) { fprintf(stderr, "FAIL: key insert rejected\n"); return 1; }
+        if (ch->GetNotes().size() != 1) { fprintf(stderr, "FAIL: keying duplicated the note (would double the sound)\n"); return 1; }
+        if (ch->GetNotes().value(R).lane != 1) { fprintf(stderr, "FAIL: note not relocated to key lane\n"); return 1; }
+    }
+
     fprintf(stderr, "=== case: sample grouping (name pattern + overlap sub-lanes) ===\n");
     {
         using namespace SampleGrouping;
