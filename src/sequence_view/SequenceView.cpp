@@ -1597,6 +1597,10 @@ void SequenceView::SetChannelsGeometry()
 			groupedBgmPane->show();
 			groupedBgmPane->update();
 		}
+		// Keep the right-edge minimap (whole-chart scroll overview) on top of the
+		// grouped overlay, which otherwise covers it.
+		if (miniMap->IsPresent())
+			miniMap->raise();
 		return;
 	}
 	if (groupedBgmPane)
@@ -2254,6 +2258,8 @@ bool SequenceView::mouseEventGroupedBgm([[maybe_unused]] QWidget *widget, QMouse
 		}
 		if (channelIndex >= 0 && channelIndex < soundChannels.size()){
 			SetCurrentChannel(soundChannels[channelIndex]); // canonical path: selects + notifies
+			// Audition the sample so it can be heard without the channel tab.
+			QMetaObject::invokeMethod(soundChannels[channelIndex], "Preview");
 			groupedBgmPane->update();
 		}
 		return true;
