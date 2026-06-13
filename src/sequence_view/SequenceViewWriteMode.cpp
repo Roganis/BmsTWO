@@ -108,8 +108,18 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
                 // if single note in the current channel, delete it
                 // otherwise, simply select them
                 auto note = notes[0]->GetNote();
-                if (notes.size() == 1 && notes[0]->GetChannelView()->IsCurrent()
-                    && notes[0]->GetChannelView()->GetChannel()->RemoveNote(note))
+                bool handled = false;
+                if (notes.size() == 1 && notes[0]->GetChannelView()->IsCurrent()){
+                    SoundChannel *c = notes[0]->GetChannelView()->GetChannel();
+                    if (sview->groupedBgmView && note.lane > 0){
+                        // Grouped-BGM: un-key instead of delete — return the
+                        // sample to the BGM lane so the music is preserved.
+                        handled = c->InsertNote(SoundNote(note.location, 0, 0, note.noteType));
+                    }else{
+                        handled = c->RemoveNote(note);
+                    }
+                }
+                if (handled)
                 {
                     sview->ClearNotesSelection();
                     sview->cursor->SetNewSoundNote(note);
