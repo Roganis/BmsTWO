@@ -165,6 +165,7 @@ private:
 	QList<SampleGrouping::Group> bgmGroups;
 	QList<int> bgmGroupLeft;  // content-x (px) of each group's left edge
 	int bgmContentWidth = 0;
+	bool bgmRebuildPending = false; // coalesces edit-driven regrouping
 
 	qreal zoomY;	// pixels per tick
 	qreal zoomXKey;	// 1 = default
@@ -257,6 +258,7 @@ private:
 	void SetChannelsGeometry();
 	void AnimateChannelsGeometry();
 	void RebuildBgmGroups();
+	void ScheduleBgmRebuild(); // debounced regroup while in grouped-BGM view
 	bool paintEventGroupedBgm(QWidget *widget, QPaintEvent *event);
 	bool mouseEventGroupedBgm(QWidget *widget, QMouseEvent *event);
 
