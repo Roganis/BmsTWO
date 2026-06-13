@@ -38,7 +38,9 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MouseMove(QMo
 	if (lane >= 0)
 		notes = sview->HitTestPlayingPaneMulti(lane, event->y(), iTime, event->modifiers() & Qt::AltModifier, &conflicts, &conf);
 	if (notes.size() > 0){
-		sview->playingPane->setCursor(Qt::SizeAllCursor);
+		// Write mode can't drag notes (that's Edit mode), so don't imply it with
+		// a move cursor — hovering a note just lets you select/delete it.
+		sview->playingPane->setCursor(Qt::ArrowCursor);
 		if (conflicts){
 			sview->cursor->SetLayeredSoundNotesWithConflict(notes, conf);
 		}else{
