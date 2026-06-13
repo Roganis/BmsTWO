@@ -53,6 +53,11 @@ documentation for these lives in the [project wiki](../../wiki) (source under
 
 ### Panels & workflow
 
+* **Grouped BGM Lanes** — a usable layout *and* charting flow for pre-cut-sample
+  songs (hundreds of keysound channels): channels are merged into name-grouped,
+  overlap-packed background lanes; clicking a note auditions its sample, writing
+  a key note keys the sample the music actually has at that time, and deleting a
+  keyed note un-keys it — so charting never alters the music.
 * **Statistics** dock — note counts, average / peak NPS, per-lane distribution.
 * **Charts** dock — list and switch between the charts in a song folder (sabun
   workflow).
