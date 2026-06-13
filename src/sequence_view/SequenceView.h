@@ -324,6 +324,13 @@ public slots:
 	void ChannelDisplayFilteringConditionsChanged(bool hideOthers, QString keyword, bool filterActive);
 	void SetGroupedBgmView(bool on);
 	bool GetGroupedBgmView() const{ return groupedBgmView; }
+	// noteType for a freshly placed note (0 = new sample / sounding, 1 =
+	// continuation). Normally Shift requests a new sample; in grouped-BGM mode
+	// every note is its own sample, so the default is inverted (no Shift = new).
+	int DefaultNewNoteType(bool shiftHeld) const{
+		bool newSample = groupedBgmView ? !shiftHeld : shiftHeld;
+		return newSample ? 0 : 1;
+	}
 
 signals:
 	void CurrentChannelChanged(int index);

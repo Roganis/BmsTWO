@@ -46,7 +46,7 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MouseMove(QMo
 		}
 	}else if (lane >= 0){
 		sview->playingPane->setCursor(Qt::CrossCursor);
-		sview->cursor->SetNewSoundNote(SoundNote(iTime, lane, 0, event->modifiers() & Qt::ShiftModifier ? 0 : 1));
+		sview->cursor->SetNewSoundNote(SoundNote(iTime, lane, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier)));
 	}else{
 		sview->playingPane->setCursor(Qt::ArrowCursor);
 		sview->cursor->SetNothing();
@@ -142,7 +142,7 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
 	}else{
 		if (sview->currentChannel >= 0 && lane > 0 && event->button() == Qt::LeftButton){
 			// insert note (maybe moving existing note)
-			SoundNote note(iTime, lane, 0, event->modifiers() & Qt::ShiftModifier ? 0 : 1);
+			SoundNote note(iTime, lane, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier));
 			if (sview->soundChannels[sview->currentChannel]->GetChannel()->InsertNote(note)){
 				// select the note
 				const QMap<int, SoundNoteView*> &notes = sview->soundChannels[sview->currentChannel]->GetNotes();

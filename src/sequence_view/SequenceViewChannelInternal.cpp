@@ -262,7 +262,7 @@ SoundChannelView::Context *SoundChannelView::WriteModeContext::MouseMove(QMouseE
 		sview->cursor->SetExistingSoundNote(noteHit);
 	}else{
 		cview->setCursor(Qt::CrossCursor);
-		sview->cursor->SetNewSoundNote(SoundNote(iTime, 0, 0, event->modifiers() & Qt::ShiftModifier ? 0 : 1));
+		sview->cursor->SetNewSoundNote(SoundNote(iTime, 0, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier)));
 	}
 	return this;
 }
@@ -340,7 +340,7 @@ SoundChannelView::Context *SoundChannelView::WriteModeContext::MousePress(QMouse
 	}else{
 		if (event->button() == Qt::LeftButton){
 			// insert note (maybe moving existing note)
-			SoundNote note(iTime, 0, 0, event->modifiers() & Qt::ShiftModifier ? 0 : 1);
+			SoundNote note(iTime, 0, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier));
 			if (cview->channel->InsertNote(note)){
 				// select the note
 				sview->SelectSingleNote(cview->notes[iTime]);
