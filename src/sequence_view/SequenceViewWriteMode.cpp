@@ -141,6 +141,16 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
 		}
 	}else{
 		if (sview->currentChannel >= 0 && lane > 0 && event->button() == Qt::LeftButton){
+			// Grouped-BGM (pre-cut) charting: key the sample the music actually has
+			// at this time rather than the last-selected one. If a channel has a
+			// note exactly here, switch to it first so InsertNote relocates that
+			// sample's note onto the key lane (a channel holds one note per time),
+			// preserving the music and only changing what triggers it.
+			if (sview->groupedBgmView){
+				int found = sview->FindSampleChannelAtTime(iTime);
+				if (found >= 0 && found != sview->currentChannel)
+					sview->SetCurrentChannel(sview->soundChannels[found], true);
+			}
 			// insert note (maybe moving existing note)
 			SoundNote note(iTime, lane, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier));
 			if (sview->soundChannels[sview->currentChannel]->GetChannel()->InsertNote(note)){

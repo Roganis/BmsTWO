@@ -197,6 +197,10 @@ private:
 	int SnapToLowerFineGrid(qreal time) const;
 	int SnapToUpperFineGrid(qreal time) const;
 	int GetSomeVacantLane(int location, QSet<int> excludeLanes=QSet<int>(), int length=0, int pivotLaneIndex=0);
+	// For grouped-BGM charting: the channel whose note sits exactly at `location`
+	// (preferring the current channel's name-group, and un-keyed BGM notes), so a
+	// key write reassigns the sample the music actually has there. -1 if none.
+	int FindSampleChannelAtTime(int location) const;
 	void SetNoteColor(QLinearGradient &g, QLinearGradient &g2, int lane, bool active, QColor customColor=QColor()) const;
 	void UpdateVerticalScrollBar(qreal newTimeBegin=-1.0);
 	void VisibleRangeChanged();
