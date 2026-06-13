@@ -2245,7 +2245,11 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 			const int x = groupLeft + pl.subLane * BgmSubLaneWidth;
 			const qreal yTop = Time2Y(pl.location + pl.length);
 			const qreal yBot = Time2Y(pl.location);
-			QRectF r(x + 1.5, yTop - 3, BgmSubLaneWidth - 3, std::max<qreal>(4.0, yBot - yTop + 5));
+			// Anchor the marker's bottom at the note's start time and extend it
+			// upward (min height), like the channel columns — so notes right at
+			// time 0 (the bottom edge) stay fully visible instead of clipping off.
+			const qreal h = std::max<qreal>(6.0, yBot - yTop);
+			QRectF r(x + 1.5, yBot - h, BgmSubLaneWidth - 3, h);
 			p.setBrush(c);
 			p.setPen(isCurrent ? QPen(QBrush(QColor(255, 255, 255)), 1.5) : QPen(c.darker(150), 1));
 			if (modern){
