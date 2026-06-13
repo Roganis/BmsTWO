@@ -152,7 +152,7 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
                 break;
 		}
 	}else{
-		if (sview->currentChannel >= 0 && lane > 0 && event->button() == Qt::LeftButton){
+		if (sview->currentChannel >= 0 && lane > 0 && iTime >= 0 && event->button() == Qt::LeftButton){
 			// Grouped-BGM (pre-cut) charting: key the sample the music actually has
 			// at this time rather than the last-selected one. If a channel has a
 			// note exactly here, switch to it first so InsertNote relocates that
