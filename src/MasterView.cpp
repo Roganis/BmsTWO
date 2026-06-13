@@ -78,6 +78,7 @@ void MiniMapView::PopIn()
 	if (fixed || present)
 		return;
 	show();
+	raise(); // stay above other viewport overlays (e.g. the grouped-BGM pane)
 	auto anim = new QPropertyAnimation(this, "geometry");
 	anim->setDuration(200);
 	anim->setStartValue(geometry());

@@ -430,6 +430,11 @@ void SequenceView::ReplaceDocument(Document *newDocument)
 		connect(document, &Document::TimeMappingChanged, this, &SequenceView::TimeMappingChanged);
 		connect(document, &Document::AnyNotesChanged, this, &SequenceView::AnyNotesChanged, Qt::QueuedConnection);
 		connect(document, &Document::ShowBpmEventLocation, this, &SequenceView::ShowLocation);
+		// Keep the grouped-BGM layout in sync with edits made while it is shown.
+		connect(document, &Document::AnyNotesChanged, this, &SequenceView::ScheduleBgmRebuild, Qt::QueuedConnection);
+		connect(document, &Document::SoundChannelInserted, this, &SequenceView::ScheduleBgmRebuild);
+		connect(document, &Document::SoundChannelRemoved, this, &SequenceView::ScheduleBgmRebuild);
+		connect(document, &Document::SoundChannelMoved, this, &SequenceView::ScheduleBgmRebuild);
 
 		lockCommands = 0;
 		resolution = document->GetInfo()->GetResolution();
@@ -2085,6 +2090,22 @@ void SequenceView::SetGroupedBgmView(bool on)
 	OnViewportResize(); // re-lay-out: show/hide the grouped pane vs. the columns
 	if (groupedBgmPane)
 		groupedBgmPane->update();
+}
+
+void SequenceView::ScheduleBgmRebuild()
+{
+	if (!groupedBgmView || bgmRebuildPending)
+		return;
+	bgmRebuildPending = true;
+	QTimer::singleShot(200, this, [this](){
+		bgmRebuildPending = false;
+		if (!groupedBgmView)
+			return;
+		RebuildBgmGroups();
+		SetChannelsGeometry(); // refresh the horizontal scroll range for the new layout
+		if (groupedBgmPane)
+			groupedBgmPane->update();
+	});
 }
 
 void SequenceView::RebuildBgmGroups()
