@@ -16,6 +16,8 @@ note on how each is implemented.
   selection.
 * **[Panels & Workflow](Panels-and-Workflow)** — Statistics, Charts, Keysounds,
   and Selection docks; the sabun (chart-variation) workflow.
+* **[Grouped BGM Lanes](Grouped-BGM-Lanes)** — a usable layout and charting flow
+  for pre-cut-sample songs with hundreds of keysound channels.
 * **[Autosave & Shortcuts](Autosave-and-Shortcuts)** — autosave / crash
   recovery and configurable keyboard shortcuts.
 * **[Appearance](Appearance)** — the modern dark theme and rendering options.
