@@ -389,6 +389,9 @@ int main(int argc, char **argv) {
         if (!ch->InsertNote(SoundNote(R, 1, 0, 0))) { fprintf(stderr, "FAIL: key insert rejected\n"); return 1; }
         if (ch->GetNotes().size() != 1) { fprintf(stderr, "FAIL: keying duplicated the note (would double the sound)\n"); return 1; }
         if (ch->GetNotes().value(R).lane != 1) { fprintf(stderr, "FAIL: note not relocated to key lane\n"); return 1; }
+        // un-key (the grouped-BGM "delete on chart" behavior): move back to lane 0
+        if (!ch->InsertNote(SoundNote(R, 0, 0, 0))) { fprintf(stderr, "FAIL: un-key insert rejected\n"); return 1; }
+        if (ch->GetNotes().size() != 1 || ch->GetNotes().value(R).lane != 0) { fprintf(stderr, "FAIL: un-key did not return sample to BGM\n"); return 1; }
     }
 
     fprintf(stderr, "=== case: sample grouping (name pattern + overlap sub-lanes) ===\n");
