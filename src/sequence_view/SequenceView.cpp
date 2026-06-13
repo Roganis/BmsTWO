@@ -45,6 +45,8 @@ static const int SmallSoundChannelWidth = 32;
 static const int BgmSubLaneWidth = 14;  // px per sub-lane within a group
 static const int BgmGroupGap = 8;       // px between groups
 static const int BgmLabelHeight = 16;   // group label strip at the top
+static const int BottomPaddingPx = 48;  // a little room below time 0 (so the
+                                        // first notes aren't flush at the edge)
 }
 using namespace SequenceViewDefaultMetrics;
 
@@ -1543,7 +1545,9 @@ void SequenceView::scrollContentsBy(int dx, int dy)
 
 void SequenceView::UpdateVerticalScrollBar(qreal newTimeBegin)
 {
-	verticalScrollBar()->setRange(0, std::max(0, int(viewLength*zoomY) - viewport()->height()));
+	// BottomPaddingPx leaves a little space below time 0 so notes that start at
+	// the very beginning aren't jammed against the bottom edge.
+	verticalScrollBar()->setRange(0, std::max(0, int(viewLength*zoomY) - viewport()->height() + BottomPaddingPx));
 	verticalScrollBar()->setPageStep(viewport()->height());
 	verticalScrollBar()->setSingleStep(48); // not affected by zoomY!
 	if (newTimeBegin >= 0.0){

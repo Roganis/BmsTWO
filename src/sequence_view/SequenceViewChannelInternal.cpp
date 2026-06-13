@@ -338,7 +338,7 @@ SoundChannelView::Context *SoundChannelView::WriteModeContext::MousePress(QMouse
                 break;
 		}
 	}else{
-		if (event->button() == Qt::LeftButton){
+		if (event->button() == Qt::LeftButton && iTime >= 0){
 			// insert note (maybe moving existing note)
 			SoundNote note(iTime, 0, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier));
 			if (cview->channel->InsertNote(note)){
