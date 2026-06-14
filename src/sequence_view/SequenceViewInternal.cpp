@@ -361,6 +361,14 @@ void SoundChannelView::paintEvent(QPaintEvent *event)
 			polygon[2] = QPoint(internalWidth-5, noteStartY);
 			painter.drawPolygon(polygon);
 		}
+		if (note.stop > 0){
+			// sample-stop marker: an "X" at the tick where the sample is cut.
+			int sy = sview->Time2Y(note.location + note.stop) - 1;
+			painter.setPen(QPen(QColor(255, 90, 90), 2));
+			painter.setBrush(Qt::NoBrush);
+			painter.drawLine(2, sy - 4, internalWidth - 2, sy + 4);
+			painter.drawLine(2, sy + 4, internalWidth - 2, sy - 4);
+		}
 	}
 
 	// horz. cursor line

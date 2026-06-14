@@ -338,7 +338,12 @@ SoundChannelView::Context *SoundChannelView::WriteModeContext::MousePress(QMouse
                 break;
 		}
 	}else{
-		if (event->button() == Qt::LeftButton && iTime >= 0){
+		if (event->button() == Qt::RightButton && iTime >= 0){
+			// Right-click on an empty spot in this sample's own column: place/toggle
+			// its sample "stop" (cut the sample at this tick). The column's channel
+			// is unambiguous, so target it directly.
+			sview->PlaceOrToggleSampleStop(sview->soundChannels.indexOf(cview), iTime);
+		}else if (event->button() == Qt::LeftButton && iTime >= 0){
 			// insert note (maybe moving existing note)
 			SoundNote note(iTime, 0, 0, sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier));
 			if (cview->channel->InsertNote(note)){

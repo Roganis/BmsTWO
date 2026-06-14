@@ -204,6 +204,11 @@ private:
 	// Channel whose sample is still playing at `location` (no exact note required),
 	// for grouped-BGM placement that "takes from" the sounding sample. -1 if none.
 	int FindSoundingSampleChannelAtTime(int location) const;
+	// Place/toggle the non-standard sample "stop" (x_stop) on the governing
+	// start note of `channelIndex`'s sample so its playback is cut at tick `t`.
+	// Strict window: only within the sample's known playback length. Clicking the
+	// existing marker removes it. No-op + beep if out of range / no sample.
+	void PlaceOrToggleSampleStop(int channelIndex, int t);
 	void SetNoteColor(QLinearGradient &g, QLinearGradient &g2, int lane, bool active, QColor customColor=QColor()) const;
 	void UpdateVerticalScrollBar(qreal newTimeBegin=-1.0);
 	void VisibleRangeChanged();

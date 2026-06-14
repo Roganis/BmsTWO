@@ -2205,6 +2205,35 @@ int SequenceView::FindSoundingSampleChannelAtTime(int location) const
 	return bestAny;
 }
 
+void SequenceView::PlaceOrToggleSampleStop(int channelIndex, int t)
+{
+	if (channelIndex < 0 || channelIndex >= soundChannels.size() || t < 0)
+		return;
+	SoundChannel *channel = soundChannels[channelIndex]->GetChannel();
+	const auto &ns = channel->GetNotes();
+	// governing start note: latest noteType-0 note at or before t
+	int startLoc = -1;
+	for (auto it = ns.begin(); it != ns.end() && it.key() <= t; ++it)
+		if (it.value().noteType == 0)
+			startLoc = it.key();
+	// strict window: only within the sample's known playback length
+	if (startLoc < 0 || t <= startLoc || t > channel->GetSampleEndTick(startLoc)){
+		qApp->beep();
+		return;
+	}
+	SoundNote start = ns.value(startLoc);
+	if (start.stop > 0 && startLoc + start.stop == t)
+		start.stop = 0; // toggle off (clicked the marker)
+	else
+		start.stop = t - startLoc; // place / move the stop
+	channel->InsertNote(start); // undoable in-place update
+	playingPane->update();
+	groupedBgmPane->update();
+	timeLine->update();
+	for (auto cv : soundChannels)
+		cv->update();
+}
+
 void SequenceView::SetGroupedBgmView(bool on)
 {
 	if (groupedBgmView == on)
@@ -2420,6 +2449,28 @@ bool SequenceView::mouseEventGroupedBgm([[maybe_unused]] QWidget *widget, QMouse
 			// empty sub-lane: fall back to the group's first sample
 			if (channelIndex < 0 && !g.placements.isEmpty())
 				channelIndex = g.placements.first().channelIndex;
+		}
+		if (event->button() == Qt::RightButton){
+			// Right-click in a sub-lane: place/toggle a sample "stop" right where
+			// the sample is shown. Target the sample sounding here — the placement
+			// with the largest location <= t in this sub-lane.
+			if (event->y() > BgmLabelHeight){
+				const int subLane = std::min(g.subLaneCount - 1,
+											 std::max(0, (event->x() - groupLeft) / BgmSubLaneWidth));
+				const int t = snapToGrid ? SnapToLowerFineGrid(clickTime) : int(clickTime);
+				int target = -1, bestLoc = -1;
+				for (const auto &pl : g.placements){
+					if (pl.subLane != subLane || pl.location > t)
+						continue;
+					if (pl.location > bestLoc){
+						bestLoc = pl.location;
+						target = pl.channelIndex;
+					}
+				}
+				if (target >= 0)
+					PlaceOrToggleSampleStop(target, t);
+			}
+			return true;
 		}
 		if (channelIndex >= 0 && channelIndex < soundChannels.size()){
 			SetCurrentChannel(soundChannels[channelIndex]); // canonical path: selects + notifies
