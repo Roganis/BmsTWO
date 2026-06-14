@@ -429,6 +429,27 @@ int main(int argc, char **argv) {
             if (SoundNote(noStop.AsJson()).stop != 0) { fprintf(stderr, "FAIL: stop default\n"); return 1; }
             if (s == noStop) { fprintf(stderr, "FAIL: stop should make notes differ (for in-place update)\n"); return 1; }
         }
+        // SetNoteStop must work on a lane-0 (BGM) note, where InsertNote's
+        // lane-conflict guard rejects re-inserting an existing BGM note. This is
+        // the regression: pre-cut/grouped samples are lane-0, so the stop gesture
+        // silently no-op'd through InsertNote.
+        {
+            if (!ch->InsertNote(SoundNote(0, 0, 0, 0))) { fprintf(stderr, "FAIL: un-key to lane 0\n"); return 1; }
+            if (ch->GetNotes().value(0).lane != 0) { fprintf(stderr, "FAIL: note not on lane 0\n"); return 1; }
+            // InsertNote of a duplicate lane-0 note is rejected (the old bug path)
+            if (ch->InsertNote(SoundNote(0, 0, 0, 0, false, 480))) { fprintf(stderr, "FAIL: InsertNote should reject dup lane-0\n"); return 1; }
+            if (ch->GetNotes().value(0).stop != 0) { fprintf(stderr, "FAIL: InsertNote must not have set stop\n"); return 1; }
+            // SetNoteStop applies it
+            if (!ch->SetNoteStop(0, 480)) { fprintf(stderr, "FAIL: SetNoteStop rejected\n"); return 1; }
+            if (ch->GetNotes().value(0).stop != 480) { fprintf(stderr, "FAIL: SetNoteStop did not store stop\n"); return 1; }
+            if (ch->SetNoteStop(0, 480)) { fprintf(stderr, "FAIL: SetNoteStop should no-op when unchanged\n"); return 1; }
+            doc.GetHistory()->Undo();
+            if (ch->GetNotes().value(0).stop != 0) { fprintf(stderr, "FAIL: undo did not restore stop=0\n"); return 1; }
+            doc.GetHistory()->Redo();
+            if (ch->GetNotes().value(0).stop != 480) { fprintf(stderr, "FAIL: redo did not restore stop=480\n"); return 1; }
+            if (!ch->SetNoteStop(0, 0)) { fprintf(stderr, "FAIL: SetNoteStop clear rejected\n"); return 1; }
+            if (ch->GetNotes().value(0).stop != 0) { fprintf(stderr, "FAIL: SetNoteStop did not clear stop\n"); return 1; }
+        }
     }
 
     fprintf(stderr, "=== case: reset all notes to BGM (un-chart) ===\n");

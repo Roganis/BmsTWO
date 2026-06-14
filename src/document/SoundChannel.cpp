@@ -341,6 +341,30 @@ bool SoundChannel::RemoveNote(SoundNote note)
 	return true;
 }
 
+bool SoundChannel::SetNoteStop(int location, int newStop)
+{
+	if (!notes.contains(location))
+		return false;
+	SoundNote cur = notes[location];
+	if (cur.stop == newStop)
+		return false; // no change
+	SoundNote updated = cur;
+	updated.stop = newStop;
+	auto shower = [=](){
+		emit ShowNoteLocation(location);
+	};
+	auto setter = [this](SoundNote note){
+		// UpdateNoteImpl rebuilds the cache + master contribution from the
+		// updated note (so CapFramesByStop sees the new stop); bypasses the
+		// lane-0 in-place guard in InsertNoteInternal.
+		UpdateNoteImpl(note);
+		emit document->AnyNotesChanged();
+	};
+	auto *action = new EditValueAction<SoundNote>(setter, cur, updated, tr("modify sample stop"), true, shower);
+	document->GetHistory()->Add(action);
+	return true;
+}
+
 void SoundChannel::UpdateVisibleRegions(const QList<QPair<int, int> > &visibleRegionsTime)
 {
 	visibleRegions = visibleRegionsTime;

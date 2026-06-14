@@ -146,6 +146,11 @@ public:
 	void SetSourceFile(const QString &absolutePath);
 	bool InsertNote(SoundNote note);
 	bool RemoveNote(SoundNote note);
+	// Undoable in-place update of a note's non-standard sample "stop" (x_stop).
+	// Unlike InsertNote, this bypasses the lane-conflict guard that rejects
+	// re-inserting an existing lane-0 (BGM) note, so stops work on BGM samples.
+	// `location` must be an existing note. Returns false if absent / unchanged.
+	bool SetNoteStop(int location, int newStop);
 
 	// Optional per-channel display color (saved with the document as a
 	// non-standard "x_color" field). Invalid QColor means "use the default".

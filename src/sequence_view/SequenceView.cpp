@@ -2221,12 +2221,11 @@ void SequenceView::PlaceOrToggleSampleStop(int channelIndex, int t)
 		qApp->beep();
 		return;
 	}
-	SoundNote start = ns.value(startLoc);
-	if (start.stop > 0 && startLoc + start.stop == t)
-		start.stop = 0; // toggle off (clicked the marker)
-	else
-		start.stop = t - startLoc; // place / move the stop
-	channel->InsertNote(start); // undoable in-place update
+	const SoundNote start = ns.value(startLoc);
+	const int newStop = (start.stop > 0 && startLoc + start.stop == t)
+			? 0              // toggle off (clicked the marker)
+			: t - startLoc;  // place / move the stop
+	channel->SetNoteStop(startLoc, newStop); // undoable; works on BGM (lane-0) notes
 	playingPane->update();
 	groupedBgmPane->update();
 	timeLine->update();
