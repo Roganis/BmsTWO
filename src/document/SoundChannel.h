@@ -155,6 +155,9 @@ public:
 	int GetLength() const{ return totalLength; }
 
 	WaveSummary GetWaveSummary() const{ return waveSummary; }
+	// Tick at which this sample finishes if triggered at startLoc (BPM/stop-aware).
+	// Returns startLoc when the wav duration is unknown.
+	int GetSampleEndTick(int startLoc) const;
 	const QImage &GetOverallWaveform() const{ return overallWaveform; } // .isNull()==true means uninitialized
 	void UpdateVisibleRegions(const QList<QPair<int, int>> &visibleRegionsTime);
 	void DrawRmsGraph(double location, double resolution, std::function<bool(Rms)> drawer) const;

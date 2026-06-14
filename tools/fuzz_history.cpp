@@ -394,6 +394,30 @@ int main(int argc, char **argv) {
         if (ch->GetNotes().size() != 1 || ch->GetNotes().value(R).lane != 0) { fprintf(stderr, "FAIL: un-key did not return sample to BGM\n"); return 1; }
     }
 
+    fprintf(stderr, "=== case: slice / continuation (cut) note ===\n");
+    {
+        // A continuation note (noteType 1) coexists on the same channel as its
+        // start note (noteType 0) and round-trips through the bmson `c` flag;
+        // GetSampleEndTick falls back to startLoc when the wav length is unknown.
+        Document doc;
+        doc.Initialize();
+        const int R = doc.GetInfo()->GetResolution();
+        doc.InsertNewSoundChannels(QList<QString>() << "a.ogg");
+        pump();
+        auto chs = doc.GetSoundChannels();
+        if (chs.isEmpty()) { fprintf(stderr, "FAIL: no channel\n"); return 1; }
+        SoundChannel *ch = chs.first();
+        if (!ch->InsertNote(SoundNote(0, 1, 0, 0))) { fprintf(stderr, "FAIL: insert start note\n"); return 1; }
+        if (!ch->InsertNote(SoundNote(R, 1, 0, 1))) { fprintf(stderr, "FAIL: insert continuation\n"); return 1; }
+        if (ch->GetNotes().size() != 2) { fprintf(stderr, "FAIL: continuation did not coexist (count %d)\n", (int)ch->GetNotes().size()); return 1; }
+        if (ch->GetNotes().value(0).noteType != 0 || ch->GetNotes().value(R).noteType != 1) { fprintf(stderr, "FAIL: noteTypes wrong\n"); return 1; }
+        // wav summary unknown in the harness -> GetSampleEndTick returns startLoc
+        if (ch->GetSampleEndTick(0) != 0) { fprintf(stderr, "FAIL: GetSampleEndTick fallback\n"); return 1; }
+        // bmson c-flag round-trip
+        if (SoundNote(SoundNote(R, 1, 0, 1).AsJson()).noteType != 1) { fprintf(stderr, "FAIL: c=true round-trip\n"); return 1; }
+        if (SoundNote(SoundNote(0, 1, 0, 0).AsJson()).noteType != 0) { fprintf(stderr, "FAIL: c=false round-trip\n"); return 1; }
+    }
+
     fprintf(stderr, "=== case: reset all notes to BGM (un-chart) ===\n");
     {
         // Underpins Edit > Reset All Notes to BGM: every keyed note moves to lane
