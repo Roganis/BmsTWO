@@ -150,6 +150,7 @@ private:
 	QAction *actionEditDelete;
 	QAction *actionEditTransferToKey;
 	QAction *actionEditTransferToBgm;
+	QAction *actionEditResetAllNotesToBgm;
 	QAction *actionEditSeparateLayeredNotes;
 	QAction *actionEditFillNotes;
 	QAction *actionEditToggleBarLine;
@@ -226,6 +227,7 @@ public:
 
 private slots:
 	void EditGoTo();
+	void EditResetAllNotesToBgm();
 	void FileNew();
 	void FileOpen();
 	void FileOpen(QString path);

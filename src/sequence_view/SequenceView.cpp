@@ -922,6 +922,41 @@ void SequenceView::TransferSelectedNotesToBgm()
 	emit SelectionChanged();
 }
 
+void SequenceView::ResetAllNotesToBgm()
+{
+	if (lockCommands > 0 || !document)
+		return;
+	// "Un-chart": move every charted note (lane > 0) in every channel back to the
+	// BGM lane, as clean one-shots (length 0). noteType/up are preserved so the
+	// music (which sample plays, and whether it restarts) is unchanged. One
+	// undoable MultiChannelUpdateSoundNotes call covers the whole chart.
+	QMultiMap<SoundChannel*, SoundNote> notes;
+	for (auto *cview : soundChannels){
+		SoundChannel *channel = cview->GetChannel();
+		const auto &chNotes = channel->GetNotes();
+		for (auto it = chNotes.begin(); it != chNotes.end(); ++it){
+			if (it.value().lane <= 0)
+				continue; // already BGM
+			SoundNote n = it.value();
+			n.lane = 0;
+			n.length = 0;
+			notes.insert(channel, n);
+		}
+	}
+	ClearBpmEventsSelection();
+	ClearNotesSelection();
+	if (notes.empty())
+		return; // nothing charted
+	if (!document->MultiChannelUpdateSoundNotes(notes)){
+		qApp->beep();
+	}
+	playingPane->update();
+	for (auto cview : soundChannels){
+		cview->update();
+	}
+	emit SelectionChanged();
+}
+
 void SequenceView::TransferSelectedNotesToKey()
 {
 	if (lockCommands > 0)
