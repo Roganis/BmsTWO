@@ -151,6 +151,11 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionEditTransferToBgm);
 	actionEditTransferToBgm->setEnabled(false);
 
+	actionEditResetAllNotesToBgm = new QAction(tr("Reset All Notes to BGM (un-chart)"), this);
+	SharedUIHelper::RegisterGlobalShortcut(actionEditResetAllNotesToBgm);
+	actionEditResetAllNotesToBgm->setStatusTip(tr("Move every charted note back to the BGM lane, turning the chart into a blank canvas of samples"));
+	connect(actionEditResetAllNotesToBgm, &QAction::triggered, this, &MainWindow::EditResetAllNotesToBgm);
+
 	actionEditSeparateLayeredNotes = new QAction(tr("Separate Layered Notes"), this);
 	SharedUIHelper::RegisterGlobalShortcut(actionEditSeparateLayeredNotes);
 	actionEditSeparateLayeredNotes->setEnabled(false);
@@ -335,6 +340,7 @@ MainWindow::MainWindow(QSettings *settings)
 	menuEdit->addAction(actionEditDelete);
 	menuEdit->addAction(actionEditTransferToKey);
 	menuEdit->addAction(actionEditTransferToBgm);
+	menuEdit->addAction(actionEditResetAllNotesToBgm);
 	menuEdit->addAction(actionEditSeparateLayeredNotes);
 	menuEdit->addAction(actionEditFillNotes);
 	menuEdit->addSeparator();
@@ -1394,6 +1400,24 @@ void MainWindow::EditGoTo()
 		break;
 	}
 	sequenceView->GoToLocation(tick);
+}
+
+void MainWindow::EditResetAllNotesToBgm()
+{
+	if (!document)
+		return;
+	QMessageBox::StandardButton res = QMessageBox::question(
+				this,
+				tr("Reset All Notes to BGM"),
+				tr("Move every charted note back to the BGM lane?\n\n"
+				   "This turns the chart into a blank canvas of samples to re-chart. "
+				   "The samples and their timing are kept; only the key assignments "
+				   "are removed. This can be undone."),
+				QMessageBox::Ok | QMessageBox::Cancel,
+				QMessageBox::Cancel);
+	if (res == QMessageBox::Ok){
+		sequenceView->ResetAllNotesToBgm();
+	}
 }
 
 bool MainWindow::IsSourceFileExtension(const QString &ext)

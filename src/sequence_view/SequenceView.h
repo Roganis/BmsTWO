@@ -312,6 +312,7 @@ public slots:
 	void SetMediumGrid(GridSize grid);
 	void DeleteSelectedObjects();
 	void TransferSelectedNotesToBgm();
+	void ResetAllNotesToBgm(); // un-chart: move every keyed note (lane>0) to BGM
 	void TransferSelectedNotesToKey();
 	void SeparateLayeredNotes();
 	void CopySelectedNotes();

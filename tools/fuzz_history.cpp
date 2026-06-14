@@ -394,6 +394,60 @@ int main(int argc, char **argv) {
         if (ch->GetNotes().size() != 1 || ch->GetNotes().value(R).lane != 0) { fprintf(stderr, "FAIL: un-key did not return sample to BGM\n"); return 1; }
     }
 
+    fprintf(stderr, "=== case: reset all notes to BGM (un-chart) ===\n");
+    {
+        // Underpins Edit > Reset All Notes to BGM: every keyed note moves to lane
+        // 0 (length 0), counts preserved, noteType preserved, one undo restores.
+        Document doc;
+        doc.Initialize();
+        const int R = doc.GetInfo()->GetResolution();
+        doc.InsertNewSoundChannels(QList<QString>() << "a.ogg" << "b.ogg");
+        pump();
+        auto chs = doc.GetSoundChannels();
+        if (chs.size() != 2) { fprintf(stderr, "FAIL: channels\n"); return 1; }
+        // place charted notes (lane>0, varied noteType) + one already-BGM note
+        QMultiMap<SoundChannel*, SoundNote> seed;
+        for (int i = 0; i < 10; i++)
+            seed.insert(chs[0], SoundNote(i * 2 * R, (i % 5) + 1, 0, i % 2)); // keyed
+        seed.insert(chs[1], SoundNote(0, 0, 0, 0)); // already BGM
+        doc.MultiChannelUpdateSoundNotes(seed);
+        pump();
+        int before = chs[0]->GetNotes().size() + chs[1]->GetNotes().size();
+
+        // build the "reset all" map exactly as SequenceView::ResetAllNotesToBgm
+        QMultiMap<SoundChannel*, SoundNote> reset;
+        QMap<int,int> oldType; // location -> noteType (ch0) to confirm preservation
+        for (auto *ch : chs){
+            const auto &ns = ch->GetNotes();
+            for (auto it = ns.begin(); it != ns.end(); ++it){
+                if (it.value().lane <= 0) continue;
+                SoundNote n = it.value();
+                if (ch == chs[0]) oldType[n.location] = n.noteType;
+                n.lane = 0; n.length = 0;
+                reset.insert(ch, n);
+            }
+        }
+        doc.MultiChannelUpdateSoundNotes(reset);
+        pump();
+        int after = chs[0]->GetNotes().size() + chs[1]->GetNotes().size();
+        if (after != before) { fprintf(stderr, "FAIL: reset changed note count %d->%d\n", before, after); return 1; }
+        for (auto *ch : chs){
+            for (auto it = ch->GetNotes().begin(); it != ch->GetNotes().end(); ++it){
+                if (it.value().lane != 0 || it.value().length != 0) { fprintf(stderr, "FAIL: note not reset to BGM\n"); return 1; }
+            }
+        }
+        for (auto it = chs[0]->GetNotes().begin(); it != chs[0]->GetNotes().end(); ++it){
+            if (oldType.contains(it.key()) && it.value().noteType != oldType[it.key()]) { fprintf(stderr, "FAIL: noteType not preserved\n"); return 1; }
+        }
+        // single undo restores the charted lanes
+        doc.GetHistory()->Undo();
+        pump();
+        bool anyKeyed = false;
+        for (auto it = chs[0]->GetNotes().begin(); it != chs[0]->GetNotes().end(); ++it)
+            if (it.value().lane > 0) { anyKeyed = true; break; }
+        if (!anyKeyed) { fprintf(stderr, "FAIL: undo did not restore charted lanes\n"); return 1; }
+    }
+
     fprintf(stderr, "=== case: sample grouping (name pattern + overlap sub-lanes) ===\n");
     {
         using namespace SampleGrouping;
