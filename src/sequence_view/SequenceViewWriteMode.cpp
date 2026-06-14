@@ -113,11 +113,14 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
                 bool handled = false;
                 if (notes.size() == 1 && notes[0]->GetChannelView()->IsCurrent()){
                     SoundChannel *c = notes[0]->GetChannelView()->GetChannel();
-                    if (sview->groupedBgmView && note.lane > 0){
-                        // Grouped-BGM: un-key instead of delete — return the
-                        // sample to the BGM lane so the music is preserved.
+                    if (sview->groupedBgmView && note.lane > 0 && note.noteType == 0){
+                        // Grouped-BGM: un-key a keyed sample START instead of
+                        // deleting it, so the music is preserved (sample -> BGM).
                         handled = c->InsertNote(SoundNote(note.location, 0, 0, note.noteType));
                     }else{
+                        // A cut (continuation, noteType 1) or a normal note is
+                        // removed outright — removing a cut heals the slice so the
+                        // previous note reclaims the sample.
                         handled = c->RemoveNote(note);
                     }
                 }
