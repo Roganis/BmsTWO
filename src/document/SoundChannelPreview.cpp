@@ -75,6 +75,10 @@ SoundChannelNotePreviewer::SoundChannelNotePreviewer(SoundChannel *channel, int 
 	}else{
 		nextNoteLocation = inote.key();
 	}
+	// Non-standard "stop": preview cuts the sample at location+stop, like a next note.
+	if (note.stop > 0 && location + note.stop < nextNoteLocation){
+		nextNoteLocation = location + note.stop;
+	}
 	icache = cache.lowerBound(location);
 	if (icache.key() == location){
 		// exactly hit on an Event!

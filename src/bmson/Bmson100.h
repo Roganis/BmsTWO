@@ -56,6 +56,7 @@ namespace Bmson
 		static const char* LengthKey;
 		static const char* ContinueKey;
 		static const char* UpKey; // non-standard: LN release re-trigger sound
+		static const char* StopKey; // non-standard: truncate the sample at location+stop ticks
 	};
 
 	struct BpmEvent
