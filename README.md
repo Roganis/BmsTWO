@@ -56,8 +56,10 @@ documentation for these lives in the [project wiki](../../wiki) (source under
 * **Grouped BGM Lanes** — a usable layout *and* charting flow for pre-cut-sample
   songs (hundreds of keysound channels): channels are merged into name-grouped,
   overlap-packed background lanes; clicking a note auditions its sample, writing
-  a key note keys the sample the music actually has at that time, and deleting a
-  keyed note un-keys it — so charting never alters the music.
+  a key note keys the sample the music actually has at that time (or slices an
+  ongoing one), deleting a keyed note un-keys it, and right-clicking cuts a
+  sample's playback — so charting never alters the music. **Reset All Notes to
+  BGM** un-charts back to a blank canvas of samples.
 * **Statistics** dock — note counts, average / peak NPS, per-lane distribution.
 * **Charts** dock — list and switch between the charts in a song folder (sabun
   workflow).
@@ -78,6 +80,12 @@ documentation for these lives in the [project wiki](../../wiki) (source under
   look): Fusion palette, tiered gridlines, alternating measure shading, rounded
   notes / long-note capsules, per-channel color-coding with custom overrides,
   monospace numeric fields, and crisp high-DPI rendering.
+
+### Format
+
+* **bmson extensions** — a few optional non-standard fields (`up` LN-release
+  re-trigger, `x_stop` keysound cutoff, `x_color` channel color) that degrade
+  gracefully in other players. See [`docs/Bmson-Extensions.md`](docs/Bmson-Extensions.md).
 
 ### Under the hood
 
