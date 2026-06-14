@@ -653,16 +653,31 @@ void SequenceView::DeselectBpmEvent(BpmEvent event)
 void SequenceView::DeleteSelectedNotes()
 {
 	if (groupedBgmView){
-		// Deleting a chart note must not delete the music: if any selected note
-		// is keyed, un-key it (return the sample to the BGM lane) instead.
-		bool anyKeyed = false;
+		// Grouped-BGM: keyed sample STARTS (noteType 0) are un-keyed back to the
+		// BGM lane (preserve the music); user-added CUTS (continuation, noteType 1)
+		// and BGM notes are removed outright (removing a cut heals the slice so the
+		// previous note reclaims the sample).
+		QMultiMap<SoundChannel*, SoundNote> toBgm;
+		QMultiMap<SoundChannel*, SoundNote> toRemove;
 		for (auto nv : selectedNotes){
-			if (nv->GetNote().lane > 0){ anyKeyed = true; break; }
+			SoundNote n = nv->GetNote();
+			SoundChannel *ch = nv->GetChannelView()->GetChannel();
+			if (n.lane > 0 && n.noteType == 0){
+				SoundNote b = n;
+				b.lane = 0;
+				b.length = 0;
+				toBgm.insert(ch, b);
+			}else{
+				toRemove.insert(ch, n);
+			}
 		}
-		if (anyKeyed){
-			TransferSelectedNotesToBgm();
-			return;
-		}
+		ClearBpmEventsSelection();
+		ClearNotesSelection();
+		if (!toRemove.empty())
+			document->MultiChannelDeleteSoundNotes(toRemove);
+		if (!toBgm.empty())
+			document->MultiChannelUpdateSoundNotes(toBgm);
+		return;
 	}
 	QMultiMap<SoundChannel*, SoundNote> notes;
 	for (auto nv : selectedNotes){

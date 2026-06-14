@@ -416,6 +416,9 @@ int main(int argc, char **argv) {
         // bmson c-flag round-trip
         if (SoundNote(SoundNote(R, 1, 0, 1).AsJson()).noteType != 1) { fprintf(stderr, "FAIL: c=true round-trip\n"); return 1; }
         if (SoundNote(SoundNote(0, 1, 0, 0).AsJson()).noteType != 0) { fprintf(stderr, "FAIL: c=false round-trip\n"); return 1; }
+        // removing the cut heals the slice: only the noteType-0 start remains
+        if (!ch->RemoveNote(SoundNote(R, 1, 0, 1))) { fprintf(stderr, "FAIL: remove cut\n"); return 1; }
+        if (ch->GetNotes().size() != 1 || ch->GetNotes().value(0).noteType != 0) { fprintf(stderr, "FAIL: removing cut did not restore the lone start note\n"); return 1; }
     }
 
     fprintf(stderr, "=== case: reset all notes to BGM (un-chart) ===\n");
