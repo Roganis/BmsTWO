@@ -153,35 +153,28 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
 		}
 	}else{
 		if (sview->currentChannel >= 0 && lane > 0 && iTime >= 0 && event->button() == Qt::LeftButton){
-			const bool shift = event->modifiers() & Qt::ShiftModifier;
-			int noteType = sview->DefaultNewNoteType(shift);
-			bool sliced = false;
-			// Slice gesture (grouped-BGM): Shift + a single selected note whose
-			// sample is still playing at iTime -> add a continuation (cut) note on
-			// that sample's own channel, splitting the keysound at this point.
-			if (sview->groupedBgmView && shift && sview->selectedNotes.size() == 1){
-				SoundChannel *selCh = (*sview->selectedNotes.begin())->GetChannelView()->GetChannel();
-				const auto &ns = selCh->GetNotes();
-				int startLoc = -1; // governing start note (noteType 0) at/just before iTime
-				for (auto it = ns.begin(); it != ns.end() && it.key() <= iTime; ++it)
-					if (it.value().noteType == 0)
-						startLoc = it.key();
-				if (startLoc >= 0 && iTime > startLoc
-						&& iTime <= selCh->GetSampleEndTick(startLoc) && !ns.contains(iTime)){
-					sview->SetCurrentChannel(sview->GetSoundChannelView(selCh), true);
-					noteType = 1; // continuation = cut
-					sliced = true;
+			int noteType;
+			if (sview->groupedBgmView){
+				// Grouped-BGM (pre-cut) charting never adds new sound — a placed
+				// note only ever "takes from" the sample the BGM has at this time.
+				int target = sview->FindSampleChannelAtTime(iTime);
+				if (target >= 0){
+					// a sample has a note exactly here -> key it (InsertNote will
+					// relocate that note onto the key lane); preserve its noteType.
+					noteType = sview->soundChannels[target]->GetChannel()->GetNotes().value(iTime).noteType;
+				}else{
+					// no exact note: take from the sample still sounding here as a
+					// continuation (cut). If nothing is sounding, register nothing.
+					target = sview->FindSoundingSampleChannelAtTime(iTime);
+					if (target < 0){
+						sview->cursor->SetNewSoundNote(SoundNote(iTime, lane, 0, 0));
+						return this; // outside every sample's playback window
+					}
+					noteType = 1; // continuation
 				}
-			}
-			// Grouped-BGM (pre-cut) charting: key the sample the music actually has
-			// at this time rather than the last-selected one. If a channel has a
-			// note exactly here, switch to it first so InsertNote relocates that
-			// sample's note onto the key lane (a channel holds one note per time),
-			// preserving the music and only changing what triggers it.
-			if (!sliced && sview->groupedBgmView){
-				int found = sview->FindSampleChannelAtTime(iTime);
-				if (found >= 0 && found != sview->currentChannel)
-					sview->SetCurrentChannel(sview->soundChannels[found], true);
+				sview->SetCurrentChannel(sview->soundChannels[target], true);
+			}else{
+				noteType = sview->DefaultNewNoteType(event->modifiers() & Qt::ShiftModifier);
 			}
 			// insert note (maybe moving existing note)
 			SoundNote note(iTime, lane, 0, noteType);
