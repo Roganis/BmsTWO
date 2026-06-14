@@ -584,6 +584,8 @@ void SoundChannel::ConvertResolution(int newResolution, int oldResolution)
 	for (auto note : notesOld){
 		note.location = ResolutionUtil::ConvertTicks(note.location, newResolution, oldResolution);
 		note.length = ResolutionUtil::ConvertTicks(note.length, newResolution, oldResolution);
+		if (note.stop > 0)
+			note.stop = ResolutionUtil::ConvertTicks(note.stop, newResolution, oldResolution);
 		notes.insert(note.location, note);
 	}
 	UpdateCache();
@@ -606,7 +608,7 @@ void SoundChannel::AddAllIntoMasterCache(int sign)
 				MasterCacheMultiWorker::Patch patch;
 				patch.sign = sign;
 				patch.time = document->GetAbsoluteTime(note.location) * MasterCache::SampleRate;
-				patch.frames = double(icache->prevSamplePosition) * MasterCache::SampleRate / waveSummary.Format.sampleRate();
+				patch.frames = CapFramesByStop(double(icache->prevSamplePosition) * MasterCache::SampleRate / waveSummary.Format.sampleRate(), note);
 				patches.append(patch);
 				break;
 			}
@@ -636,6 +638,16 @@ void SoundChannel::MasterCacheAddPreviousNoteInernal(int location, int v)
 	MasterCacheAddNoteInternal(inote.key(), v);
 }
 
+double SoundChannel::CapFramesByStop(double frames, const SoundNote &note) const
+{
+	if (note.stop <= 0)
+		return frames;
+	// duration of `stop` ticks in master-rate samples (BPM/stop-aware)
+	double stopFrames = (document->GetAbsoluteTime(note.location + note.stop)
+						 - document->GetAbsoluteTime(note.location)) * MasterCache::SampleRate;
+	return (stopFrames >= 0 && stopFrames < frames) ? stopFrames : frames;
+}
+
 void SoundChannel::MasterCacheAddNoteInternal(int location, int v)
 {
 	auto note = notes[location];
@@ -648,10 +660,11 @@ void SoundChannel::MasterCacheAddNoteInternal(int location, int v)
 	}
 	while (++icache != cache.end()){
 		if (icache->currentSamplePosition != icache->prevSamplePosition){
+			double frames = double(icache->prevSamplePosition) * MasterCache::SampleRate / waveSummary.Format.sampleRate();
+			frames = CapFramesByStop(frames, note);
 			document->GetMaster()->AddSound(
 						document->GetAbsoluteTime(location) * MasterCache::SampleRate,
-						v, this,
-						double(icache->prevSamplePosition) * MasterCache::SampleRate / waveSummary.Format.sampleRate());
+						v, this, frames);
 			return;
 		}
 	}
@@ -873,6 +886,7 @@ SoundNote::SoundNote(const QJsonValue &json)
 	length = bmsonFields[Bmson::Note::LengthKey].toInt();
 	noteType = bmsonFields[Bmson::Note::ContinueKey].toBool() ? 1 : 0;
 	up = bmsonFields[Bmson::Note::UpKey].toBool();
+	stop = bmsonFields[Bmson::Note::StopKey].toInt();
 }
 
 QJsonValue SoundNote::SaveBmson()
@@ -886,6 +900,11 @@ QJsonValue SoundNote::SaveBmson()
 	}else{
 		bmsonFields.remove(Bmson::Note::UpKey);
 	}
+	if (stop > 0){
+		bmsonFields[Bmson::Note::StopKey] = stop;
+	}else{
+		bmsonFields.remove(Bmson::Note::StopKey);
+	}
 	return bmsonFields;
 }
 
@@ -897,7 +916,8 @@ QMap<QString, QJsonValue> SoundNote::GetExtraFields() const
 			&& i.key() != Bmson::Note::LaneKey
 			&& i.key() != Bmson::Note::LengthKey
 			&& i.key() != Bmson::Note::ContinueKey
-			&& i.key() != Bmson::Note::UpKey)
+			&& i.key() != Bmson::Note::UpKey
+			&& i.key() != Bmson::Note::StopKey)
 		{
 			fields.insert(i.key(), i.value());
 		}
@@ -913,7 +933,8 @@ void SoundNote::SetExtraFields(const QMap<QString, QJsonValue> &fields)
 			&& i.key() != Bmson::Note::LaneKey
 			&& i.key() != Bmson::Note::LengthKey
 			&& i.key() != Bmson::Note::ContinueKey
-			&& i.key() != Bmson::Note::UpKey)
+			&& i.key() != Bmson::Note::UpKey
+			&& i.key() != Bmson::Note::StopKey)
 		{
 			bmsonFields[i.key()] = i.value();
 		}
@@ -931,6 +952,11 @@ QJsonObject SoundNote::AsJson() const
 		obj[Bmson::Note::UpKey] = true;
 	}else{
 		obj.remove(Bmson::Note::UpKey);
+	}
+	if (stop > 0){
+		obj[Bmson::Note::StopKey] = stop;
+	}else{
+		obj.remove(Bmson::Note::StopKey);
 	}
 	return obj;
 }

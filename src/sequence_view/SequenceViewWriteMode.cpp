@@ -201,6 +201,30 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
 				qApp->beep();
 				sview->cursor->SetNewSoundNote(note);
 			}
+		}else if (event->button() == Qt::RightButton && sview->groupedBgmView && iTime >= 0 && lane >= 0){
+			// Right-click on an empty spot in grouped view: place/toggle a sample
+			// "stop" — the sounding sample's playback is cut at this tick. Clicking
+			// exactly on an existing stop marker removes it.
+			int ch = sview->FindSoundingSampleChannelAtTime(iTime);
+			if (ch >= 0){
+				SoundChannel *channel = sview->soundChannels[ch]->GetChannel();
+				const auto &ns = channel->GetNotes();
+				int startLoc = -1;
+				for (auto it = ns.begin(); it != ns.end() && it.key() <= iTime; ++it)
+					if (it.value().noteType == 0)
+						startLoc = it.key();
+				if (startLoc >= 0){
+					SoundNote start = ns.value(startLoc);
+					if (start.stop > 0 && startLoc + start.stop == iTime)
+						start.stop = 0; // toggle off (clicked the marker)
+					else
+						start.stop = iTime - startLoc; // place / move the stop
+					channel->InsertNote(start); // undoable in-place update
+					sview->playingPane->update();
+					for (auto cv : sview->soundChannels)
+						cv->update();
+				}
+			}
 		}
 	}
 	return this;

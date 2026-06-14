@@ -29,8 +29,9 @@ struct SoundNote : public BmsonObject
 	int length;
 	int noteType;
 	bool up = false; // non-standard "up": re-trigger the sound at the LN release
+	int stop = 0; // non-standard "x_stop": truncate this sample at location+stop ticks (0 = full)
 	SoundNote(){}
-	SoundNote(int location, int lane, int length, int noteType, bool up=false) : location(location), lane(lane), length(length), noteType(noteType), up(up){}
+	SoundNote(int location, int lane, int length, int noteType, bool up=false, int stop=0) : location(location), lane(lane), length(length), noteType(noteType), up(up), stop(stop){}
 
 	SoundNote(const QJsonValue &json);
 	QJsonValue SaveBmson();
@@ -121,6 +122,9 @@ private:
 	void UpdateNoteImpl(SoundNote note);
 	void MasterCacheAddPreviousNoteInernal(int location, int v);
 	void MasterCacheAddNoteInternal(int location, int v);
+	// Truncate a master patch's frame count at the note's non-standard "stop"
+	// (location+stop ticks), so a stopped sample renders shorter. No-op if stop<=0.
+	double CapFramesByStop(double frames, const SoundNote &note) const;
 
 private slots:
 	//void OnWaveSummaryReady(const WaveSummary *summary);

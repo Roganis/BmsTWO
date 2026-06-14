@@ -419,6 +419,16 @@ int main(int argc, char **argv) {
         // removing the cut heals the slice: only the noteType-0 start remains
         if (!ch->RemoveNote(SoundNote(R, 1, 0, 1))) { fprintf(stderr, "FAIL: remove cut\n"); return 1; }
         if (ch->GetNotes().size() != 1 || ch->GetNotes().value(0).noteType != 0) { fprintf(stderr, "FAIL: removing cut did not restore the lone start note\n"); return 1; }
+        // non-standard "stop" (x_stop) round-trips and only serializes when > 0
+        {
+            SoundNote s(0, 1, 0, 0, false, 480);
+            SoundNote s2(s.AsJson());
+            if (s2.stop != 480) { fprintf(stderr, "FAIL: stop round-trip\n"); return 1; }
+            SoundNote noStop(0, 1, 0, 0);
+            if (noStop.AsJson().contains("x_stop")) { fprintf(stderr, "FAIL: x_stop written when 0\n"); return 1; }
+            if (SoundNote(noStop.AsJson()).stop != 0) { fprintf(stderr, "FAIL: stop default\n"); return 1; }
+            if (s == noStop) { fprintf(stderr, "FAIL: stop should make notes differ (for in-place update)\n"); return 1; }
+        }
     }
 
     fprintf(stderr, "=== case: reset all notes to BGM (un-chart) ===\n");

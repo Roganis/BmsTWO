@@ -150,6 +150,14 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 					painter.setPen(QPen(QColor(255, 255, 255), 2));
 					painter.drawLine(rect.left()+1, rect.bottom(), rect.right()-1, rect.bottom());
 				}
+				if (note.stop > 0){
+					// sample-stop marker: an "X" at the tick where the sample is cut.
+					int sy = std::round(Time2Y(note.location + note.stop));
+					int cx0 = laneDef.left + 3, cx1 = laneDef.left + laneDef.width - 3;
+					painter.setPen(QPen(QColor(255, 90, 90), 2));
+					painter.drawLine(cx0, sy - 4, cx1, sy + 4);
+					painter.drawLine(cx0, sy + 4, cx1, sy - 4);
+				}
 			}
 		}
 		painter.setRenderHint(QPainter::Antialiasing, false);
