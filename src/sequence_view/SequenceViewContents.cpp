@@ -144,6 +144,12 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 				}else{
 					painter.drawRect(rect);
 				}
+				if (note.noteType == 1){
+					// continuation/cut marker: bright line at the trigger edge so a
+					// sliced sample reads differently from a restart.
+					painter.setPen(QPen(QColor(255, 255, 255), 2));
+					painter.drawLine(rect.left()+1, rect.bottom(), rect.right()-1, rect.bottom());
+				}
 			}
 		}
 		painter.setRenderHint(QPainter::Antialiasing, false);

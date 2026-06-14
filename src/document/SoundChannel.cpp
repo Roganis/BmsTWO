@@ -120,6 +120,15 @@ QColor SoundChannel::GetCustomColor() const
 	return hex.isEmpty() ? QColor() : QColor(hex);
 }
 
+int SoundChannel::GetSampleEndTick(int startLoc) const
+{
+	if (!waveSummary.IsValid() || waveSummary.Format.sampleRate() <= 0)
+		return startLoc; // duration unknown -> no playback window
+	double secs = document->GetAbsoluteTime(startLoc);
+	double dur = waveSummary.FrameCount / (double)waveSummary.Format.sampleRate();
+	return document->FromAbsoluteTime(secs + dur);
+}
+
 void SoundChannel::SetCustomColor(QColor color)
 {
 	const QString oldHex = bmsonFields.value("x_color").toString();

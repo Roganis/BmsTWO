@@ -2297,6 +2297,12 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 			}else{
 				p.drawRect(r);
 			}
+			// continuation/cut marker (noteType 1): bright line at the trigger edge
+			if (pl.channelIndex >= 0 && pl.channelIndex < channels.size()
+					&& channels[pl.channelIndex]->GetNotes().value(pl.location).noteType == 1){
+				p.setPen(QPen(QColor(255, 255, 255), 2));
+				p.drawLine(QPointF(r.left()+1, r.bottom()), QPointF(r.right()-1, r.bottom()));
+			}
 		}
 
 		// group label strip (fixed at top), styled like the surrounding chrome
