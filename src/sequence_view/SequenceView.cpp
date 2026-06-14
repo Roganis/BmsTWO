@@ -2156,6 +2156,40 @@ int SequenceView::FindSampleChannelAtTime(int location) const
 	return bestAny;
 }
 
+int SequenceView::FindSoundingSampleChannelAtTime(int location) const
+{
+	// A channel is "sounding" at `location` if its governing start note (the
+	// latest noteType-0 note at or before `location`) is still playing there
+	// (location <= the sample's end tick). Used so a placed note takes from the
+	// sample currently in the BGM instead of adding a new playback.
+	auto sounding = [&](int i)->bool{
+		SoundChannel *ch = soundChannels[i]->GetChannel();
+		const auto &notes = ch->GetNotes();
+		int startLoc = -1;
+		for (auto it = notes.begin(); it != notes.end() && it.key() <= location; ++it)
+			if (it.value().noteType == 0)
+				startLoc = it.key();
+		return startLoc >= 0 && location <= ch->GetSampleEndTick(startLoc);
+	};
+	// prefer the current/selected sample
+	if (currentChannel >= 0 && currentChannel < soundChannels.size() && sounding(currentChannel))
+		return currentChannel;
+	QString grp;
+	if (currentChannel >= 0 && currentChannel < soundChannels.size())
+		grp = SampleGrouping::GroupKeyOf(soundChannels[currentChannel]->GetChannel()->GetName());
+	int bestSameGroup = -1, bestAny = -1;
+	for (int i = 0; i < soundChannels.size(); i++){
+		if (!sounding(i))
+			continue;
+		if (!grp.isEmpty() && SampleGrouping::GroupKeyOf(soundChannels[i]->GetChannel()->GetName()) == grp && bestSameGroup < 0)
+			bestSameGroup = i;
+		if (bestAny < 0)
+			bestAny = i;
+	}
+	if (bestSameGroup >= 0) return bestSameGroup;
+	return bestAny;
+}
+
 void SequenceView::SetGroupedBgmView(bool on)
 {
 	if (groupedBgmView == on)
