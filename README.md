@@ -42,8 +42,9 @@ documentation for these lives in the [project wiki](../../wiki) (source under
   poor event lanes.
 * **STOP events** — editable, and now honored by the time/playback engine
   (playback and WAV export pause at stops).
-* **Long notes** — a non-standard `up` flag re-triggers the keysound at an LN's
-  release, plus a one-key **Toggle Long Note** command.
+* **Long notes** — a one-key **Toggle Long Note** command, plus an optional
+  keysound re-trigger at an LN's release (the `up` extension — see
+  [Format](#format) below).
 * **Keysound / lane lock** — stop note drags from accidentally reassigning a
   note's lane (keysound).
 * **MIDI import** — drop a MIDI file onto a channel to lay out slice notes.

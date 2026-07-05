@@ -34,6 +34,7 @@ follows the `InfoView` pattern.)
 | BGA model / dock | `Document` BGA API, `BgaView.*` |
 | STOP dock | `StopView.*` |
 | LN `up` field | `SoundNote` (`SoundChannel.h/.cpp`) |
+| Sample-stop `x_stop` field | `SoundNote` (`SoundChannel.h`), `Bmson100.cpp` |
 | Keysound lane lock | `EditConfig`, `SequenceViewEditMode.cpp` |
 | Autosave / recovery | `MainWindow` (`SetupAutosave` … `CheckForCrashRecovery`), `EditConfig` |
 | Configurable shortcuts | `util/ShortcutManager.*`, `PrefShortcuts.*` |
@@ -43,13 +44,11 @@ follows the `InfoView` pattern.)
 
 ## Non-standard bmson fields
 
-The fork stores two non-standard fields that round-trip via each object's
-preserved `bmsonFields`:
-
-* note **`up`** — re-trigger keysound at LN release (only written when true).
-* channel **`x_color`** — per-channel display color (`#RRGGBB`).
-
-Standard players ignore unknown fields, so files stay compatible.
+The fork's bmson extensions (`up`, `x_stop`, `x_color`) are specified in
+**[bmson Extensions](Bmson-Extensions)** — keep that page authoritative when
+adding or changing a field. They round-trip via each object's preserved
+`bmsonFields`; standard players ignore unknown fields, so files stay
+compatible.
 
 ## Qt 5 / Qt 6
 
