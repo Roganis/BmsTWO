@@ -58,9 +58,10 @@ documentation for these lives in the [project wiki](../../wiki) (source under
   songs (hundreds of keysound channels): channels are merged into name-grouped,
   overlap-packed background lanes; clicking a note auditions its sample, writing
   a key note keys the sample the music actually has at that time (or slices an
-  ongoing one), deleting a keyed note un-keys it, and right-clicking cuts a
-  sample's playback — so charting never alters the music. **Reset All Notes to
-  BGM** un-charts back to a blank canvas of samples.
+  ongoing one), deleting a keyed note un-keys it, and right-clicking splits a
+  sample (the remainder returns to the background) — so charting never alters
+  the music. **Reset All Notes to BGM** un-charts back to a blank canvas of
+  samples.
 * **Statistics** dock — note counts, average / peak NPS, per-lane distribution.
 * **Charts** dock — list and switch between the charts in a song folder (sabun
   workflow).

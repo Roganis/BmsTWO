@@ -42,6 +42,12 @@ can read the whole song and chart from it.
   timeline each note grabs the correct sample automatically.
 * **Delete a keyed note** → **un-keys** it: the sample returns to the BGM lane
   rather than being deleted, so deleting a chart note never deletes the music.
+* **Right-click on the playfield** (write mode, empty spot) → **splits** the
+  sounding sample at that tick: the remainder returns to the background as a
+  continuation note, so a keyed note above the split only triggers the first
+  part — the total audio stays identical. Right-click an existing split to heal
+  it. (Right-clicking a legacy `x_stop` marker clears the stop, un-silencing
+  the remainder.)
 * **No Shift needed.** In this view a freshly placed note defaults to a
   *new-sample* trigger (normally Shift); Shift instead requests a continuation.
 * **Moving notes** between lanes is still done in **Edit mode** (write mode no

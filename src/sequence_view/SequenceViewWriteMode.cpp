@@ -202,9 +202,13 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
 				sview->cursor->SetNewSoundNote(note);
 			}
 		}else if (event->button() == Qt::RightButton && sview->groupedBgmView && iTime >= 0 && lane >= 0){
-			// Right-click on an empty spot in grouped view: place/toggle a sample
-			// "stop" — the sounding sample's playback is cut at this tick. Clicking
-			// exactly on an existing stop marker removes it.
+			// Right-click on an empty spot in Classic BMS mode: split the sounding
+			// sample at this tick — the remainder returns to the background as a
+			// continuation note, so a keyed note above the split only triggers the
+			// first part while the total audio stays identical (charting never
+			// alters the music). Clicking exactly on an existing split heals it;
+			// clicking a legacy x_stop marker clears the stop (un-silences the
+			// remainder) instead.
 			int ch = sview->FindSoundingSampleChannelAtTime(iTime);
 			if (ch >= 0){
 				SoundChannel *channel = sview->soundChannels[ch]->GetChannel();
@@ -214,15 +218,21 @@ SequenceView::Context *SequenceView::WriteModeContext::PlayingPane_MousePress(QM
 					if (it.value().noteType == 0)
 						startLoc = it.key();
 				if (startLoc >= 0){
+					bool handled = false;
 					SoundNote start = ns.value(startLoc);
-					if (start.stop > 0 && startLoc + start.stop == iTime)
-						start.stop = 0; // toggle off (clicked the marker)
-					else
-						start.stop = iTime - startLoc; // place / move the stop
-					channel->InsertNote(start); // undoable in-place update
-					sview->playingPane->update();
-					for (auto cv : sview->soundChannels)
-						cv->update();
+					if (start.stop > 0 && startLoc + start.stop == iTime){
+						start.stop = 0;
+						handled = channel->InsertNote(start); // undoable in-place update
+					}else if (ns.contains(iTime) && ns[iTime].noteType == 1 && ns[iTime].lane == 0){
+						handled = channel->RemoveNote(ns[iTime]); // heal the split
+					}else if (!ns.contains(iTime)){
+						handled = channel->InsertNote(SoundNote(iTime, 0, 0, 1));
+					}
+					if (handled){
+						sview->playingPane->update();
+						for (auto cv : sview->soundChannels)
+							cv->update();
+					}
 				}
 			}
 		}

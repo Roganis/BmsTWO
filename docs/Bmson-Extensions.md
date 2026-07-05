@@ -50,6 +50,10 @@ start at y=720.
 - **Notes:** bmson has no native keysound cutoff, which is why this exists. It is
   typically placed on the note that starts the sample (a `c:false` note). Players
   that ignore it play the sample to its natural end.
+- **Editor status:** BmsTWO's own charting flow no longer *writes* this field —
+  splitting a sample now inserts a native continuation note instead, which keeps
+  the total audio unchanged. `x_stop` remains fully supported for playback,
+  display, and round-trip of files that contain it.
 
 ```json
 { "x": 2, "y": 0, "l": 0, "x_stop": 960 }
