@@ -137,8 +137,8 @@ SequenceView::SequenceView(MainWindow *parent)
 	grabGesture(Qt::PinchGesture);
 	timeLine = NewWidget(&SequenceView::paintEventTimeLine, &SequenceView::mouseEventTimeLine, &SequenceView::enterEventTimeLine);
 	playingPane = NewWidget(&SequenceView::paintEventPlayingPane, &SequenceView::mouseEventPlayingPane, &SequenceView::enterEventPlayingPane);
-	groupedBgmPane = NewWidget(&SequenceView::paintEventGroupedBgm, &SequenceView::mouseEventGroupedBgm);
-	groupedBgmPane->hide(); // shown only in the grouped-BGM view
+	groupedBgmPane = NewWidget(&SequenceView::paintEventGroupedBgm, &SequenceView::mouseEventGroupedBgm, &SequenceView::enterEventGroupedBgm);
+	groupedBgmPane->hide(); // shown only in Classic BMS mode
 	//headerChannelsArea = NewWidget(&SequenceView::paintEventHeaderArea);
 	//headerCornerEntry = NewWidget(&SequenceView::paintEventHeaderEntity);
 	//headerPlayingEntry = NewWidget(&SequenceView::paintEventPlayingHeader);
@@ -1477,6 +1477,9 @@ void SequenceView::wheelEventVp(QWheelEvent *event)
 		playingPane->update();
 		//headerChannelsArea->update();
 		footerChannelsArea->update();
+		if (groupedBgmView && groupedBgmPane){
+			groupedBgmPane->update();
+		}
 		for (SoundChannelView *cview : soundChannels){
 			cview->UpdateWholeBackBuffer();
 			cview->update();
@@ -1505,6 +1508,9 @@ void SequenceView::pinchEvent(QPinchGesture *pinch)
 	playingPane->update();
 	//headerChannelsArea->update();
 	footerChannelsArea->update();
+	if (groupedBgmView && groupedBgmPane){
+		groupedBgmPane->update();
+	}
 	for (SoundChannelView *cview : soundChannels){
 		if (cview->geometry().intersects(viewport()->rect())){
 			cview->UpdateWholeBackBuffer();
@@ -2076,6 +2082,9 @@ void SequenceView::ZoomIn()
 	}
 	//headerChannelsArea->update();
 	footerChannelsArea->update();
+	if (groupedBgmView && groupedBgmPane){
+		groupedBgmPane->update();
+	}
 	for (SoundChannelView *cview : soundChannels){
 		if (cview->geometry().intersects(viewport()->rect())){
 			cview->UpdateWholeBackBuffer();
@@ -2098,6 +2107,9 @@ void SequenceView::ZoomOut()
 	}
 	//headerChannelsArea->update();
 	footerChannelsArea->update();
+	if (groupedBgmView && groupedBgmPane){
+		groupedBgmPane->update();
+	}
 	for (SoundChannelView *cview : soundChannels){
 		if (cview->geometry().intersects(viewport()->rect())){
 			cview->UpdateWholeBackBuffer();
@@ -2117,6 +2129,9 @@ void SequenceView::ZoomReset()
 	playingPane->update();
 	//headerChannelsArea->update();
 	footerChannelsArea->update();
+	if (groupedBgmView && groupedBgmPane){
+		groupedBgmPane->update();
+	}
 	for (SoundChannelView *cview : soundChannels){
 		if (cview->geometry().intersects(viewport()->rect())){
 			cview->UpdateWholeBackBuffer();
@@ -2300,6 +2315,18 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 		p.drawLines(lines);
 	}
 
+	// the note hovered via the cursor (status bar/hit feedback), for its outline
+	int hoverChannel = -1, hoverLocation = -1;
+	if (cursor->IsExistingSoundNote()){
+		SoundNoteView *nv = cursor->GetExistingSoundNote();
+		hoverChannel = soundChannels.indexOf(nv->GetChannelView());
+		hoverLocation = nv->GetNote().location;
+	}
+	// the name-group the current channel belongs to (works even when the channel
+	// has no notes yet, unlike scanning placements)
+	const QString currentGroupKey = (currentChannel >= 0 && currentChannel < channels.size())
+			? SampleGrouping::GroupKeyOf(channels[currentChannel]->GetName()) : QString();
+
 	p.setRenderHint(QPainter::Antialiasing, modern);
 	for (int gi = 0; gi < bgmGroups.size(); gi++){
 		const auto &g = bgmGroups[gi];
@@ -2309,6 +2336,7 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 			continue; // off-screen horizontally
 
 		// sub-lane separators (subtle) + group separator (strong)
+		p.setRenderHint(QPainter::Antialiasing, false);
 		p.setPen(QPen(QBrush(QColor(34, 34, 34)), 1));
 		for (int sl = 1; sl < g.subLaneCount; sl++){
 			int x = groupLeft + sl * BgmSubLaneWidth;
@@ -2317,6 +2345,15 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 		p.setPen(QPen(QBrush(QColor(0, 0, 0)), 1));
 		p.drawLine(groupLeft - BgmGroupGap/2, 0, groupLeft - BgmGroupGap/2, paneH);
 
+		// the current channel's group gets the same light tint the standard view
+		// puts on the current channel's column
+		if (!currentGroupKey.isEmpty() && g.key == currentGroupKey){
+			p.setCompositionMode(QPainter::CompositionMode_Plus);
+			p.fillRect(QRect(groupLeft, 0, groupW, paneH), QColor(211, 211, 255, 42));
+			p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+		}
+		p.setRenderHint(QPainter::Antialiasing, modern);
+
 		// notes — same color vocabulary as the rest of the editor: the channel's
 		// categorical/custom color, dimmed when not the current channel; the
 		// current channel's notes get the white selected-style outline.
@@ -2324,6 +2361,7 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 			if (pl.location + std::max(pl.length, 1) < tBegin || pl.location > tEnd)
 				continue;
 			const bool isCurrent = (pl.channelIndex == currentChannel);
+			const bool isHover = (pl.channelIndex == hoverChannel && pl.location == hoverLocation);
 			QColor c = (pl.channelIndex >= 0 && pl.channelIndex < channels.size())
 					? channels[pl.channelIndex]->GetCustomColor() : QColor();
 			if (!c.isValid())
@@ -2339,7 +2377,13 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 			const qreal h = std::max<qreal>(6.0, yBot - yTop);
 			QRectF r(x + 1.5, yBot - h, BgmSubLaneWidth - 3, h);
 			p.setBrush(c);
-			p.setPen(isCurrent ? QPen(QBrush(QColor(255, 255, 255)), 1.5) : QPen(c.darker(150), 1));
+			// hover > current > normal, mirroring the standard panes' outlines
+			if (isHover)
+				p.setPen(QPen(QBrush(QColor(255, 255, 255)), 2.5));
+			else if (isCurrent)
+				p.setPen(QPen(QBrush(QColor(255, 255, 255)), 1.5));
+			else
+				p.setPen(QPen(c.darker(150), 1));
 			if (modern){
 				qreal rad = std::min<qreal>(3.0, r.width()/3.0);
 				p.drawRoundedRect(r, rad, rad);
@@ -2362,74 +2406,141 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 				}
 			}
 		}
+	}
 
-		// group label strip (fixed at top), styled like the surrounding chrome
-		p.setRenderHint(QPainter::Antialiasing, false);
-		p.fillRect(QRect(groupLeft - BgmGroupGap/2, 0, groupW + BgmGroupGap, BgmLabelHeight), palette().window().color());
-		p.setPen(QPen(palette().dark(), 1));
-		p.drawLine(groupLeft - BgmGroupGap/2, BgmLabelHeight, groupLeft + groupW + BgmGroupGap/2, BgmLabelHeight);
-		p.setPen(palette().text().color());
+	p.setRenderHint(QPainter::Antialiasing, false);
+
+	// horz. cursor line — same as the playing pane / channel columns
+	if (cursor->ShouldShowHLine()){
+		p.setPen(QPen(QBrush(QColor(255, 255, 255)), 1));
+		int y = std::round(Time2Y(cursor->GetTime())) - 1;
+		p.drawLine(0, y, paneW, y);
+	}
+
+	// group label strip: full-width chrome at the top (like the footer strip in
+	// the standard view), with one label per visible group
+	p.fillRect(QRect(0, 0, paneW, BgmLabelHeight), palette().window().color());
+	p.setPen(QPen(palette().dark(), 1));
+	p.drawLine(0, BgmLabelHeight, paneW, BgmLabelHeight);
+	{
 		QFont f = p.font();
 		f.setPixelSize(10);
-		p.setFont(f);
-		p.drawText(QRect(groupLeft + 2, 0, groupW + BgmGroupGap/2 - 4, BgmLabelHeight),
-				   Qt::AlignLeft | Qt::AlignVCenter, g.key);
-		p.setRenderHint(QPainter::Antialiasing, modern);
+		for (int gi = 0; gi < bgmGroups.size(); gi++){
+			const auto &g = bgmGroups[gi];
+			const int groupLeft = bgmGroupLeft[gi] - hscroll;
+			const int groupW = g.subLaneCount * BgmSubLaneWidth;
+			if (groupLeft + groupW < 0 || groupLeft > paneW)
+				continue;
+			const bool isCurrentGroup = !currentGroupKey.isEmpty() && g.key == currentGroupKey;
+			f.setBold(isCurrentGroup);
+			p.setFont(f);
+			p.setPen(isCurrentGroup && modern ? Theme::Accent() : palette().text().color());
+			p.drawText(QRect(groupLeft + 2, 0, groupW + BgmGroupGap/2 - 4, BgmLabelHeight),
+					   Qt::AlignLeft | Qt::AlignVCenter, g.key);
+		}
 	}
 	return true;
 }
 
 bool SequenceView::mouseEventGroupedBgm([[maybe_unused]] QWidget *widget, QMouseEvent *event)
 {
-	if (event->type() != QEvent::MouseButtonPress || !document)
+	if (!document)
 		return false;
 	const int hscroll = horizontalScrollBar()->value();
-	const qreal clickTime = Y2Time(event->y());
+	const qreal time = Y2Time(event->y());
+
+	// locate the group / sub-lane under the mouse, and the note (if any) whose
+	// extent contains the mouse time within that sub-lane
+	int hitGroup = -1, hitSubLane = -1, hitChannel = -1, hitLocation = -1;
 	for (int gi = 0; gi < bgmGroups.size(); gi++){
 		const auto &g = bgmGroups[gi];
 		const int groupLeft = bgmGroupLeft[gi] - hscroll;
 		const int groupW = g.subLaneCount * BgmSubLaneWidth;
 		if (event->x() < groupLeft - BgmGroupGap/2 || event->x() >= groupLeft + groupW + BgmGroupGap/2)
 			continue;
-		// Clicking anywhere in a sub-lane selects the sample of the note nearest
-		// in time within that sub-lane (so empty space between notes works too);
-		// clicking the group label selects the group's first sample.
-		int channelIndex = -1;
-		if (event->y() <= BgmLabelHeight){
-			if (!g.placements.isEmpty())
-				channelIndex = g.placements.first().channelIndex;
-		}else{
-			const int subLane = std::min(g.subLaneCount - 1,
-										 std::max(0, (event->x() - groupLeft) / BgmSubLaneWidth));
-			qreal best = -1;
-			for (const auto &pl : g.placements){
-				if (pl.subLane != subLane)
-					continue;
-				// distance 0 inside the note's extent, else gap to nearest edge
-				qreal d;
-				if (clickTime >= pl.location && clickTime <= pl.location + std::max(pl.length, 1))
-					d = 0;
-				else
-					d = std::min(std::abs(clickTime - pl.location),
-								 std::abs(clickTime - (pl.location + pl.length)));
-				if (best < 0 || d < best){
-					best = d;
-					channelIndex = pl.channelIndex;
-				}
+		hitGroup = gi;
+		hitSubLane = std::min(g.subLaneCount - 1,
+							  std::max(0, (event->x() - groupLeft) / BgmSubLaneWidth));
+		for (const auto &pl : g.placements){
+			if (pl.subLane != hitSubLane)
+				continue;
+			if (time >= pl.location && time <= pl.location + std::max(pl.length, 1)){
+				hitChannel = pl.channelIndex;
+				hitLocation = pl.location;
+				break;
 			}
-			// empty sub-lane: fall back to the group's first sample
-			if (channelIndex < 0 && !g.placements.isEmpty())
-				channelIndex = g.placements.first().channelIndex;
 		}
-		if (channelIndex >= 0 && channelIndex < soundChannels.size()){
-			SetCurrentChannel(soundChannels[channelIndex]); // canonical path: selects + notifies
-			// Audition the sample so it can be heard without the channel tab.
-			QMetaObject::invokeMethod(soundChannels[channelIndex], "Preview");
-			groupedBgmPane->update();
+		break;
+	}
+
+	if (event->type() == QEvent::MouseMove){
+		// Same hover feedback as the standard columns: the note under the mouse
+		// drives the status bar (and gets an outline); empty space shows the
+		// time cursor line, snapped like everywhere else.
+		if (event->y() <= BgmLabelHeight){
+			cursor->SetNothing();
+		}else if (hitChannel >= 0 && hitChannel < soundChannels.size()
+				  && soundChannels[hitChannel]->GetNotes().contains(hitLocation)){
+			cursor->SetExistingSoundNote(soundChannels[hitChannel]->GetNotes()[hitLocation]);
+		}else{
+			int iTime = int(time);
+			if (snapToGrid)
+				iTime = SnapToLowerFineGrid(time);
+			cursor->SetTime(EditConfig::SnappedHitTestInEditMode() ? iTime : time);
 		}
 		return true;
 	}
-	return false;
+	if (event->type() != QEvent::MouseButtonPress || hitGroup < 0)
+		return false;
+
+	// Clicking anywhere in a sub-lane selects the sample of the note nearest in
+	// time within that sub-lane (so empty space between notes works too);
+	// clicking the group label selects the group's first sample.
+	const auto &g = bgmGroups[hitGroup];
+	int channelIndex = hitChannel;
+	if (event->y() <= BgmLabelHeight){
+		channelIndex = g.placements.isEmpty() ? -1 : g.placements.first().channelIndex;
+	}else if (channelIndex < 0){
+		qreal best = -1;
+		for (const auto &pl : g.placements){
+			if (pl.subLane != hitSubLane)
+				continue;
+			qreal d = std::min(std::abs(time - pl.location),
+							   std::abs(time - (pl.location + pl.length)));
+			if (best < 0 || d < best){
+				best = d;
+				channelIndex = pl.channelIndex;
+			}
+		}
+		// empty sub-lane: fall back to the group's first sample
+		if (channelIndex < 0 && !g.placements.isEmpty())
+			channelIndex = g.placements.first().channelIndex;
+	}
+	if (channelIndex >= 0 && channelIndex < soundChannels.size()){
+		SetCurrentChannel(soundChannels[channelIndex]); // canonical path: selects + notifies
+		if (event->button() == Qt::RightButton){
+			// Same context menu as a standard channel column.
+			soundChannels[channelIndex]->ShowChannelMenu(QCursor::pos());
+		}else{
+			// Audition the sample so it can be heard without the channel tab.
+			QMetaObject::invokeMethod(soundChannels[channelIndex], "Preview");
+		}
+		groupedBgmPane->update();
+	}
+	return true;
+}
+
+bool SequenceView::enterEventGroupedBgm([[maybe_unused]] QWidget *widget, QEvent *event)
+{
+	switch (event->type()){
+	case QEvent::Enter:
+		return true;
+	case QEvent::Leave:
+		cursor->SetNothing();
+		return true;
+	default:
+		return false;
+	}
 }
 
 void SequenceView::ChannelDisplayFilteringConditionsChanged(bool hideOthers, QString keyword, bool filterActive)
@@ -2595,6 +2706,9 @@ void SequenceView::CursorChanged()
 	playingPane->update();
 	if (showMasterLane){
 		masterLane->update();
+	}
+	if (groupedBgmView && groupedBgmPane){
+		groupedBgmPane->update();
 	}
 	for (auto cview : soundChannels){
 		cview->update();

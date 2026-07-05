@@ -158,8 +158,9 @@ private:
 	bool fixMiniMap;
 	SequenceViewChannelLaneMode channelLaneMode;
 
-	// Grouped BGM lanes view (for pre-cut sample charts): renders sample channels
-	// merged into name-grouped, overlap-packed lanes instead of one column each.
+	// Classic BMS mode (grouped BGM lanes, for pre-cut sample charts): renders
+	// sample channels merged into name-grouped, overlap-packed lanes instead of
+	// one column each.
 	bool groupedBgmView = false;
 	QWidget *groupedBgmPane = nullptr;
 	QList<SampleGrouping::Group> bgmGroups;
@@ -268,6 +269,7 @@ private:
 	void ScheduleBgmRebuild(); // debounced regroup while in grouped-BGM view
 	bool paintEventGroupedBgm(QWidget *widget, QPaintEvent *event);
 	bool mouseEventGroupedBgm(QWidget *widget, QMouseEvent *event);
+	bool enterEventGroupedBgm(QWidget *widget, QEvent *event);
 
 	bool enterEventTimeLine(QWidget *timeLine, QEvent *event);
 	bool mouseEventTimeLine(QWidget *timeLine, QMouseEvent *event);

@@ -1,12 +1,14 @@
-# Grouped BGM Lanes (pre-cut samples)
+# Classic BMS Mode
+
+*(formerly “Grouped BGM Lanes”)*
 
 For songs whose samples are **already cut** (often hundreds of one-shot
-keysound channels), the normal one-column-per-channel layout becomes
-unusably wide. The **Grouped BGM Lanes** view reorganizes those channels into
-compact, name-grouped background lanes so you can read the whole song and chart
-from it.
+keysound channels) — the classic BMS way of charting — the normal
+one-column-per-channel layout becomes unusably wide. **Classic BMS Mode**
+reorganizes those channels into compact, name-grouped background lanes so you
+can read the whole song and chart from it.
 
-**Enable:** **View → Grouped BGM Lanes (pre-cut samples)** (persisted).
+**Enable:** **View → Classic BMS Mode** (persisted).
 
 ## What it does
 
@@ -16,17 +18,23 @@ from it.
 * **Overlap sub-lanes.** Notes within a group that overlap in time are split
   into the minimum number of side-by-side sub-lanes so nothing collides; a
   group widens only as much as it needs to.
-* **Editor-native look.** Same dark background, bar/beat/fine gridlines, and
-  per-channel colors (with custom-color overrides) as the rest of the editor;
-  the current sample's notes get the white selected outline. A label strip at
-  the top names each group.
+* **Editor-native look.** Same dark background, bar/beat/fine gridlines,
+  per-channel colors (with custom-color overrides), time cursor line, and
+  hover outlines as the rest of the editor. A label strip at the top names
+  each group; the current sample's group is tinted and its label highlighted,
+  just like the current channel's column in the standard view.
 * **Live.** The grouping rebuilds automatically as you edit, and the right-edge
   minimap (whole-chart scroll overview) stays available.
 
 ## Working in this view
 
+* **Hover** → the standard time cursor and status-bar readout (measure / beat /
+  real time); hovering a note outlines it and shows its info, exactly like the
+  standard lanes.
 * **Click a note** → selects that sample as the current channel **and auditions
   it** (so you hear the keysound without opening the channel tab).
+* **Right-click a lane** → the same channel context menu as a standard column:
+  preview, move left/right, select notes, set/clear color, delete.
 * **Write a key note** (write mode, on the playfield) → keys **the sample the
   music actually has at that time**, not the last-selected one. Because a channel
   holds one note per time, the existing sample note is *moved* onto the key lane

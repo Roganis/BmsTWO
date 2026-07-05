@@ -603,6 +603,13 @@ SoundNoteView *SoundChannelView::HitTestBGPane(int y, int time)
 
 void SoundChannelView::OnChannelMenu(QContextMenuEvent *event)
 {
+	ShowChannelMenu(event->globalPos());
+}
+
+// Also invoked from the Classic BMS mode pane, so right-clicking a grouped lane
+// offers the same channel menu as a standard column.
+void SoundChannelView::ShowChannelMenu(const QPoint &globalPos)
+{
 	QMenu menu(this);
 	menu.addAction(actionPreview);
 	menu.addSeparator();
@@ -616,7 +623,7 @@ void SoundChannelView::OnChannelMenu(QContextMenuEvent *event)
 	menu.addAction(actionClearColor);
 	menu.addSeparator();
 	menu.addAction(actionDestroy);
-	menu.exec(event->globalPos());
+	menu.exec(globalPos);
 }
 
 bool SoundChannelView::DrawsWaveform() const

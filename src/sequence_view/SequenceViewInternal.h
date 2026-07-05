@@ -186,6 +186,7 @@ public:
 	void RemakeBackBuffer();
 	void ScrollContents(int dy);
 	void SetInternalWidth(int width);
+	void ShowChannelMenu(const QPoint &globalPos);
 
 	SoundChannel *GetChannel() const{ return channel; }
 	QString GetName() const{ return channel->GetName(); }

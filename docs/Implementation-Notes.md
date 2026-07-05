@@ -36,6 +36,7 @@ follows the `InfoView` pattern.)
 | LN `up` field | `SoundNote` (`SoundChannel.h/.cpp`) |
 | Sample-stop `x_stop` field | `SoundNote` (`SoundChannel.h`), `Bmson100.cpp` |
 | Keysound lane lock | `EditConfig`, `SequenceViewEditMode.cpp` |
+| Classic BMS mode (grouped BGM lanes) | `SequenceView` (`RebuildBgmGroups`, `paintEventGroupedBgm`), `util/SampleGrouping.*` |
 | Autosave / recovery | `MainWindow` (`SetupAutosave` … `CheckForCrashRecovery`), `EditConfig` |
 | Configurable shortcuts | `util/ShortcutManager.*`, `PrefShortcuts.*` |
 | Per-channel color | `SoundChannel` `x_color`, `SequenceView::SetNoteColor` |

@@ -54,7 +54,7 @@ documentation for these lives in the [project wiki](../../wiki) (source under
 
 ### Panels & workflow
 
-* **Grouped BGM Lanes** — a usable layout *and* charting flow for pre-cut-sample
+* **Classic BMS Mode** — a usable layout *and* charting flow for pre-cut-sample
   songs (hundreds of keysound channels): channels are merged into name-grouped,
   overlap-packed background lanes; clicking a note auditions its sample, writing
   a key note keys the sample the music actually has at that time (or slices an

@@ -16,7 +16,7 @@ note on how each is implemented.
   selection.
 * **[Panels & Workflow](Panels-and-Workflow)** — Statistics, Charts, Keysounds,
   and Selection docks; the sabun (chart-variation) workflow.
-* **[Grouped BGM Lanes](Grouped-BGM-Lanes)** — a usable layout and charting flow
+* **[Classic BMS Mode](Classic-BMS-Mode)** — a usable layout and charting flow
   for pre-cut-sample songs with hundreds of keysound channels.
 * **[bmson Extensions](Bmson-Extensions)** — the non-standard fields BmsTWO adds
   (`up`, `x_stop`, `x_color`) and how to implement them in a player.
@@ -47,3 +47,6 @@ BmsTWO ships a **Modern dark theme** that is on by default, plus a **Classic**
 mode that restores the original BmsONE look exactly. Toggle it in
 **Preferences → General → Modern dark theme** (requires restart). See
 [Appearance](Appearance).
+
+(Not to be confused with **[Classic BMS Mode](Classic-BMS-Mode)**, which is a
+charting workflow for pre-cut-sample songs, unrelated to the theme.)

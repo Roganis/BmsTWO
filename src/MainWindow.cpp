@@ -232,9 +232,9 @@ MainWindow::MainWindow(QSettings *settings)
 	SharedUIHelper::RegisterGlobalShortcut(actionViewFullScreen);
 	connect(actionViewFullScreen, SIGNAL(triggered()), this, SLOT(ViewFullScreen()));
 
-	actionViewGroupedBgm = new QAction(tr("Grouped BGM Lanes (pre-cut samples)"), this);
+	actionViewGroupedBgm = new QAction(tr("Classic BMS Mode"), this);
 	actionViewGroupedBgm->setCheckable(true);
-	actionViewGroupedBgm->setStatusTip(tr("Merge sample channels into name-grouped background lanes — a usable layout for charts with hundreds of pre-cut samples"));
+	actionViewGroupedBgm->setStatusTip(tr("Chart pre-cut sample songs the classic BMS way: sample channels are merged into name-grouped background lanes"));
 	SharedUIHelper::RegisterGlobalShortcut(actionViewGroupedBgm);
 	connect(actionViewGroupedBgm, &QAction::triggered, this, [this](bool checked){
 		if (sequenceView) sequenceView->SetGroupedBgmView(checked);
