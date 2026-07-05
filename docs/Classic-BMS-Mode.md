@@ -48,6 +48,11 @@ can read the whole song and chart from it.
   part — the total audio stays identical. Right-click an existing split to heal
   it. (Right-clicking a legacy `x_stop` marker clears the stop, un-silencing
   the remainder.)
+* **Draw a long note** → the sample is **split automatically at the LN's
+  release**: the long note keys the head slice, the remainder returns to the
+  background — no manual right-click needed. (Skipped if another note already
+  sits at the release tick, if the sample has ended by then, or for `up`
+  notes.) Right-click the split to heal it.
 * **Reading the lanes:** every continuation/cut note carries a **red cross** at
   its trigger tick — the previous sound is cut there and the marker under the
   cross is its remainder. A marker *without* a cross is a genuinely new

@@ -537,6 +537,28 @@ SequenceView::Context *SequenceView::WriteModeDrawNoteContext::PlayingPane_Mouse
 	updateNotesCxt->Finish();
 	delete updateNotesCxt;
 	updateNotesCxt = nullptr;
+	// Classic BMS mode: a keyed long note should own the sample only up to its
+	// release, so auto-split there — the remainder returns to the background,
+	// exactly like a manual right-click split at the LN's end. Skip when a note
+	// already bounds the release tick, when the sample has ended by then, or
+	// for `up` notes (their release re-trigger has its own semantics).
+	if (sview->groupedBgmView && sview->currentChannel >= 0){
+		SoundChannel *channel = sview->soundChannels[sview->currentChannel]->GetChannel();
+		const auto &ns = channel->GetNotes();
+		if (ns.contains(notePos)){
+			const SoundNote n = ns[notePos];
+			const int end = n.location + n.length;
+			if (n.length > 0 && !n.up && !ns.contains(end)){
+				int startLoc = -1;
+				for (auto it = ns.begin(); it != ns.end() && it.key() <= n.location; ++it)
+					if (it.value().noteType == 0)
+						startLoc = it.key();
+				if (startLoc >= 0 && end < channel->GetSampleEndTick(startLoc)){
+					channel->InsertNote(SoundNote(end, 0, 0, 1));
+				}
+			}
+		}
+	}
 	return Escape();
 }
 
