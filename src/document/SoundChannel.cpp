@@ -220,7 +220,18 @@ void SoundChannel::RemoveNoteImpl(SoundNote note)
 
 void SoundChannel::UpdateNoteImpl(SoundNote note)
 {
-	bool updatesMasterCache = note.noteType == 0 || notes[note.location].noteType == 0;
+	// Master audio depends only on start-note timing (noteType-0 locations),
+	// the x_stop cutoff, and the LN release re-trigger (up + length). A
+	// lane-only move (keying / un-keying a sample) is audio-neutral, so skip
+	// the master-cache patch: it spawns decode workers that re-read the source
+	// file, and mass operations (un-chart, grouped-BGM keying) would otherwise
+	// fire thousands of them at once for a no-op.
+	const SoundNote &old = notes[note.location];
+	bool audioNeutral = old.noteType == note.noteType
+			&& old.stop == note.stop
+			&& old.up == note.up
+			&& (!note.up || old.length == note.length);
+	bool updatesMasterCache = (note.noteType == 0 || old.noteType == 0) && !audioNeutral;
 	if (updatesMasterCache){
 		MasterCacheAddPreviousNoteInernal(note.location, -1);
 		MasterCacheAddNoteInternal(note.location, -1);

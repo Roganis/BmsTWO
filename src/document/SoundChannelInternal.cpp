@@ -306,7 +306,12 @@ void SoundChannelResourceManager::UpdateWaveData(const QString &srcPath)
 		wave = nullptr;
 	}
 	overallWaveform.fill(0x00000000);
-	rmsCachePackets.clear();
+	{
+		// RunTaskRmsCachePacket futures are not tracked by currentTask, so a
+		// packet read may still be in flight; clear under the same mutex.
+		QMutexLocker lock(&rmsCacheMutex);
+		rmsCachePackets.clear();
+	}
 	file = QFileInfo(srcPath);
 	wave = SoundChannelUtil::OpenSourceFile(srcPath, this);
 
@@ -352,13 +357,17 @@ void SoundChannelResourceManager::RunTaskWaveData()
 
 void SoundChannelResourceManager::RunTaskRmsCachePacket(int position)
 {
-	QMap<quint64, RmsCachePacket>::const_iterator i = rmsCachePackets.find(position);
-	if (i == rmsCachePackets.end()){
-		// packet not found
-		emit RmsCachePacketReady(position, QList<RmsCacheEntry>());
-		return;
+	// Read (and uncompress) under the mutex: RunTaskWaveData inserts into
+	// rmsCachePackets concurrently from another pooled thread, and an
+	// unlocked find/iterate races the map's rebalancing.
+	QList<RmsCacheEntry> entries; // empty = packet not found
+	{
+		QMutexLocker lock(&rmsCacheMutex);
+		auto i = rmsCachePackets.constFind(position);
+		if (i != rmsCachePackets.constEnd())
+			entries = i->Uncompress();
 	}
-	emit RmsCachePacketReady(position, i->Uncompress());
+	emit RmsCachePacketReady(position, entries);
 }
 
 void SoundChannelResourceManager::TaskDrawOverallWaveformAndRmsCache()

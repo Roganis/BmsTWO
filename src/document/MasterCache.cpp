@@ -139,13 +139,17 @@ void MasterCache::DecCounter(int position, int length)
 
 void MasterCache::WorkerComplete(MasterCacheWorkerBase *worker)
 {
-	if (workersMutex.tryLock(1)){ // to make sure
+	// Runs on the GUI thread (queued connection), same as every other locker
+	// of workersMutex, so a plain lock cannot deadlock. The old tryLock(1)
+	// leaked the worker (never removed, never deleted) whenever the lock was
+	// contended.
+	{
+		QMutexLocker lock(&workersMutex);
 		workers.remove(worker);
-		workersMutex.unlock();
-		worker->deleteLater();
-		if (workers.isEmpty()){
-			emit Complete();
-		}
+	}
+	worker->deleteLater();
+	if (workers.isEmpty()){
+		emit Complete();
 	}
 }
 

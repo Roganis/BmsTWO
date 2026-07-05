@@ -79,7 +79,10 @@ void WaveData::LoadWav(const QString &srcPath)
 		}
 		din >> formatTag >> channelsCount >> samplesPerSec >> avgBytesPerSec >> blockAlign >> bitsPerSample;
 		din.skipRawData(ckSize - 16);
-		if (formatTag != 1 /*WAVE_FORMAT_PCM*/ || channelsCount > 2){
+		// channelsCount == 0 must be rejected here: blockAlign is validated
+		// against N*channelsCount below, so 0 channels + 0 blockAlign would
+		// pass and divide by zero at `bytes / blockAlign`.
+		if (formatTag != 1 /*WAVE_FORMAT_PCM*/ || channelsCount == 0 || channelsCount > 2 || samplesPerSec == 0){
 			qDebug() << "formatTag: " << formatTag;
 			qDebug() << "channels: " << channelsCount;
 			err = UnsupportedFormat;
