@@ -301,7 +301,7 @@ void MasterOutDialog::ProcessSoftClip(QDataStream &dout)
 	Rms peakSat(0.f, 0.f);
     int samples = master->GetDataSize();
     const StereoFloat32 *s = master->GetAllData();
-    for (int i = 0; i < samples; s++){
+    for (int i = 0; i < samples; i++){
         float l = s[i].left * gain, r = s[i].right * gain;
 		float satL = saturate(0.8f, l), satR = saturate(0.8f, r);
 		qint16 outL = satL * 32767.f, outR = satR * 32767.f;
@@ -363,7 +363,7 @@ void MasterOutDialog::ProcessHardClip(QDataStream &dout)
 	Rms peakSat(0.f, 0.f);
     int samples = master->GetDataSize();
     const StereoFloat32 *s = master->GetAllData();
-    for (int i = 0; i < samples; s++){
+    for (int i = 0; i < samples; i++){
         float l = s[i].left * gain, r = s[i].right * gain;
 		float satL = std::max(-1.0f, std::min(1.0f, l));
 		float satR = std::max(-1.0f, std::min(1.0f, r));
@@ -425,7 +425,7 @@ void MasterOutDialog::ProcessNormalize(QDataStream &dout)
 	Rms peakSat(0.f, 0.f);
     int samples = master->GetDataSize();
     const StereoFloat32 *s = master->GetAllData();
-    for (int i = 0; i < samples; s++){
+    for (int i = 0; i < samples; i++){
         float l = std::fabs(s[i].left);
         float r = std::fabs(s[i].right);
 		if (peakOrg.L < l)
@@ -435,7 +435,7 @@ void MasterOutDialog::ProcessNormalize(QDataStream &dout)
 	}
 	float pk = std::max(peakOrg.L, peakOrg.R);
 	const float gainWithNorm = pk * gain > 1.0f ? (1.0f / pk) : gain;
-    for (int i = 0; i < samples; s++){
+    for (int i = 0; i < samples; i++){
         float l = s[i].left * gainWithNorm, r = s[i].right * gainWithNorm;
 		float satL = std::max(-1.0f, std::min(1.0f, l));
 		float satR = std::max(-1.0f, std::min(1.0f, r));
