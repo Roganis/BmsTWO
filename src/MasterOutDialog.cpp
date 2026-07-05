@@ -1,6 +1,9 @@
 #include "MasterOutDialog.h"
 #include "document/Document.h"
+#include "document/SoundChannel.h"
+#include "document/SoundChannelInternal.h"
 #include "document/MasterCache.h"
+#include "audio/Wave.h"
 #include "util/UIDef.h"
 #include "EditConfig.h"
 #include <cmath>
@@ -249,6 +252,43 @@ void MasterOutDialog::Export()
 	file.seek(tailRiff);
 	file.close();
 	log->append(tr("Export complete."));
+
+	// Opt-in self-check: confirm every non-silent sample actually made it into
+	// the rendered mix. Set BMSTWO_VERIFY_MIX=1 and Export; any sample whose own
+	// waveform isn't found at its note position is listed here.
+	if (qEnvironmentVariableIsSet("BMSTWO_VERIFY_MIX")){
+		const int nData = master->GetDataSize();
+		const StereoFloat32 *md = master->GetAllData();
+		int checked = 0, missing = 0;
+		for (SoundChannel *c : document->GetSoundChannels()){
+			const auto &ns = c->GetNotes();
+			if (ns.isEmpty()) continue;
+			AudioStreamSource *w = SoundChannelUtil::OpenSourceFile(document->GetAbsolutePath(c->GetFileName()), nullptr);
+			if (!w || w->Open() != 0){ delete w; continue; }
+			auto *tr = new S32F44100StreamTransformer(w, nullptr); tr->Open(); tr->SeekAbsolute(0);
+			QList<StereoFloat32> V; StereoFloat32 bb[8192];
+			while (true){ int got = tr->Read(bb, 8192); if (got <= 0) break; for (int i=0;i<got;i++) V.append(bb[i]); if (V.size() > 44100*40) break; }
+			delete tr;
+			if (V.size() < 4410) continue;
+			int win = 11025; double smax = 0; long soff = 0;
+			for (long o=0; o+win<V.size(); o+=2205){ double e=0; for (int i=0;i<win;i++) e+=std::abs((double)V[o+i].left)+std::abs((double)V[o+i].right); if (e>smax){smax=e;soff=o;} }
+			if (smax < 50) continue; // essentially silent sample
+			checked++;
+			bool present = false;
+			for (auto it=ns.begin(); it!=ns.end() && !present; ++it){
+				if (it.value().noteType != 0) continue;
+				long cp = (long)(document->GetAbsoluteTime(it.value().location)*MasterCache::SampleRate) + soff;
+				double dot=0, vv=0;
+				for (int i=0;i<win && cp+i>=0 && cp+i<nData;i++){
+					double vl=V[soff+i].left, vr=V[soff+i].right, ml=md[cp+i].left, mr=md[cp+i].right;
+					dot += ml*vl+mr*vr; vv += vl*vl+vr*vr;
+				}
+				if (vv>0 && dot/vv > 0.5) present = true;
+			}
+			if (!present){ missing++; log->append(QString("  MISSING from mix: %1").arg(c->GetName())); }
+		}
+		log->append(tr("Mix self-check: %1 checked, %2 missing.").arg(checked).arg(missing));
+	}
 }
 
 void MasterOutDialog::ProcessSoftClip(QDataStream &dout)
