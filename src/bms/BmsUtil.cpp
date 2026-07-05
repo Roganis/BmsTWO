@@ -404,8 +404,16 @@ QVector<QMap<int, SoundNote> > Bms::BmsUtil::GetNotesOfBmson(const Bms &bms, Mod
 					}
 				}
 			}else if (ch.key() >= ZZtoInt("31") && ch.key() <= ZZtoInt("4Z")){
-				// Invisible objects
-				//int offset = ch.key() - ZZtoInt("30");
+				// Invisible objects (channels 3x/4x): they trigger their keysound
+				// but are never judged or shown. bmson has no hidden-note concept,
+				// so convert them to plain BGM sound notes (lane 0) — otherwise the
+				// sound is silently lost on import.
+				for (auto obj=sequence.objects.begin(); obj!=sequence.objects.end(); obj++){
+					if (obj.value() < 0 || obj.value() >= notes.length())
+						continue;
+					int relativePos = GetPositionInSectionInBmson(resolution, bms.sections[i], sequence, obj.key());
+					notes[obj.value()].insert(pos + relativePos, SoundNote(pos+relativePos, 0, 0, 0));
+				}
 			}else if (ch.key() >= ZZtoInt("51") && ch.key() <= ZZtoInt("6Z")){
 				// Long notes (processed as LNTYPE 1 (RDM))
 				int offset = ch.key() - ZZtoInt("50");
