@@ -90,18 +90,18 @@ documentation for these lives in the [project wiki](../../wiki) (source under
 
 ### Under the hood
 
-* **Qt 6 port** (still builds on Qt 5), a dependency-free **crash handler**,
+* **Qt 6 port**, a dependency-free **crash handler**,
   numerous crash/UB/leak fixes, smart-pointer ownership refactors, faster bulk
   channel operations, a headless ASan/UBSan fuzz harness, and CI that produces
   Windows and Linux builds.
 
 ## Building
 
-This software is built with [Qt](https://www.qt.io/) (Qt 5; the project also
-compiles under Qt 6) and C++17, using qmake.
+This software is built with [Qt](https://www.qt.io/) 6 and C++17, using qmake
+(the `qt5compat` module is required for `core5compat`).
 
 ```sh
-qmake src/bmstwo.pro
+qmake6 src/bmstwo.pro
 make
 ```
 

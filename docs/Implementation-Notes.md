@@ -51,11 +51,12 @@ adding or changing a field. They round-trip via each object's preserved
 `bmsonFields`; standard players ignore unknown fields, so files stay
 compatible.
 
-## Qt 5 / Qt 6
+## Qt 6
 
-The code builds on **both** Qt 5 and Qt 6. Portability shims live in
-`util/KeySeq.h` (modifier+key) and the audio/PCM layer; Qt 6 additionally pulls
-in `core5compat`. Avoid APIs removed in Qt 6.
+The project targets **Qt 6 only** (Qt 5 support and its CI jobs were dropped in
+July 2026; releases were already Qt 6). Leftover Qt 5 portability shims —
+`util/KeySeq.h` (modifier+key), the audio/PCM layer, and the `core5compat`
+dependency — still exist and can be retired opportunistically.
 
 ## Crash handling
 
