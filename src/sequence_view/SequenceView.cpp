@@ -2392,10 +2392,13 @@ bool SequenceView::paintEventGroupedBgm(QWidget *widget, [[maybe_unused]] QPaint
 			}
 			if (pl.channelIndex >= 0 && pl.channelIndex < channels.size()){
 				const SoundNote n = channels[pl.channelIndex]->GetNotes().value(pl.location);
-				// continuation/cut marker (noteType 1): bright line at the trigger edge
+				// continuation/cut marker (noteType 1): the cross at the trigger
+				// tick — the previous sound is cut here and the body is its
+				// remainder; a marker without a cross is a genuinely new sample.
 				if (n.noteType == 1){
-					p.setPen(QPen(QColor(255, 255, 255), 2));
-					p.drawLine(QPointF(r.left()+1, r.bottom()), QPointF(r.right()-1, r.bottom()));
+					p.setPen(QPen(QColor(255, 90, 90), 2));
+					p.drawLine(QPointF(x + 2, r.bottom() - 4), QPointF(x + BgmSubLaneWidth - 2, r.bottom() + 4));
+					p.drawLine(QPointF(x + 2, r.bottom() + 4), QPointF(x + BgmSubLaneWidth - 2, r.bottom() - 4));
 				}
 				// sample-stop marker: an "X" at the tick where the sample is cut
 				if (n.stop > 0){

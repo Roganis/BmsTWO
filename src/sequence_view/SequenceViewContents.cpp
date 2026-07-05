@@ -145,10 +145,14 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 					painter.drawRect(rect);
 				}
 				if (note.noteType == 1){
-					// continuation/cut marker: bright line at the trigger edge so a
-					// sliced sample reads differently from a restart.
-					painter.setPen(QPen(QColor(255, 255, 255), 2));
-					painter.drawLine(rect.left()+1, rect.bottom(), rect.right()-1, rect.bottom());
+					// continuation/cut marker: the cross at the trigger edge so a
+					// sliced sample reads differently from a restart (same
+					// vocabulary as the grouped BGM lanes).
+					int cy = rect.bottom();
+					int cx0 = laneDef.left + 3, cx1 = laneDef.left + laneDef.width - 3;
+					painter.setPen(QPen(QColor(255, 90, 90), 2));
+					painter.drawLine(cx0, cy - 4, cx1, cy + 4);
+					painter.drawLine(cx0, cy + 4, cx1, cy - 4);
 				}
 				if (note.stop > 0){
 					// sample-stop marker: an "X" at the tick where the sample is cut.

@@ -48,6 +48,10 @@ can read the whole song and chart from it.
   part — the total audio stays identical. Right-click an existing split to heal
   it. (Right-clicking a legacy `x_stop` marker clears the stop, un-silencing
   the remainder.)
+* **Reading the lanes:** every continuation/cut note carries a **red cross** at
+  its trigger tick — the previous sound is cut there and the marker under the
+  cross is its remainder. A marker *without* a cross is a genuinely new
+  keysound.
 * **No Shift needed.** In this view a freshly placed note defaults to a
   *new-sample* trigger (normally Shift); Shift instead requests a continuation.
 * **Moving notes** between lanes is still done in **Edit mode** (write mode no
