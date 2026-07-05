@@ -91,6 +91,14 @@ MasterOutDialog::MasterOutDialog(Document *document, QWidget *parent)
 	resize(480, 320);
 }
 
+void MasterOutDialog::HeadlessExport(const QString &path)
+{
+	headless = true;
+	editFile->setText(path);
+	forceReconstructMasterCache->setChecked(true);
+	OnClickOk(); // async: rebuilds the master, then OnMasterCacheComplete -> Export
+}
+
 void MasterOutDialog::OnClickOk()
 {
 	for (auto widget : disabledWidgetsDuringExport){
@@ -154,6 +162,10 @@ void MasterOutDialog::OnMasterCacheComplete()
 		widget->setEnabled(true);
 	}
 	cancelButton->setDefault(true);
+
+	if (headless){
+		QCoreApplication::quit();
+	}
 }
 
 

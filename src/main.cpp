@@ -1,4 +1,5 @@
 #include <QStandardPaths>
+#include <QTimer>
 #include <QTranslator>
 #include <QLibraryInfo>
 #include "MainWindow.h"
@@ -80,14 +81,26 @@ App::App(int argc, char *argv[])
 	Theme::Apply(this);
 
 	mainWindow = new MainWindow(settings);
+	const bool autoExportMode = qEnvironmentVariableIsSet("BMSTWO_AUTOEXPORT");
 	// Offer to recover work left behind by a crashed session before we touch
-	// any file the user asked to open on the command line.
-	bool recovered = mainWindow->CheckForCrashRecovery();
+	// any file the user asked to open on the command line. Skipped in headless
+	// auto-export mode, where a modal recovery prompt would block forever.
+	bool recovered = autoExportMode ? false : mainWindow->CheckForCrashRecovery();
 	if (arguments().size() > 1 && !recovered){
 		QStringList filePaths = arguments().mid(1);
 		mainWindow->OpenFiles(filePaths);
 	}
 	mainWindow->show();
+
+	// Diagnostics/automation: BMSTWO_AUTOEXPORT=<out.wav> exports the just-opened
+	// chart through the real export path, then quits. No GUI interaction needed.
+	QByteArray autoExport = qgetenv("BMSTWO_AUTOEXPORT");
+	if (!autoExport.isEmpty()){
+		QString outPath = QString::fromLocal8Bit(autoExport);
+		MainWindow *mw = mainWindow;
+		// Give the just-opened document a moment to settle before exporting.
+		QTimer::singleShot(5000, mw, [mw, outPath]{ mw->HeadlessExport(outPath); });
+	}
 }
 
 App::~App()

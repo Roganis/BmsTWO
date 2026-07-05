@@ -313,6 +313,9 @@ public:
 	void OpenBmson(QString path);
 	void OpenBms(QString path);
 
+	// Non-interactive WAV export of the current document (automation/diagnostics).
+	void HeadlessExport(const QString &path);
+
 	bool WarningFileTraversals(QStringList filePaths);
 };
 

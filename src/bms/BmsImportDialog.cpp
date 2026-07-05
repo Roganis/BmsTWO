@@ -56,6 +56,11 @@ BmsImportDialog::~BmsImportDialog()
 int BmsImportDialog::exec()
 {
 	ResetInteractArea(tr("Loading BMS..."));
+	// Headless auto-export: answer every question with its default and run to
+	// completion without user interaction (the modal loop still drives the timer).
+	if (qEnvironmentVariableIsSet("BMSTWO_AUTOEXPORT")){
+		checkSkip->setChecked(true);
+	}
 	timer->start();
 	return QDialog::exec();
 }
@@ -253,6 +258,9 @@ void BmsImportDialog::Next()
 		connect(okButton, SIGNAL(clicked(bool)), this, SLOT(accept()));
 		okButton->setText(tr("Finish"));
 		okButton->setEnabled(true);
+		if (qEnvironmentVariableIsSet("BMSTWO_AUTOEXPORT")){
+			accept(); // headless: no one clicks Finish
+		}
 		break;
 	case Bms::BmsReader::STATUS_ERROR:
 	default:

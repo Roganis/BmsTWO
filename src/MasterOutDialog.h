@@ -48,8 +48,14 @@ private:
 
 	static const int SliderGainSteps = 200;
 
+	bool headless = false;
+
 public:
 	MasterOutDialog(Document *document, QWidget *parent=nullptr);
+
+	// Non-interactive export (for automation/diagnostics): reconstruct the master
+	// and write to `path` using the exact export path, then quit the application.
+	void HeadlessExport(const QString &path);
 
 private slots:
 	void OnClickOk();

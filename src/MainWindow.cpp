@@ -875,6 +875,19 @@ void MainWindow::MasterOut()
 	delete dialog;
 }
 
+void MainWindow::HeadlessExport(const QString &path)
+{
+	if (!document){
+		qWarning("HeadlessExport: no document loaded");
+		QCoreApplication::quit();
+		return;
+	}
+	// Runs the exact interactive export path (reconstruct + clip + write) without
+	// showing the dialog, then quits when done.
+	auto dialog = new MasterOutDialog(document, this);
+	dialog->HeadlessExport(path);
+}
+
 void MainWindow::closeEvent(QCloseEvent *event)
 {
 	if (closing){
