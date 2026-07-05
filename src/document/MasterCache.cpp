@@ -29,7 +29,12 @@ void MasterCache::ClearAll()
         for (auto worker : std::as_const(workers)) {
             disconnect(worker, SIGNAL(Complete(MasterCacheWorkerBase*)), this, SLOT(WorkerComplete(MasterCacheWorkerBase*)));
 			worker->Cancel();
-			delete worker;
+			// Defer deletion: a worker may already have a queued Complete() in the
+			// event loop. Deleting it now leaves that queued call pointing at freed
+			// memory (crash), so keep it alive until the event loop drains — the
+			// stale WorkerComplete then finds it absent from `workers` and ignores
+			// it (see WorkerComplete).
+			worker->deleteLater();
         }
     }
 	workers.clear();
@@ -143,12 +148,19 @@ void MasterCache::WorkerComplete(MasterCacheWorkerBase *worker)
 	// of workersMutex, so a plain lock cannot deadlock. The old tryLock(1)
 	// leaked the worker (never removed, never deleted) whenever the lock was
 	// contended.
+	bool nowEmpty;
 	{
 		QMutexLocker lock(&workersMutex);
-		workers.remove(worker);
+		// A worker dropped by ClearAll() may still have a queued Complete() in the
+		// event loop. Ignore it: acting on it would fire Complete() while a fresh
+		// rebuild is still running, so the WAV export / playback would capture a
+		// half-built master (samples missing). It would also double-delete.
+		if (!workers.remove(worker))
+			return;
+		nowEmpty = workers.isEmpty();
 	}
 	worker->deleteLater();
-	if (workers.isEmpty()){
+	if (nowEmpty){
 		emit Complete();
 	}
 }
