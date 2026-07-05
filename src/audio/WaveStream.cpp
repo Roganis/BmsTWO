@@ -598,9 +598,14 @@ void S16S44100StreamTransformer::Forget(qreal playHeadEnd)
 	const qreal samplingRatio = qreal(src->GetFormat().sampleRate()) / format.sampleRate();
 	int playHeadOffset = int(qint64(playHeadEnd - 1.0*samplingRatio - 1.0) - qint64(src->GetCurrentFrame() - auxBuffer.size()));
 	int forgetOffset = std::max(0, std::min((int)auxBuffer.size(), playHeadOffset));
-	for (int i=0; i<forgetOffset; i++){
-		auxBuffer.removeFirst();
-	}
+	// Trim the consumed front in a single O(n) shift. The old per-element
+	// removeFirst() loop was O(n^2) (QList::removeFirst shifts the whole buffer
+	// each call): harmless for the tiny reads a live preview does, but
+	// catastrophic for the master-cache decode, which reads long samples in
+	// 64k-frame chunks — a multi-second pad/vocal could take minutes to mix, so
+	// it never finished and those samples were silent in playback.
+	if (forgetOffset > 0)
+		auxBuffer.erase(auxBuffer.begin(), auxBuffer.begin() + forgetOffset);
 }
 
 
@@ -926,9 +931,14 @@ void S32F44100StreamTransformer::Forget(qreal playHeadEnd)
 	const qreal samplingRatio = qreal(src->GetFormat().sampleRate()) / format.sampleRate();
 	int playHeadOffset = int(qint64(playHeadEnd - 1.0*samplingRatio - 1.0) - qint64(src->GetCurrentFrame() - auxBuffer.size()));
 	int forgetOffset = std::max(0, std::min((int)auxBuffer.size(), playHeadOffset));
-	for (int i=0; i<forgetOffset; i++){
-		auxBuffer.removeFirst();
-	}
+	// Trim the consumed front in a single O(n) shift. The old per-element
+	// removeFirst() loop was O(n^2) (QList::removeFirst shifts the whole buffer
+	// each call): harmless for the tiny reads a live preview does, but
+	// catastrophic for the master-cache decode, which reads long samples in
+	// 64k-frame chunks — a multi-second pad/vocal could take minutes to mix, so
+	// it never finished and those samples were silent in playback.
+	if (forgetOffset > 0)
+		auxBuffer.erase(auxBuffer.begin(), auxBuffer.begin() + forgetOffset);
 }
 
 
