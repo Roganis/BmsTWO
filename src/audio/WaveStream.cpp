@@ -232,6 +232,8 @@ int OggStreamSource::Open()
 
 quint64 OggStreamSource::Read(char *buffer, quint64 bufferSize)
 {
+	if (!file) // Open() failed or was never called: nothing to read
+		return 0;
 	int bpf = format.bytesPerFrame();
 	int bs;
 	int readSize = ov_read(file, buffer, std::min(bufferSize / bpf * bpf, (frames-current) * bpf), 0, 2, 1, &bs);
@@ -257,12 +259,16 @@ quint64 OggStreamSource::Read(char *buffer, quint64 bufferSize)
 
 void OggStreamSource::SeekRelative(qint64 relativeFrames)
 {
+	if (!file) // Open() failed or was never called: ov_pcm_seek would deref null
+		return;
 	ov_pcm_seek(file, current + relativeFrames);
 	current += relativeFrames;
 }
 
 void OggStreamSource::SeekAbsolute(quint64 absoluteFrames)
 {
+	if (!file) // Open() failed or was never called: ov_pcm_seek would deref null
+		return;
 	ov_pcm_seek(file, absoluteFrames);
 	current = absoluteFrames;
 }

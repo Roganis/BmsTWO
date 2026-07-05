@@ -245,7 +245,16 @@ void MasterCacheSingleWorker::AddSoundTask()
 {
 	const int orgTime = time;
 	const int orgFrames = frames;
-	wave->Open();
+	// The source may be absent (missing file -> wave==nullptr) or fail to decode
+	// (a present-but-corrupt/unsupported file, whose Open() leaves the stream
+	// with no handle). Seeking/reading it would dereference a null handle, so
+	// release the counter reservation and bail. (Fixes a crash opening charts
+	// that reference a sample file which isn't on disk.)
+	if (!wave || wave->Open() != 0){
+		master->DecCounter(orgTime, orgFrames);
+		emit Complete(this);
+		return;
+	}
 	wave->SeekAbsolute(0);
 	static const int BufferSize = 4096;
 	StereoFloat32 buf[BufferSize];
@@ -349,7 +358,15 @@ void MasterCacheMultiWorker::AddSoundTask()
 		QMutexLocker locker(&master->dataMutex);
 		master->data.reserve(tmax);
 	}
-	wave->Open();
+	// Guard against a missing source (wave==nullptr) or a file that fails to
+	// decode (Open()!=0 leaves the stream with no handle): seeking/reading it
+	// would dereference null. Release the counter reservations and finish.
+	if (!wave || wave->Open() != 0){
+		for (auto patch : std::as_const(patches))
+			master->DecCounter(patch.time, patch.frames);
+		emit Complete(this);
+		return;
+	}
 	wave->SeekAbsolute(0);
 	int pbuf = 0;
 	while (pbuf < fmax){
