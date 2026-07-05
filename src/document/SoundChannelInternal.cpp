@@ -292,6 +292,10 @@ SoundChannelResourceManager::SoundChannelResourceManager(QObject *parent)
 
 SoundChannelResourceManager::~SoundChannelResourceManager()
 {
+	// The waveform task touches this object's members, so it must not outlive us.
+	if (currentTask.isRunning())
+		currentTask.waitForFinished();
+	delete wave;
 	delete[] auxBuffer;
 }
 
@@ -313,22 +317,29 @@ void SoundChannelResourceManager::UpdateWaveData(const QString &srcPath)
 		rmsCachePackets.clear();
 	}
 	file = QFileInfo(srcPath);
-	wave = SoundChannelUtil::OpenSourceFile(srcPath, this);
 
-	// Load Wave Summary
-	if (!wave){
+	// Load the wave summary, then release the file handle immediately. Holding
+	// one open descriptor per channel for the lifetime of the document exhausts
+	// the process FD table on large charts (hundreds/thousands of keysounds):
+	// master-cache decode workers then fail to open samples, which silently
+	// dropped notes from the mix (and previously crashed). RunTaskWaveData
+	// reopens the file transiently, and playback/preview open their own handles.
+	AudioStreamSource *w = SoundChannelUtil::OpenSourceFile(srcPath, nullptr);
+	if (!w){
 		qDebug() << "No Such Audio File (or Unknown File Type): " << file.path();
 		summary = WaveSummary();
 		return;
 	}
-	int error = wave->Open();
+	int error = w->Open();
 	if (error != 0){
 		qDebug() << "Audio File Error: " << error;
+		delete w;
 		summary = WaveSummary();
 		return;
 	}
-	summary.Format = wave->GetFormat();
-	summary.FrameCount = wave->GetFrameCount();
+	summary.Format = w->GetFormat();
+	summary.FrameCount = w->GetFrameCount();
+	delete w; // release the descriptor; the task below reopens on demand
 
 	currentTask = QtConcurrent::run([this](){
 		RunTaskWaveData();
@@ -350,7 +361,17 @@ void SoundChannelResourceManager::RequireRmsCachePacket(int position)
 
 void SoundChannelResourceManager::RunTaskWaveData()
 {
-	TaskDrawOverallWaveformAndRmsCache();
+	// Reopen the source only for the duration of this task (the handle is not
+	// held between loads — see UpdateWaveData). Created with no parent so this
+	// pooled thread can delete it safely.
+	wave = SoundChannelUtil::OpenSourceFile(file.absoluteFilePath(), nullptr);
+	if (wave && wave->Open() == 0){
+		TaskDrawOverallWaveformAndRmsCache();
+	}
+	if (wave){
+		delete wave;
+		wave = nullptr;
+	}
 	emit OverallWaveformReady();
 	emit RmsCacheUpdated();
 }
