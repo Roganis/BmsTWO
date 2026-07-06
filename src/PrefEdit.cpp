@@ -41,6 +41,19 @@ PrefEditPage::PrefEditPage(QWidget *parent)
 		layout->addWidget(masterGroup);
 	}
 	{
+		auto appearanceGroup = new QGroupBox(tr("Appearance"));
+		auto appearanceLayout = new QFormLayout();
+		{
+			laneBackgroundBrightness = new QSlider(Qt::Horizontal);
+			laneBackgroundBrightness->setRange(0, 100);
+			laneBackgroundBrightness->setWhatsThis(tr("Darkens the lane backgrounds in the sequence view so notes stand out more. 100% is the skin's original colors."));
+			laneBackgroundBrightness->setToolTip(laneBackgroundBrightness->whatsThis());
+			appearanceLayout->addRow(tr("Lane background brightness:"), laneBackgroundBrightness);
+		}
+		appearanceGroup->setLayout(appearanceLayout);
+		layout->addWidget(appearanceGroup);
+	}
+	{
 		auto editModeGroup = new QGroupBox(tr("Edit Mode"));
 		auto editModeLayout = new QFormLayout();
 		{
@@ -98,6 +111,8 @@ void PrefEditPage::load()
 	double vMiniMapOpacity = EditConfig::GetMiniMapOpacity();
 	miniMapOpacity->setValue(vMiniMapOpacity*65536);
 
+	laneBackgroundBrightness->setValue(int(EditConfig::GetLaneBackgroundBrightness()*100 + 0.5));
+
 	snappedHitTestInEditMode->setChecked(EditConfig::SnappedHitTestInEditMode());
 	alwaysShowCursorLineInEditMode->setChecked(EditConfig::AlwaysShowCursorLineInEditMode());
 	snappedSelectionInEditMode->setChecked(EditConfig::SnappedSelectionInEditMode());
@@ -115,6 +130,7 @@ void PrefEditPage::store()
 	EditConfig::SetShowMiniMap(showMiniMap->isChecked());
 	EditConfig::SetFixMiniMap(fixMiniMap->isChecked());
 	EditConfig::SetMiniMapOpacity(double(miniMapOpacity->value())/65536);
+	EditConfig::SetLaneBackgroundBrightness(double(laneBackgroundBrightness->value())/100);
 
 	EditConfig::SetSnappedHitTestInEditMode(snappedHitTestInEditMode->isChecked());
 	EditConfig::SetAlwaysShowCursorLineInEditMode(alwaysShowCursorLineInEditMode->isChecked());

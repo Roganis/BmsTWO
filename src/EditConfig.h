@@ -14,6 +14,7 @@ private:
 	static const char* SettingsShowMiniMapKey;
 	static const char* SettingsFixMiniMapKey;
 	static const char* SettingsMiniMapOpacityKey;
+	static const char* SettingsLaneBackgroundBrightnessKey;
 
 	static const char* SettingsSnappedHitTestInEditModeKey;
 	static const char* SettingsAlwaysShowCursorLineInEditModeKey;
@@ -38,12 +39,16 @@ public:
 	static bool GetShowMiniMap();
 	static bool GetFixMiniMap();
 	static double GetMiniMapOpacity();
+	// 1.0 = the skin's lane colors as-is; lower darkens the playing-pane lane
+	// backgrounds so notes stand out more.
+	static double GetLaneBackgroundBrightness();
 
 	static void SetEnableMasterChannel(bool value);
 	static void SetShowMasterLane(bool value);
 	static void SetShowMiniMap(bool value);
 	static void SetFixMiniMap(bool value);
 	static void SetMiniMapOpacity(double value);
+	static void SetLaneBackgroundBrightness(double value);
 
 	static bool CanShowMasterLane();
 	static bool CanShowMiniMap();
@@ -75,6 +80,7 @@ signals:
 	void ShowMiniMapChanged(bool value);
 	void FixMiniMapChanged(bool value);
 	void MiniMapOpacityChanged(double value);
+	void LaneBackgroundBrightnessChanged(double value);
 
 	void CanShowMasterLaneChanged(bool value);
 	void CanShowMiniMapChanged(bool value);

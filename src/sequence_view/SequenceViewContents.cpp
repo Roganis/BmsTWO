@@ -30,7 +30,14 @@ bool SequenceView::paintEventPlayingPane(QWidget *playingPane, QPaintEvent *even
 	QRegion rgn;
 	for (LaneDef lane : lanes){
 		rgn += QRegion(lane.left, top, lane.width, height);
-		painter.fillRect(lane.left, top, lane.width, height, lane.color);
+		// configurable darkening so notes stand out against the lane background
+		QColor bg = lane.color;
+		if (laneBgBrightness < 1.0){
+			bg = QColor(int(bg.red() * laneBgBrightness),
+						int(bg.green() * laneBgBrightness),
+						int(bg.blue() * laneBgBrightness), bg.alpha());
+		}
+		painter.fillRect(lane.left, top, lane.width, height, bg);
 		painter.setPen(QPen(QBrush(lane.leftLine), 1.0));
 		painter.drawLine(lane.left, top, lane.left, bottom);
 		painter.setPen(QPen(QBrush(lane.rightLine), 1.0));

@@ -153,6 +153,7 @@ private:
 	GridSize fineGrid;
 	bool snapToGrid;
 	bool darkenNotesInInactiveChannels;
+	qreal laneBgBrightness; // 1.0 = skin colors as-is (see EditConfig)
 	bool showMasterLane;
 	bool showMiniMap;
 	bool fixMiniMap;

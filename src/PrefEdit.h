@@ -21,6 +21,7 @@ private:
 	QWidget *miniMapGroup;
 	QCheckBox *fixMiniMap;
 	QSlider *miniMapOpacity;
+	QSlider *laneBackgroundBrightness;
 	QCheckBox *snappedHitTestInEditMode;
 	QCheckBox *alwaysShowCursorLineInEditMode;
 	QCheckBox *snappedSelectionInEditMode;

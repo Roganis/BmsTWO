@@ -217,6 +217,11 @@ SequenceView::SequenceView(MainWindow *parent)
 	connect(EditConfig::Instance(), SIGNAL(FixMiniMapChanged(bool)), this, SLOT(FixMiniMapChanged(bool)));
 	showMasterLane = EditConfig::CanShowMasterLane();
 	connect(EditConfig::Instance(), SIGNAL(CanShowMasterLaneChanged(bool)), this, SLOT(ShowMasterLaneChanged(bool)));
+	laneBgBrightness = EditConfig::GetLaneBackgroundBrightness();
+	connect(EditConfig::Instance(), &EditConfig::LaneBackgroundBrightnessChanged, this, [this](double value){
+		laneBgBrightness = value;
+		playingPane->update();
+	});
 	masterLane->setVisible(showMasterLane);
 	footerMasterLane->setVisible(showMasterLane);
 

@@ -27,6 +27,7 @@ const char* EditConfig::SettingsShowMasterLaneKey = "SequenceView/ShowMasterLane
 const char* EditConfig::SettingsShowMiniMapKey = "SequenceView/ShowMiniMap";
 const char* EditConfig::SettingsFixMiniMapKey = "SequenceView/FixMiniMap";
 const char* EditConfig::SettingsMiniMapOpacityKey = "SequenceView/MiniMapOpacity";
+const char* EditConfig::SettingsLaneBackgroundBrightnessKey = "SequenceView/LaneBackgroundBrightness";
 
 const char* EditConfig::SettingsSnappedHitTestInEditModeKey = "SequenceView/SnappedHitTestInEditMode";
 const char* EditConfig::SettingsAlwaysShowCursorLineInEditModeKey = "SequenceView/AlwaysShowCursorLineInEditMode";
@@ -93,6 +94,18 @@ void EditConfig::SetMiniMapOpacity(double value)
 {
 	App::Instance()->GetSettings()->setValue(SettingsMiniMapOpacityKey, value);
 	emit Instance()->MiniMapOpacityChanged(value);
+}
+
+double EditConfig::GetLaneBackgroundBrightness()
+{
+	return std::clamp(App::Instance()->GetSettings()->value(SettingsLaneBackgroundBrightnessKey, 1.0).toDouble(), 0.0, 1.0);
+}
+
+void EditConfig::SetLaneBackgroundBrightness(double value)
+{
+	value = std::clamp(value, 0.0, 1.0);
+	App::Instance()->GetSettings()->setValue(SettingsLaneBackgroundBrightnessKey, value);
+	emit Instance()->LaneBackgroundBrightnessChanged(value);
 }
 
 
