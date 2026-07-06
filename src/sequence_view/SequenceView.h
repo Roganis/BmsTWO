@@ -197,6 +197,12 @@ private:
 	QMap<int, QPair<int, BarLine> > BarsInRange(qreal tBegin, qreal tEnd);
 	int SnapToLowerFineGrid(qreal time) const;
 	int SnapToUpperFineGrid(qreal time) const;
+	// Classic BMS mode turns the magnet into "snap to sample": candidates are the
+	// note locations of every channel in the currently selected background lane
+	// (the current channel's name-group). `upper` = earliest note >= time,
+	// otherwise the note nearest to time. False when there is nothing to snap to
+	// (no current channel / empty group), so callers fall back to the grid.
+	bool SnapToSampleInCurrentGroup(qreal time, bool upper, int *result) const;
 	int GetSomeVacantLane(int location, QSet<int> excludeLanes=QSet<int>(), int length=0, int pivotLaneIndex=0);
 	// For grouped-BGM charting: the channel whose note sits exactly at `location`
 	// (preferring the current channel's name-group, and un-keyed BGM notes), so a
@@ -351,6 +357,7 @@ signals:
 	void MediumGridChanged(GridSize grid);
 	void SelectionChanged();
 	void ChannelLaneModeChanged(SequenceViewChannelLaneMode show);
+	void GroupedBgmViewChanged(bool on);
 
 	void ApproximateVisibleRangeChanged();
 	void ForceDisableChannelDisplayFiltering();

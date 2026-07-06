@@ -479,6 +479,13 @@ MainWindow::MainWindow(QSettings *settings)
 	sequenceView = new SequenceView(this);
 	setCentralWidget(sequenceView);
 	actionViewGroupedBgm->setChecked(sequenceView->GetGroupedBgmView());
+	// In Classic BMS mode the magnet snaps to the selected lane's samples instead
+	// of the grid, so relabel the action to say what it now does.
+	auto updateSnapLabel = [this](bool groupedBgm){
+		actionViewSnapToGrid->setText(groupedBgm ? tr("Snap to Sample") : tr("Snap to Grid"));
+	};
+	updateSnapLabel(sequenceView->GetGroupedBgmView());
+	connect(sequenceView, &SequenceView::GroupedBgmViewChanged, this, updateSnapLabel);
 	//sequenceView->installEventFilter(this);
 
 	preferences = new Preferences(this);

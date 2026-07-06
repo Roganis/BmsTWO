@@ -110,6 +110,7 @@ private slots:
 	void MediumGridChanged(GridSize grid);
 	void SelectionChanged();
 	void ChannelLaneModeChanged(SequenceViewChannelLaneMode mode);
+	void GroupedBgmViewChanged(bool on);
 
 	void UpdateGridSetting();
 	void UpdateSmallGrid();

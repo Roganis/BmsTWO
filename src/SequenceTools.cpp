@@ -381,6 +381,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		disconnect(sview, SIGNAL(MediumGridChanged(GridSize)), this, SLOT(MediumGridChanged(GridSize)));
 		disconnect(sview, SIGNAL(SelectionChanged(SequenceEditSelection)), this, SLOT(SelectionChanged(SequenceEditSelection)));
 		disconnect(sview, SIGNAL(ChannelLaneModeChanged(SequenceViewChannelLaneMode)), this, SLOT(ChannelLaneModeChanged(SequenceViewChannelLaneMode)));
+		disconnect(sview, SIGNAL(GroupedBgmViewChanged(bool)), this, SLOT(GroupedBgmViewChanged(bool)));
 		disconnect(mainWindow->actionViewZoomIn, SIGNAL(triggered(bool)), sview, SLOT(ZoomIn()));
 		disconnect(mainWindow->actionViewZoomOut, SIGNAL(triggered(bool)), sview, SLOT(ZoomOut()));
 		disconnect(mainWindow->actionViewZoomReset, SIGNAL(triggered(bool)), sview, SLOT(ZoomReset()));
@@ -401,6 +402,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		connect(sview, SIGNAL(MediumGridChanged(GridSize)), this, SLOT(MediumGridChanged(GridSize)));
 		connect(sview, SIGNAL(SelectionChanged()), this, SLOT(SelectionChanged()));
 		connect(sview, SIGNAL(ChannelLaneModeChanged(SequenceViewChannelLaneMode)), this, SLOT(ChannelLaneModeChanged(SequenceViewChannelLaneMode)));
+		connect(sview, SIGNAL(GroupedBgmViewChanged(bool)), this, SLOT(GroupedBgmViewChanged(bool)));
 		connect(mainWindow->actionViewZoomIn, SIGNAL(triggered(bool)), sview, SLOT(ZoomIn()));
 		connect(mainWindow->actionViewZoomOut, SIGNAL(triggered(bool)), sview, SLOT(ZoomOut()));
 		connect(mainWindow->actionViewZoomReset, SIGNAL(triggered(bool)), sview, SLOT(ZoomReset()));
@@ -418,6 +420,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 		snapToGrid->setEnabled(true);
 		darkenNotesInInactiveChannels->setEnabled(true);
 		SnapToGridChanged(sview->GetSnapToGrid());
+		GroupedBgmViewChanged(sview->GetGroupedBgmView());
 		DarkenNotesInInactiveChannelsChanged(sview->GetDarkenNotesInInactiveChannels());
 		SmallGridChanged(sview->GetSmallGrid());
 		MediumGridChanged(sview->GetMediumGrid());
@@ -426,6 +429,7 @@ void SequenceTools::ReplaceSequenceView(SequenceView *newSView)
 	}else{
 		snapToGrid->setEnabled(false);
 		snapToGrid->setChecked(false);
+		GroupedBgmViewChanged(false);
 		darkenNotesInInactiveChannels->setEnabled(false);
 		darkenNotesInInactiveChannels->setChecked(true);
 		mainWindow->actionEditCopy->setEnabled(false);
@@ -525,6 +529,13 @@ void SequenceTools::SnapToGridChanged(bool snap)
 		return;
 	mainWindow->actionViewSnapToGrid->setChecked(snap);
 	snapToGrid->setChecked(snap);
+}
+
+void SequenceTools::GroupedBgmViewChanged(bool on)
+{
+	// Classic BMS mode repurposes the magnet: it snaps to the selected lane's
+	// samples instead of the grid, so the button says what it actually does.
+	snapToGrid->setText(on ? tr("Snap to Sample") : tr("Snap to Grid"));
 }
 
 void SequenceTools::DarkenNotesInInactiveChannelsChanged(bool darken)

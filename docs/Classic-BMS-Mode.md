@@ -59,6 +59,13 @@ can read the whole song and chart from it.
   keysound.
 * **No Shift needed.** In this view a freshly placed note defaults to a
   *new-sample* trigger (normally Shift); Shift instead requests a continuation.
+* **Snap to Sample.** The magnet (**Snap to Grid**, Ctrl+T) changes function in
+  this mode: instead of locking the cursor to BPM fractions, it locks to the
+  **nearest sample in the currently selected lane** (the highlighted name-group).
+  Select a sample in a group, then chart on the playfield — the cursor jumps
+  from sample to sample, so every written note lands exactly on a keysound even
+  when the song is off-grid. With no sample selected (or an empty group) the
+  magnet falls back to the normal grid.
 * **Moving notes** between lanes is still done in **Edit mode** (write mode no
   longer shows a misleading move cursor).
 
@@ -70,6 +77,8 @@ can read the whole song and chart from it.
 
 ## Notes & limitations
 
-* Sample matching on write is by the **exact (snapped) time**; if a sample isn't
-  on the write grid it falls back to the selected channel.
+* Sample matching on write is by the **exact (snapped) time**. With the magnet
+  on, snapping targets the selected lane's samples directly, so off-grid
+  keysounds are matched exactly; only with the magnet off (or nothing selected)
+  can a click miss a sample and fall back to the sounding channel.
 * Group/lane widths are fixed (14 px per sub-lane) in this first version.

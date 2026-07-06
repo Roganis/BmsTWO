@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#include <iterator>
 #include <QFile>
 #include <QMessageBox>
 #include "../midi/MidiImport.h"
@@ -1354,8 +1355,49 @@ QMap<int, QPair<int, BarLine>> SequenceView::BarsInRange(qreal tBegin, qreal tEn
 	return barLines;
 }
 
+bool SequenceView::SnapToSampleInCurrentGroup(qreal time, bool upper, int *result) const
+{
+	if (!groupedBgmView || currentChannel < 0 || currentChannel >= soundChannels.size())
+		return false;
+	const QString grp = SampleGrouping::GroupKeyOf(soundChannels[currentChannel]->GetChannel()->GetName());
+	bool found = false;
+	int best = 0;
+	auto consider = [&](int loc){
+		if (!found || std::abs(time - loc) < std::abs(time - best)){
+			best = loc;
+			found = true;
+		}
+	};
+	for (auto cview : soundChannels){
+		SoundChannel *ch = cview->GetChannel();
+		if (SampleGrouping::GroupKeyOf(ch->GetName()) != grp)
+			continue;
+		const QMap<int, SoundNote> &notes = ch->GetNotes();
+		auto it = notes.lowerBound(int(std::ceil(time)));
+		if (upper){
+			// earliest note at/after `time` (mirrors the grid version's semantics,
+			// so e.g. Fill iterates sample to sample)
+			if (it != notes.end() && (!found || it.key() < best)){
+				best = it.key();
+				found = true;
+			}
+		}else{
+			if (it != notes.end())
+				consider(it.key());
+			if (it != notes.begin())
+				consider(std::prev(it).key());
+		}
+	}
+	if (found && result)
+		*result = best;
+	return found;
+}
+
 int SequenceView::SnapToLowerFineGrid(qreal time) const
 {
+	int sampleTime;
+	if (SnapToSampleInCurrentGroup(time, false, &sampleTime))
+		return sampleTime;
 	const QMap<int, BarLine> &bars = document->GetBarLines();
 	const QMap<int, BarLine>::const_iterator ibar = bars.lowerBound(time);
 	if (ibar == bars.begin()){
@@ -1367,6 +1409,9 @@ int SequenceView::SnapToLowerFineGrid(qreal time) const
 
 int SequenceView::SnapToUpperFineGrid(qreal time) const
 {
+	int sampleTime;
+	if (SnapToSampleInCurrentGroup(time, true, &sampleTime))
+		return sampleTime;
 	const QMap<int, BarLine> &bars = document->GetBarLines();
 	const QMap<int, BarLine>::const_iterator ibar = bars.lowerBound(time);
 	if (ibar == bars.begin()){
@@ -2230,6 +2275,7 @@ void SequenceView::SetGroupedBgmView(bool on)
 	OnViewportResize(); // re-lay-out: show/hide the grouped pane vs. the columns
 	if (groupedBgmPane)
 		groupedBgmPane->update();
+	emit GroupedBgmViewChanged(on);
 }
 
 void SequenceView::ScheduleBgmRebuild()
