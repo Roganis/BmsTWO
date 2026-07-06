@@ -223,11 +223,9 @@ MasterCacheSingleWorker::MasterCacheSingleWorker(MasterCache *master, int time, 
 		master->data.reserve(time+frames);
 	}
 	master->IncCounter(time, frames);
-	QString srcPath = master->document->GetAbsolutePath(channel->GetFileName());
-	native = SoundChannelUtil::OpenSourceFile(srcPath, this);
-	if (!native)
-		return;
-	wave = new S32F44100StreamTransformer(native, this);
+	// Defer opening the file to the task (see MultiWorker ctor): keeps only the
+	// running workers' descriptors open instead of one per queued worker.
+	srcPath = master->document->GetAbsolutePath(channel->GetFileName());
 }
 
 MasterCacheSingleWorker::~MasterCacheSingleWorker()
@@ -257,12 +255,17 @@ void MasterCacheSingleWorker::AddSoundTask()
 {
 	const int orgTime = time;
 	const int orgFrames = frames;
+	// Open lazily on the worker thread (see the ctor) to bound open descriptors.
+	native = SoundChannelUtil::OpenSourceFile(srcPath, nullptr);
+	wave = native ? new S32F44100StreamTransformer(native, nullptr) : nullptr;
 	// The source may be absent (missing file -> wave==nullptr) or fail to decode
 	// (a present-but-corrupt/unsupported file, whose Open() leaves the stream
 	// with no handle). Seeking/reading it would dereference a null handle, so
 	// release the counter reservation and bail. (Fixes a crash opening charts
 	// that reference a sample file which isn't on disk.)
 	if (!wave || wave->Open() != 0){
+		delete wave; wave = nullptr;
+		native = nullptr; // freed as wave's child
 		master->DecCounter(orgTime, orgFrames);
 		emit Complete(this);
 		return;
@@ -272,6 +275,8 @@ void MasterCacheSingleWorker::AddSoundTask()
 	StereoFloat32 buf[BufferSize];
 	while (frames > 0){
 		if (cancel){
+			delete wave; wave = nullptr;
+			native = nullptr; // freed as wave's child
 			return;
 		}
 		int sizeRead = wave->Read(buf, std::min<int>(BufferSize, frames));
@@ -304,6 +309,8 @@ void MasterCacheSingleWorker::AddSoundTask()
 		frames -= sizeRead;
 		time += sizeRead;
 	}
+	delete wave; wave = nullptr;
+	native = nullptr; // freed as wave's child
 	master->DecCounter(orgTime, orgFrames);
 	emit Complete(this);
 }
@@ -322,11 +329,12 @@ MasterCacheMultiWorker::MasterCacheMultiWorker(MasterCache *master, QList<Master
 	for (auto patch : patches){
 		master->IncCounter(patch.time, patch.frames);
 	}
-	QString srcPath = master->document->GetAbsolutePath(channel->GetFileName());
-	native = SoundChannelUtil::OpenSourceFile(srcPath, this);
-	if (!native)
-		return;
-	wave = new S32F44100StreamTransformer(native, this);
+	// Remember the path but DON'T open the file yet. Opening here (on the main
+	// thread, for every channel up front) held one descriptor per sample for the
+	// whole build — ~1200 at once — which silently exhausts a 1024 FD limit and
+	// makes later samples fail to open (dropped from the mix with no error). The
+	// task opens it lazily instead, so only the few running workers hold an FD.
+	srcPath = master->document->GetAbsolutePath(channel->GetFileName());
 	buf = new StereoFloat32[BufferSize];
 }
 
@@ -370,10 +378,16 @@ void MasterCacheMultiWorker::AddSoundTask()
 		QMutexLocker locker(&master->dataMutex);
 		master->data.reserve(tmax);
 	}
+	// Open the source now, on the worker thread, so only the handful of workers
+	// actually running hold a file descriptor at a time (see the ctor comment).
+	native = SoundChannelUtil::OpenSourceFile(srcPath, nullptr);
+	wave = native ? new S32F44100StreamTransformer(native, nullptr) : nullptr;
 	// Guard against a missing source (wave==nullptr) or a file that fails to
 	// decode (Open()!=0 leaves the stream with no handle): seeking/reading it
 	// would dereference null. Release the counter reservations and finish.
 	if (!wave || wave->Open() != 0){
+		delete wave; wave = nullptr;
+		native = nullptr; // freed as wave's child
 		for (auto patch : std::as_const(patches))
 			master->DecCounter(patch.time, patch.frames);
 		emit Complete(this);
@@ -383,6 +397,8 @@ void MasterCacheMultiWorker::AddSoundTask()
 	int pbuf = 0;
 	while (pbuf < fmax){
 		if (cancel){
+			delete wave; wave = nullptr;
+			native = nullptr; // freed as wave's child
 			return;
 		}
 		int sizeRead = wave->Read(buf, std::min<int>(BufferSize, fmax-pbuf));
@@ -419,6 +435,10 @@ void MasterCacheMultiWorker::AddSoundTask()
         }
 		pbuf += sizeRead;
 	}
+	// Release the file descriptor as soon as decoding finishes, rather than
+	// holding it until the worker object is destroyed.
+	delete wave; wave = nullptr;
+	native = nullptr; // freed as wave's child
     for (auto patch : std::as_const(patches)) {
         master->DecCounter(patch.time, patch.frames);
     }

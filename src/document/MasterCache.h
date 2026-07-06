@@ -35,6 +35,7 @@ private:
 	MasterCache *master;
 	AudioStreamSource *native;
 	S32F44100StreamTransformer *wave;
+	QString srcPath;
 	int time;
 	int v;
 	int frames;
@@ -69,6 +70,7 @@ private:
 	QList<Patch> patches;
 	AudioStreamSource *native;
 	S32F44100StreamTransformer *wave;
+	QString srcPath;
 	QFuture<void> task;
 	static const int BufferSize;
 	StereoFloat32 *buf;
