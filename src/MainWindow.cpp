@@ -901,6 +901,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
 		event->accept();
 		return;
 	}
+	// Headless automation (BMSTWO_AUTOEXPORT): never block shutdown on the
+	// save-confirmation dialog - an imported chart is always "modified", so the
+	// modal would hang the run forever. Changes are discarded by design.
+	if (qEnvironmentVariableIsSet("BMSTWO_AUTOEXPORT")){
+		closing = true;
+		DiscardRecoverySnapshot();
+		event->accept();
+		return;
+	}
 	if (!EnsureClosingFile()){
 		event->ignore();
 		return;
