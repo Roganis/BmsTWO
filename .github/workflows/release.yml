@@ -76,19 +76,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Qt6 and build dependencies
+      # Official Qt binaries (same 6.11.1 as the dev machine) instead of Ubuntu
+      # 24.04's distro Qt 6.4.2 - see build.yml for the rationale.
+      - name: Install Qt6 (official binaries)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.1'
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: 'qt5compat qtmultimedia'
+          cache: true
+
+      - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential qt6-base-dev qt6-multimedia-dev \
-            libqt6core5compat6-dev qt6-tools-dev-tools \
-            libgl1-mesa-dev libfuse2 libxcb-cursor0
+            build-essential \
+            libgl1-mesa-dev libfuse2 libpulse0 \
+            libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
 
       - name: Build (release)
         run: |
           mkdir -p build
           cd build
-          qmake6 ../src/bmstwo.pro CONFIG-=debug CONFIG+=release
+          qmake ../src/bmstwo.pro CONFIG-=debug CONFIG+=release
           make -j"$(nproc)"
 
       - name: Assemble AppDir
@@ -107,7 +120,7 @@ jobs:
           wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
           chmod +x linuxdeploy*.AppImage
           export APPIMAGE_EXTRACT_AND_RUN=1
-          export QMAKE="$(which qmake6)"
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
           export OUTPUT="BmsTWO-${{ github.event.inputs.tag || github.ref_name }}-linux-x86_64.AppImage"
           ./linuxdeploy-x86_64.AppImage --appdir AppDir \
             -d AppDir/usr/share/applications/BmsTWO.desktop \
