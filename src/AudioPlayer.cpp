@@ -217,6 +217,7 @@ AudioPlayerInternal::AudioPlayerInternal(QObject *parent)
 	, tmpPrevPosition(0)
 	, envPrev(0.0f)
 	, tmp(new SampleTypeTemp[BufferSampleCount])
+	, active(false)
 {
 	open(QIODevice::ReadOnly/* | QIODevice::Unbuffered*/);
 }
@@ -261,7 +262,11 @@ void AudioPlayerInternal::close()
 
 qint64 AudioPlayerInternal::bytesAvailable() const
 {
-	return QIODevice::bytesAvailable() + BufferSampleCount*(qint64)sizeof(SampleTypePlay);
+	// Only advertise data while something is playing. Claiming a full buffer at
+	// all times made event-driven sink backends busy-poll readData() when it
+	// returns 0 (see the idle path there).
+	return QIODevice::bytesAvailable()
+			+ (active ? BufferSampleCount*(qint64)sizeof(SampleTypePlay) : 0);
 }
 
 qint64 AudioPlayerInternal::readData(char *data, qint64 maxSize)
@@ -276,6 +281,26 @@ qint64 AudioPlayerInternal::readData(char *data, qint64 maxSize)
 	float peakR = 0.0f;
 	float rmsL = 0.0f;
 	float rmsR = 0.0f;
+	{
+		QMutexLocker idleCheck(&mutex);
+		if (!srcCurrent && !srcPrev){
+			// Nothing is playing: report no data instead of a buffer of silence.
+			// Serving silence kept the sink's buffer (16384 B ~ 93 ms) permanently
+			// full, so a new sound could only be heard after all that queued
+			// silence drained - a distinct lag at playback start. Underrunning
+			// instead parks the sink in IdleState (kept alive in OnStateChanged)
+			// with an empty buffer, so the next sound starts almost immediately.
+			// Dropping `active` makes bytesAvailable() report 0, which stops
+			// event-driven backends (Qt >= 6.8 ffmpeg) from busy-polling a starved
+			// device (~10k reads/s); they sleep until PlaySource() emits
+			// readyRead(). Timer-driven backends (Qt <= 6.7 pulse) ignore
+			// bytesAvailable() and recover by themselves on their next tick.
+			active = false;
+			idleCheck.unlock();
+			emit AudioIndicator(0.0f, 0.0f, 0.0f, 0.0f);
+			return 0;
+		}
+	}
 	{
 		for (qint64 i=0; i<samplesToRead; i++){
 			tmp[i].clear();
@@ -405,6 +430,10 @@ void AudioPlayerInternal::PlaySource(AudioPlaySource *srcNew)
 	tmpCurrentPosition = 0;
 	envPrev = 1.0f;
 	connect(srcCurrent, SIGNAL(destroyed(QObject*)), this, SLOT(OnSourceDestroyed(QObject*)));
+	active = true;
+	locker.unlock();
+	// Wake a sink backend that went to sleep on bytesAvailable() == 0.
+	emit readyRead();
 }
 
 void AudioPlayerInternal::StopSources()

@@ -16,6 +16,7 @@ typedef QAudioOutput BmsAudioOutput;
 #include <QFrame>
 #include <QToolBar>
 #include <QSlider>
+#include <atomic>
 #include "audio/Wave.h"
 #include "document/Document.h"
 
@@ -46,6 +47,10 @@ private:
 	SampleTypeTemp *tmp;
 	bool mute;
 	float volume;
+	// Whether any source is (still) playing; gates bytesAvailable() so sink
+	// backends stop pulling a starved device. Atomic: read from the backend's
+	// thread in bytesAvailable() without taking `mutex`.
+	std::atomic<bool> active;
 
 	static float sigmoid(float x);
 	static float saturate(float t, float x);
