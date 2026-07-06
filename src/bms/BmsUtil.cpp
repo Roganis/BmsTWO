@@ -52,6 +52,8 @@ Bms::Rational Bms::Rational::normalized() const
 	int num = std::abs(numerator);
 	int den = std::abs(denominator);
 	int gcd = Math::GCD(num, den);
+	if (gcd == 0) // 0/0: nothing to reduce, and dividing would crash
+		return Rational(0, 0);
 	return Rational(sign * num / gcd, den / gcd);
 }
 
@@ -69,17 +71,29 @@ Bms::Rational::operator float() const
 
 int Bms::Math::GCD_(int a, int b)
 {
-	if (b == 0)
-		return a;
-	return GCD(b, a % b);
+	return GCD(a, b);
 }
 
+// Iterative Euclid on magnitudes. The old mutually recursive version never
+// terminated for a negative argument (GCD_(2,-3) -> GCD(-3,2) -> GCD_(2,-3)
+// -> ...), and tail-call optimization turned that into a silent freeze while
+// loading charts whose section resolutions overflow LCM (see below).
 int Bms::Math::GCD(int a, int b){
-	return a > b ? GCD_(a, b) : GCD_(b, a);
+	a = std::abs(a);
+	b = std::abs(b);
+	while (b != 0){
+		int t = a % b;
+		a = b;
+		b = t;
+	}
+	return a;
 }
 
 int Bms::Math::LCM(int a, int b){
-	if (a == 0 || b == 0)
+	// Reject non-positive inputs, not just zero: LCM returns the -1 overflow
+	// sentinel, and callers chain it back in (GetResolution folds LCM over a
+	// section's sequences) - that -1 must come out as -1 again, not hang GCD.
+	if (a <= 0 || b <= 0)
 		return -1;
 	int d = GCD(a, b);
 	int m = a / d * b;
