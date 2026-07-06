@@ -178,7 +178,10 @@ void ExternalViewer::RunCommand(QString path, QString argument, QString executeD
 	process->start();
 #else
     QString program = QString("%1").arg(path);
-    QStringList arguments = argument.split(" ", Qt::SkipEmptyParts, Qt::CaseInsensitive);
+    // Quote-aware tokenization: substituted values like $(filename) routinely
+    // contain spaces, so templates quote them ("$(filename)"). A plain
+    // split(" ") broke those paths into several argv entries with stray quotes.
+    QStringList arguments = QProcess::splitCommand(argument);
     qDebug().noquote() << "Run command: " << program << " " << arguments;
     process->start(program, arguments);
 #endif
