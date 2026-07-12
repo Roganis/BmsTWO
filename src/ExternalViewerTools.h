@@ -10,6 +10,7 @@
 #include <QToolButton>
 #include <QComboBox>
 #include <QLabel>
+#include <QSpinBox>
 #include <QFormLayout>
 #include <QGroupBox>
 #include "ExternalViewer.h"
@@ -27,6 +28,10 @@ private:
 	QAction *actionPlayBeg;
 	QAction *actionPlayHere;
 	QAction *actionStop;
+	QAction *actionPlayRegion;
+	QAction *actionRegionFromSelection;
+	QSpinBox *regionBegin;
+	QSpinBox *regionEnd;
 	QComboBox *viewersConfig;
 	QAction *actionConfigure;
 	bool freezeIndexChange;
@@ -45,6 +50,8 @@ private slots:
 	void ConfigIndexChanged(int i);
 	void PlayBeg();
 	void PlayHere();
+	void PlayRegion();
+	void RegionFromSelection();
 	void Stop();
 	void CurrentConfigIndexChanged(int i);
 	void Configure();
@@ -70,6 +77,7 @@ private:
 	QLineEdit *programPath;
 	QLineEdit *argPlayBeg;
 	QLineEdit *argPlayHere;
+	QLineEdit *argPlayRegion;
 	QLineEdit *argStop;
 	QLineEdit *execDirectory;
 	QList<QLineEdit*> variableAcceptingWidgets;
@@ -92,6 +100,7 @@ private slots:
 	void ProgramPathEdited();
 	void ArgPlayBegEdited();
 	void ArgPlayHereEdited();
+	void ArgPlayRegionEdited();
 	void ArgStopEdited();
 	void ExecDirectoryEdited();
 

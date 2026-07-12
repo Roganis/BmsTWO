@@ -490,6 +490,37 @@ bool SequenceView::HasBpmEventsSelection() const
 	return !selectedBpmEvents.empty();
 }
 
+bool SequenceView::GetSelectedTimeRange(int *begin, int *end) const
+{
+	bool any = false;
+	int b = 0, e = 0;
+	for (SoundNoteView *nview : selectedNotes){
+		const SoundNote note = nview->GetNote();
+		if (!any){
+			b = note.location;
+			e = note.location + note.length;
+			any = true;
+		}else{
+			b = qMin(b, note.location);
+			e = qMax(e, note.location + note.length);
+		}
+	}
+	for (auto i=selectedBpmEvents.begin(); i!=selectedBpmEvents.end(); i++){
+		if (!any){
+			b = e = i.key();
+			any = true;
+		}else{
+			b = qMin(b, i.key());
+			e = qMax(e, i.key());
+		}
+	}
+	if (any){
+		*begin = b;
+		*end = e;
+	}
+	return any;
+}
+
 int SequenceView::GetCurrentLocation() const
 {
 	int bottom = timeLine->height();

@@ -375,6 +375,7 @@ public:
 	GridSize GetMediumGrid() const{ return coarseGrid; }
 	bool HasNotesSelection() const;
 	bool HasBpmEventsSelection() const;
+	bool GetSelectedTimeRange(int *begin, int *end) const; // ticks spanned by the selected notes/BPM events
 	bool CanPasteNotes() const;
 	QList<SoundChannel*> GetSelectedSoundChannels() const; // multi-track sample preview (#16)
 	int GetCurrentLocation() const;

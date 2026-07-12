@@ -14,6 +14,7 @@ const char *ExternalViewer::SettingsViewerProgramPathKey = "Path";
 const char *ExternalViewer::SettingsViewerIconPathKey = "Icon";
 const char *ExternalViewer::SettingsViewerArgumentFormatPlayBegKey = "ArgumentPlayBegin";
 const char *ExternalViewer::SettingsViewerArgumentFormatPlayHereKey = "ArgumentPlayHere";
+const char *ExternalViewer::SettingsViewerArgumentFormatPlayRegionKey = "ArgumentPlayRegion";
 const char *ExternalViewer::SettingsViewerArgumentFormatStopKey = "ArgumentStop";
 const char *ExternalViewer::SettingsViewerExecutionDirectoryFormatKey = "WorkingDirectory";
 
@@ -23,6 +24,8 @@ ExternalViewer::ExternalViewer(MainWindow *mainWindow)
 	, settingsCache(mainWindow->GetSettings())
 	, document(nullptr)
 {
+	stopTimer.setSingleShot(true);
+	connect(&stopTimer, SIGNAL(timeout()), this, SLOT(Stop()));
 
 	QSettings *settings = mainWindow->GetSettings();
 	settings->beginGroup(SettingsGroup);
@@ -36,6 +39,7 @@ ExternalViewer::ExternalViewer(MainWindow *mainWindow)
 			c.iconPath = settings->value(SettingsViewerIconPathKey, "").toString();
 			c.argumentFormatPlayBeg = settings->value(SettingsViewerArgumentFormatPlayBegKey, "").toString();
 			c.argumentFormatPlayHere = settings->value(SettingsViewerArgumentFormatPlayHereKey, "").toString();
+			c.argumentFormatPlayRegion = settings->value(SettingsViewerArgumentFormatPlayRegionKey, "").toString();
 			c.argumentFormatStop = settings->value(SettingsViewerArgumentFormatStopKey, "").toString();
 			c.executionDirectory = settings->value(SettingsViewerExecutionDirectoryFormatKey, "").toString();
 			config.append(c);
@@ -64,6 +68,7 @@ ExternalViewer::~ExternalViewer()
 			settings->setValue(SettingsViewerIconPathKey, c.iconPath);
 			settings->setValue(SettingsViewerArgumentFormatPlayBegKey, c.argumentFormatPlayBeg);
 			settings->setValue(SettingsViewerArgumentFormatPlayHereKey, c.argumentFormatPlayHere);
+			settings->setValue(SettingsViewerArgumentFormatPlayRegionKey, c.argumentFormatPlayRegion);
 			settings->setValue(SettingsViewerArgumentFormatStopKey, c.argumentFormatStop);
 			settings->setValue(SettingsViewerExecutionDirectoryFormatKey, c.executionDirectory);
 			settings->endGroup();
@@ -75,6 +80,7 @@ ExternalViewer::~ExternalViewer()
 
 void ExternalViewer::ReplaceDocument(Document *document)
 {
+	stopTimer.stop();
 	this->document = document;
 }
 
@@ -109,6 +115,7 @@ ExternalViewerConfig ExternalViewer::CreateNewConfig()
 	c.programPath = "";
 	c.argumentFormatPlayBeg = "";
 	c.argumentFormatPlayHere = "";
+	c.argumentFormatPlayRegion = "";
 	c.argumentFormatStop = "";
 	c.executionDirectory = "$(exedir)";
 	return c;
@@ -124,6 +131,7 @@ void ExternalViewer::PlayBeg()
 	if (!PrepareTempFile()){
 		return;
 	}
+	stopTimer.stop();
 	auto env = Environment();
 	RunCommand(config[configIndex].programPath,
 			   EvalArgument(config[configIndex].argumentFormatPlayBeg, env),
@@ -140,14 +148,52 @@ void ExternalViewer::Play(int time)
 	if (!PrepareTempFile()){
 		return;
 	}
+	stopTimer.stop();
 	auto env = Environment(time);
 	RunCommand(config[configIndex].programPath,
 			   EvalArgument(config[configIndex].argumentFormatPlayHere, env),
 			   EvalArgument(config[configIndex].executionDirectory, env));
 }
 
+void ExternalViewer::PlayRegion(int timeBegin, int timeEnd)
+{
+	if (!IsPlayable())
+		return;
+	if (!document || document->GetProjectDirectory() == QDir::root())
+		return;
+	if (timeEnd < 0){
+		timeEnd = document->GetTotalLength();
+	}
+	if (timeEnd <= timeBegin)
+		return;
+
+	if (!PrepareTempFile()){
+		return;
+	}
+	stopTimer.stop();
+	const ExternalViewerConfig &c = config[configIndex];
+	auto env = Environment(timeBegin, timeEnd);
+	if (!c.argumentFormatPlayRegion.isEmpty()){
+		// the viewer stops by itself, via $(timeEnd)/$(ticksEnd)/$(measureEnd)
+		RunCommand(c.programPath,
+				   EvalArgument(c.argumentFormatPlayRegion, env),
+				   EvalArgument(c.executionDirectory, env));
+	}else{
+		RunCommand(c.programPath,
+				   EvalArgument(c.argumentFormatPlayHere, env),
+				   EvalArgument(c.executionDirectory, env));
+		if (!c.argumentFormatStop.isEmpty()){
+			double duration = document->GetAbsoluteTime(timeEnd) - document->GetAbsoluteTime(timeBegin);
+			if (duration > 0){
+				stopTimer.start(int(duration * 1000));
+			}
+		}
+	}
+}
+
 void ExternalViewer::Stop()
 {
+	stopTimer.stop();
 	if (!IsPlayable())
 		return;
 	if (!document || document->GetProjectDirectory() == QDir::root())
@@ -217,7 +263,7 @@ QString ExternalViewer::EvalArgument(QString argumentFormat, QMap<QString, QStri
     return result;
 }
 
-QMap<QString, QString> ExternalViewer::Environment(int time)
+QMap<QString, QString> ExternalViewer::Environment(int time, int timeEnd)
 {
 	QMap<QString, QString> env;
 	env.insert("directory", QDir::toNativeSeparators(document->GetProjectDirectory().absolutePath()));
@@ -227,16 +273,36 @@ QMap<QString, QString> ExternalViewer::Environment(int time)
 		env.insert("time", QString::number(document->GetAbsoluteTime(time)));
 		env.insert("measure", QString::number(GetBarNumber(time)));
 	}
+	if (timeEnd >= 0){
+		env.insert("ticksEnd", QString::number(timeEnd));
+		env.insert("timeEnd", QString::number(document->GetAbsoluteTime(timeEnd)));
+		env.insert("measureEnd", QString::number(GetBarNumber(timeEnd)));
+	}
 	env.insert("exedir", QFileInfo(config[configIndex].programPath).absoluteDir().absolutePath());
 	return env;
 }
 
-int ExternalViewer::GetBarNumber(int time)
+int ExternalViewer::GetBarNumber(int time) const
 {
+	if (!document)
+		return -1;
 	int bar = -1;
 	const QMap<int, BarLine> &bars = document->GetBarLines();
 	for (QMap<int, BarLine>::const_iterator ibar=bars.begin(); ibar!=bars.end() && ibar.key() <= time; ibar++, bar++);
 	return bar;
+}
+
+int ExternalViewer::GetBarStartTick(int barNumber) const
+{
+	if (!document || barNumber < 0)
+		return -1;
+	const QMap<int, BarLine> &bars = document->GetBarLines();
+	int bar = 0;
+	for (QMap<int, BarLine>::const_iterator ibar=bars.begin(); ibar!=bars.end(); ibar++, bar++){
+		if (bar == barNumber)
+			return ibar.key();
+	}
+	return -1;
 }
 
 bool ExternalViewer::PrepareTempFile()

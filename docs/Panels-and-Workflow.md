@@ -81,6 +81,24 @@ sample sources.
 
 ---
 
+## External viewer focus region
+
+**What:** Loop-free A/B checking of a passage: pick a measure range and the
+external viewer plays from its start and stops at its end.
+
+**How to use:** In the External Viewer toolbar, set the *Focus* fields (first and
+last measure, inclusive), or select notes in the chart and use *Set Focus Region
+from Selection*. *Play Focus Region* (F7) plays it.
+
+**How it works:** If the viewer's *Play Focus Region* argument template is set,
+BmsTWO launches it with the region-end variables `$(timeEnd)`, `$(ticksEnd)` and
+`$(measureEnd)` (alongside the usual start-position variables) so the viewer can
+stop itself. If the template is empty, the *Play from Here* command is used and
+the *Stop* command is sent automatically once the region's real (BPM/STOP-aware)
+duration has elapsed — accurate up to the viewer's own startup latency.
+
+---
+
 ## BGA & Stops docks
 
 These editing docks are documented under

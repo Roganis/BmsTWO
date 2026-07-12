@@ -22,12 +22,43 @@ ExternalViewerTools::ExternalViewerTools(const QString &objectName, const QStrin
 	actionPlayBeg->setShortcuts(QList<QKeySequence>() << Qt::Key_F5 << KeySeq(Qt::ControlModifier, Qt::Key_R));
 	actionPlayHere->setShortcuts(QList<QKeySequence>() << Qt::Key_F6 << KeySeq(Qt::ControlModifier, Qt::ShiftModifier, Qt::Key_R));
 
+	addSeparator();
+	auto regionLabel = new QLabel(tr("Focus:"), this);
+	regionLabel->setContentsMargins(4, 0, 4, 0);
+	addWidget(regionLabel);
+	regionBegin = new QSpinBox(this);
+	regionBegin->setRange(0, 99999);
+	regionBegin->setToolTip(tr("Focus region: first measure"));
+	addWidget(regionBegin);
+	auto regionDashLabel = new QLabel("-", this);
+	regionDashLabel->setContentsMargins(2, 0, 2, 0);
+	addWidget(regionDashLabel);
+	regionEnd = new QSpinBox(this);
+	regionEnd->setRange(0, 99999);
+	regionEnd->setToolTip(tr("Focus region: last measure (inclusive)"));
+	addWidget(regionEnd);
+	actionPlayRegion = addAction(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Play), tr("Play Focus Region"));
+	actionPlayRegion->setShortcuts(QList<QKeySequence>() << Qt::Key_F7);
+	actionRegionFromSelection = addAction(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Location), tr("Set Focus Region from Selection"));
+
+	// keep begin <= end without ping-ponging while the user types
+	connect(regionBegin, QOverload<int>::of(&QSpinBox::valueChanged), [this](int value){
+		if (regionEnd->value() < value)
+			regionEnd->setValue(value);
+	});
+	connect(regionEnd, QOverload<int>::of(&QSpinBox::valueChanged), [this](int value){
+		if (regionBegin->value() > value)
+			regionBegin->setValue(value);
+	});
+
 	addWidget(viewersConfig = new QComboBox(this));
 	viewersConfig->setMinimumWidth(100);
 	actionConfigure = addAction(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Settings), tr("Configure External Viewers..."));
 
 	mainWindow->GetMenuPreview()->addAction(actionPlayBeg);
 	mainWindow->GetMenuPreview()->addAction(actionPlayHere);
+	mainWindow->GetMenuPreview()->addAction(actionPlayRegion);
+	mainWindow->GetMenuPreview()->addAction(actionRegionFromSelection);
 	mainWindow->GetMenuPreview()->addAction(actionStop);
 	mainWindow->GetMenuPreview()->addSeparator();
 	menuViewers = mainWindow->GetMenuPreview()->addMenu(tr("Viewer"));
@@ -36,6 +67,8 @@ ExternalViewerTools::ExternalViewerTools(const QString &objectName, const QStrin
 
 	connect(actionPlayBeg, SIGNAL(triggered(bool)), this, SLOT(PlayBeg()));
 	connect(actionPlayHere, SIGNAL(triggered(bool)), this, SLOT(PlayHere()));
+	connect(actionPlayRegion, SIGNAL(triggered(bool)), this, SLOT(PlayRegion()));
+	connect(actionRegionFromSelection, SIGNAL(triggered(bool)), this, SLOT(RegionFromSelection()));
 	connect(actionStop, SIGNAL(triggered(bool)), this, SLOT(Stop()));
 
 	connect(viewersConfig, SIGNAL(currentIndexChanged(int)), this, SLOT(CurrentConfigIndexChanged(int)));
@@ -114,6 +147,31 @@ void ExternalViewerTools::PlayHere()
 	viewer->Play(time);
 }
 
+void ExternalViewerTools::PlayRegion()
+{
+	int tickBegin = viewer->GetBarStartTick(regionBegin->value());
+	if (tickBegin < 0)
+		return;
+	// the region includes the last measure; -1 = the chart has no further bar line, play to the end
+	int tickEnd = viewer->GetBarStartTick(regionEnd->value() + 1);
+	viewer->PlayRegion(tickBegin, tickEnd);
+}
+
+void ExternalViewerTools::RegionFromSelection()
+{
+	auto sview = mainWindow->GetActiveSequenceView();
+	int begin, end;
+	if (!sview || !sview->GetSelectedTimeRange(&begin, &end))
+		return;
+	int measureBegin = viewer->GetBarNumber(begin);
+	// a note ending exactly on a bar line should not pull in the next measure
+	int measureEnd = viewer->GetBarNumber(qMax(begin, end - 1));
+	if (measureBegin < 0 || measureEnd < 0)
+		return;
+	regionBegin->setValue(measureBegin);
+	regionEnd->setValue(measureEnd);
+}
+
 void ExternalViewerTools::Stop()
 {
 	viewer->Stop();
@@ -140,6 +198,10 @@ void ExternalViewerTools::SetPlayable(bool playable)
 {
 	actionPlayBeg->setEnabled(playable);
 	actionPlayHere->setEnabled(playable);
+	actionPlayRegion->setEnabled(playable);
+	actionRegionFromSelection->setEnabled(playable);
+	regionBegin->setEnabled(playable);
+	regionEnd->setEnabled(playable);
 	actionStop->setEnabled(playable);
 }
 
@@ -225,6 +287,8 @@ ExternalViewerConfigDialog::ExternalViewerConfigDialog(MainWindow *mainWindow, Q
 	argsLayout->setSizeConstraint(QLayout::SetNoConstraint);
 	argsLayout->addRow(LabelWithIcon(SymbolIconManager::GetIcon(SymbolIconManager::Icon::PlayZero), tr("Play from Beginning:")), argPlayBeg = new QLineEdit());
 	argsLayout->addRow(LabelWithIcon(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Play), tr("Play from Here:")), argPlayHere = new QLineEdit());
+	argsLayout->addRow(LabelWithIcon(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Play), tr("Play Focus Region:")), argPlayRegion = new QLineEdit());
+	argPlayRegion->setToolTip(tr("Optional. Used by \"Play Focus Region\" for viewers that can stop at a given position ($(timeEnd), $(ticksEnd), $(measureEnd)).\nIf empty, the region is played with \"Play from Here\" and \"Stop\" is sent automatically when the region ends."));
 	argsLayout->addRow(LabelWithIcon(SymbolIconManager::GetIcon(SymbolIconManager::Icon::Stop), tr("Stop:")), argStop = new QLineEdit());
 	argsWidget->setLayout(argsLayout);
 	content->addRow(argsWidget);
@@ -232,10 +296,12 @@ ExternalViewerConfigDialog::ExternalViewerConfigDialog(MainWindow *mainWindow, Q
 	connect(programPath, SIGNAL(editingFinished()), this, SLOT(ProgramPathEdited()));
 	connect(argPlayBeg, SIGNAL(editingFinished()), this, SLOT(ArgPlayBegEdited()));
 	connect(argPlayHere, SIGNAL(editingFinished()), this, SLOT(ArgPlayHereEdited()));
+	connect(argPlayRegion, SIGNAL(editingFinished()), this, SLOT(ArgPlayRegionEdited()));
 	connect(argStop, SIGNAL(editingFinished()), this, SLOT(ArgStopEdited()));
 	connect(execDirectory, SIGNAL(editingFinished()), this, SLOT(ExecDirectoryEdited()));
 	variableAcceptingWidgets.append(argPlayBeg);
 	variableAcceptingWidgets.append(argPlayHere);
+	variableAcceptingWidgets.append(argPlayRegion);
 	variableAcceptingWidgets.append(argStop);
 	variableAcceptingWidgets.append(execDirectory);
 	auto vars = new QGridLayout();
@@ -245,6 +311,9 @@ ExternalViewerConfigDialog::ExternalViewerConfigDialog(MainWindow *mainWindow, Q
 	vars->addWidget(VarLabel("$(measure)"), 0, 2); vars->addWidget(VarDescription(tr("current measure")), 0, 3);
 	vars->addWidget(VarLabel("$(time)"), 1, 2); vars->addWidget(VarDescription(tr("current time in seconds")), 1, 3);
 	vars->addWidget(VarLabel("$(ticks)"), 2, 2); vars->addWidget(VarDescription(tr("current time in ticks")), 2, 3);
+	vars->addWidget(VarLabel("$(measureEnd)"), 3, 0); vars->addWidget(VarDescription(tr("region end measure")), 3, 1);
+	vars->addWidget(VarLabel("$(timeEnd)"), 3, 2); vars->addWidget(VarDescription(tr("region end time in seconds")), 3, 3);
+	vars->addWidget(VarLabel("$(ticksEnd)"), 4, 2); vars->addWidget(VarDescription(tr("region end time in ticks")), 4, 3);
 	vars->setColumnStretch(1, 1);
 	vars->setColumnStretch(3, 1);
 	vars->setColumnMinimumWidth(1, 20);
@@ -344,6 +413,7 @@ void ExternalViewerConfigDialog::PageChanged(int i)
 		programPath->setText(c.programPath);
 		argPlayBeg->setText(c.argumentFormatPlayBeg);
 		argPlayHere->setText(c.argumentFormatPlayHere);
+		argPlayRegion->setText(c.argumentFormatPlayRegion);
 		argStop->setText(c.argumentFormatStop);
 		execDirectory->setText(c.executionDirectory);
 		selectProgramButton->setEnabled(true);
@@ -351,6 +421,7 @@ void ExternalViewerConfigDialog::PageChanged(int i)
 		programPath->setEnabled(true);
 		argPlayBeg->setEnabled(true);
 		argPlayHere->setEnabled(true);
+		argPlayRegion->setEnabled(true);
 		argStop->setEnabled(true);
 		execDirectory->setEnabled(true);
 		upButton->setEnabled(true);
@@ -362,6 +433,7 @@ void ExternalViewerConfigDialog::PageChanged(int i)
 		programPath->setText("");
 		argPlayBeg->setText("");
 		argPlayHere->setText("");
+		argPlayRegion->setText("");
 		argStop->setText("");
 		execDirectory->setText("");
 		selectProgramButton->setEnabled(false);
@@ -369,6 +441,7 @@ void ExternalViewerConfigDialog::PageChanged(int i)
 		programPath->setEnabled(false);
 		argPlayBeg->setEnabled(false);
 		argPlayHere->setEnabled(false);
+		argPlayRegion->setEnabled(false);
 		argStop->setEnabled(false);
 		execDirectory->setEnabled(false);
 		upButton->setEnabled(false);
@@ -409,6 +482,14 @@ void ExternalViewerConfigDialog::ArgPlayHereEdited()
 	if (i < 0)
 		return;
 	config[i].argumentFormatPlayHere = argPlayHere->text();
+}
+
+void ExternalViewerConfigDialog::ArgPlayRegionEdited()
+{
+	int i = list->currentRow();
+	if (i < 0)
+		return;
+	config[i].argumentFormatPlayRegion = argPlayRegion->text();
 }
 
 void ExternalViewerConfigDialog::ArgStopEdited()

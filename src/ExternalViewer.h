@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QProcess>
 #include <QMessageBox>
+#include <QTimer>
 
 
 class Document;
@@ -18,6 +19,7 @@ struct ExternalViewerConfig
 	QString iconPath;
 	QString argumentFormatPlayBeg;
 	QString argumentFormatPlayHere;
+	QString argumentFormatPlayRegion; // optional; empty = PlayHere + timed Stop
 	QString argumentFormatStop;
 	QString executionDirectory;
 };
@@ -33,6 +35,7 @@ private:
 	Document *document;
 	QString tempFilePath;
 	QFile tempFile;
+	QTimer stopTimer;
 
 	QList<ExternalViewerConfig> config;
 	int configIndex;
@@ -46,6 +49,7 @@ private:
 	static const char *SettingsViewerIconPathKey;
 	static const char *SettingsViewerArgumentFormatPlayBegKey;
 	static const char *SettingsViewerArgumentFormatPlayHereKey;
+	static const char *SettingsViewerArgumentFormatPlayRegionKey;
 	static const char *SettingsViewerArgumentFormatStopKey;
 	static const char *SettingsViewerExecutionDirectoryFormatKey;
 
@@ -60,6 +64,9 @@ public:
 	void SetConfigIndex(int index);
 	bool IsPlayable() const;
 
+	int GetBarNumber(int time) const;
+	int GetBarStartTick(int barNumber) const; // -1 if barNumber is beyond the last bar line
+
 	static ExternalViewerConfig CreateNewConfig();
 
 signals:
@@ -69,13 +76,13 @@ signals:
 public slots:
 	void PlayBeg();
 	void Play(int time=0);
+	void PlayRegion(int timeBegin, int timeEnd); // timeEnd < 0 = end of chart
 	void Stop();
 
 private:
 	void RunCommand(QString path, QString argument, QString executeDir);
 	QString EvalArgument(QString argumentFormat, QMap<QString, QString> env);
-	QMap<QString, QString> Environment(int time=-1);
-	int GetBarNumber(int time);
+	QMap<QString, QString> Environment(int time=-1, int timeEnd=-1);
 	bool PrepareTempFile();
 	bool Clean();
 };
