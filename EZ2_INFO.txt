@@ -1,46 +1,81 @@
-Soft limits:
+EZ2 info fields (judgement_deltas / life_deltas)
+=================================================
 
-	judgement_deltas:
+These two objects live in "info" and map onto the original game's per-chart
+song .ini: judgement_deltas is the [JudgmentDelta] section and life_deltas is
+the [GaugeUpDownRate] section. BmsTWO round-trips them as extra fields; the
+EZ2 converter reads them. EZ2 modes ignore bmson's judge_rank and total.
+
+
+judgement_deltas - UNIT IS CHART TICKS, NOT MILLISECONDS
+--------------------------------------------------------
+
+	1 tick = 1/192 beat = 312.5 / BPM ms   (2.08 ms at 150 BPM)
+
+Windows are beat-relative: the same numbers are tighter in absolute time on
+a faster chart. Each value is the half-width of the window around the note;
+MISS is the outer bound, a press further out than that consumes no note.
+
+Store the raw file values. The game never judges with them directly: at
+chart setup it adds +3 ticks to all four (+1 in the alternate scoring mode)
+before loading them into the judge. Do not add the 3 yourself.
+
+	Original defaults (missing .ini):
+
+		KOOL = 6      judged as  9
+		COOL = 24     judged as 27
+		GOOD = 36     judged as 39
+		MISS = 72     judged as 75
+
+	Effective widths with the +3 widening, default values:
+
+		BPM   tick ms   KOOL     COOL     GOOD      MISS
+		120   2.60      +-23 ms  +-70 ms  +-102 ms  +-195 ms
+		150   2.08      +-19 ms  +-56 ms  +-81 ms   +-156 ms
+		180   1.74      +-16 ms  +-47 ms  +-68 ms   +-130 ms
+		200   1.56      +-14 ms  +-42 ms  +-61 ms   +-117 ms
+
+	Guidance (ticks), shipped charts commonly override GOOD=50 / MISS=70:
+
 		KOOL = 4 to 7
 		COOL = 15 to 30
-		GOOD = 40 to 60
-		MISS = 50 to 70
+		GOOD = 36 to 60
+		MISS = 50 to 80
 
-	life_deltas:
+
+life_deltas - gauge change per judgement
+----------------------------------------
+
+There is no KOOL entry: the game mirrors COOL into KOOL. The 14-key modes
+add +0.05 to COOL and +0.02 to GOOD on load, and EZ2CATCH zeroes GOOD; both
+are applied by the game per mode, so do not bake them into the chart.
+
+	Original defaults (missing .ini):
+
+		COOL = 0.2
+		GOOD = 0.1
+		MISS = -1.8
+		FAIL = -4.8
+
+	Guidance:
+
 		COOL = 0.2 to 0.3
 		GOOD = 0.1 to 0.2
-		MISS = -1.X to -2.0
-		FAIL = -3.X to -5.0
+		MISS = -1.5 to -2.0
+		FAIL = -3.5 to -5.0
 
----------------------------
 
-Examples:
+Examples
+--------
 
 	judgement_deltas:
 
-		KOOL = 5 to 7
-		COOL = 18
-		GOOD = 40
-		MISS = 56
-		---------
-		KOOL = 7
-		COOL = 30
-		GOOD = 50
-		MISS = 70 to 80
-		
+		KOOL = 6,  COOL = 24, GOOD = 36, MISS = 72   (defaults)
+		KOOL = 6,  COOL = 24, GOOD = 50, MISS = 70   (common shipped override)
+		KOOL = 7,  COOL = 30, GOOD = 50, MISS = 80   (lenient)
+
 	life_deltas:
 
-		COOL = 0.2
-		GOOD = 0.1
-		MISS = -2.0
-		FAIL = -5.0
-		---------
-		COOL = 0.2
-		GOOD = 0.1
-		MISS = -1.5
-		FAIL = -3.5
-		---------
-		COOL = 0.3
-		GOOD = 0.2
-		MISS = -1.5
-		FAIL = -4.5
+		COOL = 0.2, GOOD = 0.1, MISS = -1.8, FAIL = -4.8   (defaults)
+		COOL = 0.2, GOOD = 0.1, MISS = -1.5, FAIL = -3.5   (forgiving)
+		COOL = 0.3, GOOD = 0.2, MISS = -1.5, FAIL = -4.5   (fast recovery)

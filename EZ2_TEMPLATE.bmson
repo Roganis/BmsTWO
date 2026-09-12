@@ -11,17 +11,17 @@
         "init_bpm": 120,
         "judge_rank": 100,
         "judgement_deltas": {
-            "COOL": 18,
-            "GOOD": 40,
+            "COOL": 24,
+            "GOOD": 36,
             "KOOL": 6,
-            "MISS": 56
+            "MISS": 72
         },
         "level": 1,
         "life_deltas": {
             "COOL": 0.2,
             "GOOD": 0.1,
-            "FAIL": -3.5,
-            "MISS": -1.5
+            "FAIL": -4.8,
+            "MISS": -1.8
         },
         "mode_hint": "ez2-5k",
         "preview_music": "",
